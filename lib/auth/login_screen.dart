@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../core/theme/App_color.dart';
+import '../core/theme/app_color.dart';
 import '../core/constants/app_size.dart';
 import '../core/Widgets/text_field_for_login.dart';
 import 'controllers/login_controller.dart';
@@ -105,10 +105,7 @@ class _LoginView extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.scaffoldBackground,
                     borderRadius: BorderRadius.circular(AppSizes.r16),
-                    border: Border.all(
-                      color: AppColors.formBorder,
-                      width: 1,
-                    ),
+                    border: Border.all(color: AppColors.formBorder, width: 1),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.shadowColor,
@@ -135,7 +132,8 @@ class _LoginView extends StatelessWidget {
                         controller: controller.emailController,
                         hintText: 'Enter your email',
                         icon: Icons.email_outlined,
-                        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Required' : null,
                       ),
                       SizedBox(height: AppSizes.ph20),
 
@@ -155,7 +153,8 @@ class _LoginView extends StatelessWidget {
                         hintText: 'Enter your password',
                         icon: Icons.lock_outline,
                         isPassword: true,
-                        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Required' : null,
                       ),
                       SizedBox(height: AppSizes.h32),
 
@@ -168,7 +167,9 @@ class _LoginView extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: AppColors.error.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(AppSizes.r12),
-                            border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                            border: Border.all(
+                              color: AppColors.error.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Text(
                             controller.errorMessage!,
@@ -197,14 +198,18 @@ class _LoginView extends StatelessWidget {
                             borderRadius: BorderRadius.circular(AppSizes.r16),
                           ),
                           child: ElevatedButton(
-                            onPressed: controller.isLoading ? null : () => controller.login(context),
+                            onPressed: controller.isLoading
+                                ? null
+                                : () => controller.login(context),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
                               foregroundColor: AppColors.buttonText,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppSizes.r16),
+                                borderRadius: BorderRadius.circular(
+                                  AppSizes.r16,
+                                ),
                               ),
                             ),
                             child: controller.isLoading
@@ -297,7 +302,10 @@ class _LoginView extends StatelessWidget {
 
                 // ── Footer ──
                 Padding(
-                  padding: EdgeInsets.only(bottom: AppSizes.h32, top: AppSizes.h16),
+                  padding: EdgeInsets.only(
+                    bottom: AppSizes.h32,
+                    top: AppSizes.h16,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -342,4 +350,3 @@ class _LoginView extends StatelessWidget {
     );
   }
 }
-

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/App_color.dart';
+
+import '../../../../core/theme/app_color.dart';
 
 class AuditScreen extends StatelessWidget {
   const AuditScreen({super.key});
@@ -24,11 +25,7 @@ class AuditScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.security,
-              size: 100,
-              color: AppColors.primaryColor,
-            ),
+            Icon(Icons.security, size: 100, color: AppColors.primaryColor),
             SizedBox(height: 24),
             Text(
               'Audit',
@@ -41,18 +38,12 @@ class AuditScreen extends StatelessWidget {
             SizedBox(height: 16),
             Text(
               'Under Development',
-              style: TextStyle(
-                fontSize: 18,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
             ),
             SizedBox(height: 8),
             Text(
               'jh ',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
             ),
           ],
         ),

@@ -1,7 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
-import '../../core/theme/App_color.dart';
+import '../../core/theme/app_color.dart';
 import '../../models/organization_model.dart';
 import '../login_screen.dart';
 
@@ -93,8 +93,9 @@ class RequestAccessController extends ChangeNotifier {
 
     try {
       // Call Cloud Function - creates Auth user + users doc (pending) + accessRequests + notification + email
-      final callable = FirebaseFunctions.instanceFor(region: 'us-central1')
-          .httpsCallable('createEmployeeRequest');
+      final callable = FirebaseFunctions.instanceFor(
+        region: 'us-central1',
+      ).httpsCallable('createEmployeeRequest');
 
       await callable.call({
         'firstName': firstNameController.text.trim(),

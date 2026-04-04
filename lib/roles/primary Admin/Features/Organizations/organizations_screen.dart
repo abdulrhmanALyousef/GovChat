@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/App_color.dart';
+import '../../../../core/theme/app_color.dart';
 import '../../../../core/Widgets/custom_text_form_field.dart';
-import '../../../../core/Widgets/CustomDropdownField.dart';
+import '../../../../core/Widgets/custom_dropdown_field.dart';
 import 'controllers/organizarions_conttroller.dart';
 
 class OrganizationsScreen extends StatelessWidget {
@@ -27,7 +27,7 @@ class _OrganizationsView extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-     // Show success or error messages
+    // Show success or error messages
     _showMessages(context, controller);
 
     return Scaffold(
@@ -51,7 +51,10 @@ class _OrganizationsView extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   'Set up a new organization within the secure infrastructure.',
-                  style: TextStyle(fontSize: 13, color: theme.textTheme.bodyMedium?.color),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.textTheme.bodyMedium?.color,
+                  ),
                 ),
                 const SizedBox(height: 28),
 
@@ -124,7 +127,9 @@ class _OrganizationsView extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: theme.dividerTheme.color ?? colorScheme.outline),
+                    border: Border.all(
+                      color: theme.dividerTheme.color ?? colorScheme.outline,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,12 +149,19 @@ class _OrganizationsView extends StatelessWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.info_outline, size: 16, color: colorScheme.primary),
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: colorScheme.primary,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'A temporary password will be generated and sent to the admin email. The admin will be required to change it on first login.',
-                              style: TextStyle(fontSize: 12, color: theme.textTheme.bodyMedium?.color),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.textTheme.bodyMedium?.color,
+                              ),
                             ),
                           ),
                         ],
@@ -164,17 +176,22 @@ class _OrganizationsView extends StatelessWidget {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: controller.isLoading ? null : controller.createOrganization,
+                    onPressed: controller.isLoading
+                        ? null
+                        : controller.createOrganization,
                     child: controller.isLoading
                         ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Text(
-                      'CREATE ORGANIZATION',
-                      style: TextStyle(letterSpacing: 1.5, fontWeight: FontWeight.w700),
-                    ),
+                            'CREATE ORGANIZATION',
+                            style: TextStyle(
+                              letterSpacing: 1.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 24),

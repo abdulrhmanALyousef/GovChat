@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_size.dart';
-import 'App_color.dart';
+import 'app_color.dart';
 
 ThemeData darkTheme = ThemeData(
   useMaterial3: true,
@@ -37,9 +37,7 @@ ThemeData darkTheme = ThemeData(
         fontWeight: FontWeight.w700,
         letterSpacing: 1.5,
       ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       minimumSize: Size.fromHeight(AppSizes.h52),
     ),
   ),
@@ -77,7 +75,10 @@ ThemeData darkTheme = ThemeData(
     selectedItemColor: AppColors.primaryColor,
     unselectedItemColor: AppColors.navUnselected,
     showUnselectedLabels: true,
-    selectedLabelStyle: TextStyle(fontSize: AppSizes.sp10, fontWeight: FontWeight.w600),
+    selectedLabelStyle: TextStyle(
+      fontSize: AppSizes.sp10,
+      fontWeight: FontWeight.w600,
+    ),
     unselectedLabelStyle: TextStyle(fontSize: AppSizes.sp10),
   ),
 
@@ -90,14 +91,14 @@ ThemeData darkTheme = ThemeData(
     ),
   ),
 
-  dividerTheme: DividerThemeData(
-    color: AppColors.inputBorder,
-    thickness: 1,
-  ),
+  dividerTheme: DividerThemeData(color: AppColors.inputBorder, thickness: 1),
 
   textTheme: TextTheme(
     bodyLarge: TextStyle(color: AppColors.textPrimary),
     bodyMedium: TextStyle(color: AppColors.textSecondary),
-    titleLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+    titleLarge: TextStyle(
+      color: AppColors.textPrimary,
+      fontWeight: FontWeight.w700,
+    ),
   ),
 );

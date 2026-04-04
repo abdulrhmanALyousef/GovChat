@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../models/admin_model.dart';
+import '../../models/employee_model.dart';
 import '../../roles/Admin/features/Main/admin_main_screen.dart';
-import '../../roles/primary Admin/Features/Main/Main_screen.dart';
+import '../../roles/employee/features/chat/employee_chat_screen.dart';
+import '../../roles/primary Admin/Features/Main/main_screen.dart';
 import '../change_password_screen.dart';
 import '../request_access_screen.dart';
 
@@ -27,11 +29,11 @@ class LoginController extends ChangeNotifier {
 
     try {
       // 1. Sign in
-      final credential =
-          await FirebaseService.instance.auth.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+      final credential = await FirebaseService.instance.auth
+          .signInWithEmailAndPassword(
+            email: emailController.text.trim(),
+            password: passwordController.text.trim(),
+          );
 
       final uid = credential.user!.uid;
 
@@ -47,13 +49,13 @@ class LoginController extends ChangeNotifier {
             .collection('users')
             .doc(uid)
             .set({
-          'uid': uid,
-          'email': credential.user!.email,
-          'role': 'primary_admin',
-          'firstLogin': false,
-          'mustChangePassword': false,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+              'uid': uid,
+              'email': credential.user!.email,
+              'role': 'primary_admin',
+              'firstLogin': false,
+              'mustChangePassword': false,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
 
         if (!context.mounted) return;
 
@@ -74,7 +76,8 @@ class LoginController extends ChangeNotifier {
         final status = doc.data()!['status'] ?? 'pending';
         if (status == 'pending') {
           await FirebaseService.instance.auth.signOut();
-          errorMessage = 'Your account is pending approval. Please wait for admin confirmation.';
+          errorMessage =
+              'Your account is pending approval. Please wait for admin confirmation.';
           isLoading = false;
           notifyListeners();
           return;
@@ -96,6 +99,7 @@ class LoginController extends ChangeNotifier {
       await prefs.setBool('firstLogin', user.firstLogin);
 
       // 5. If admin and first login -> change password screen
+      if (!context.mounted) return;
       if (user.role == 'admin' && user.firstLogin) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -114,6 +118,10 @@ class LoginController extends ChangeNotifier {
         case 'primary_admin':
           destination = const MainScreen();
           break;
+        case 'employee':
+          final employee = await _loadEmployeeProfile(uid, doc.data()!);
+          destination = EmployeeChatScreen(employee: employee);
+          break;
         default:
           errorMessage = 'Unknown role: ${user.role}';
           isLoading = false;
@@ -121,6 +129,7 @@ class LoginController extends ChangeNotifier {
           return;
       }
 
+      if (!context.mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => destination),
@@ -134,6 +143,73 @@ class LoginController extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+  }
+
+  Future<EmployeeModel> _loadEmployeeProfile(
+    String uid,
+    Map<String, dynamic> userData,
+  ) async {
+    try {
+      final empDoc = await FirebaseService.instance.firestore
+          .collection('employees')
+          .doc(uid)
+          .get();
+
+      if (empDoc.exists) {
+        final employee = EmployeeModel.fromJson(empDoc.data()!, id: uid);
+        final deptId = employee.departmentId.trim().isNotEmpty
+            ? employee.departmentId.trim()
+            : _slugDepartment(employee.department);
+
+        if (employee.departmentId.isEmpty) {
+          await FirebaseService.instance.firestore
+              .collection('employees')
+              .doc(uid)
+              .update({'departmentId': deptId});
+        }
+
+        return EmployeeModel(
+          id: employee.id,
+          firstName: employee.firstName,
+          middleName: employee.middleName,
+          lastName: employee.lastName,
+          email: employee.email,
+          nationalId: employee.nationalId,
+          organizationId: employee.organizationId,
+          organizationName: employee.organizationName,
+          department: employee.department,
+          departmentId: deptId,
+          displayId: employee.displayId.isNotEmpty
+              ? employee.displayId
+              : 'EMP-${uid.substring(0, 5).toUpperCase()}',
+          status: employee.status,
+          createdAt: employee.createdAt,
+        );
+      }
+    } catch (_) {}
+
+    final deptId = _slugDepartment(userData['department'] ?? '');
+    return EmployeeModel(
+      id: uid,
+      firstName: userData['firstName'] ?? '',
+      middleName: userData['middleName'] ?? '',
+      lastName: userData['lastName'] ?? '',
+      email: userData['email'] ?? '',
+      nationalId: userData['nationalId'] ?? '',
+      organizationId: userData['organizationId'] ?? '',
+      organizationName: userData['organizationName'] ?? '',
+      department: userData['department'] ?? '',
+      departmentId: deptId,
+      displayId:
+          userData['displayId'] ?? 'EMP-${uid.substring(0, 5).toUpperCase()}',
+      status: userData['status'] ?? 'active',
+      createdAt: null,
+    );
+  }
+
+  String _slugDepartment(String value) {
+    if (value.trim().isEmpty) return 'general';
+    return value.trim().replaceAll(' ', '_').toLowerCase();
   }
 
   String _mapAuthError(String code) {

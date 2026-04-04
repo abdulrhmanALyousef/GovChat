@@ -1,52 +1,59 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class EmployeeModel {
+class AccessRequestModel {
   final String? id;
+  final String? uid;
+  final String email;
   final String firstName;
   final String middleName;
   final String lastName;
-  final String email;
-  final String nationalId;
+  final String fullName;
   final String organizationId;
   final String organizationName;
   final String department;
-  final String departmentId;
+  final String? departmentId;
   final String displayId;
-  final String status; // pending, approved, rejected
+  final String status;
   final DateTime? createdAt;
 
-  EmployeeModel({
+  AccessRequestModel({
     this.id,
+    this.uid,
+    required this.email,
     required this.firstName,
     this.middleName = '',
     required this.lastName,
-    required this.email,
-    required this.nationalId,
+    required this.fullName,
     required this.organizationId,
     required this.organizationName,
     required this.department,
-    this.departmentId = '',
+    this.departmentId,
     this.displayId = '',
     this.status = 'pending',
     this.createdAt,
   });
 
-  String get fullName => middleName.isNotEmpty
-      ? '$firstName $middleName $lastName'
-      : '$firstName $lastName';
+  String get displayName {
+    if (fullName.isNotEmpty) return fullName;
+    if (middleName.isNotEmpty) {
+      return '$firstName $middleName $lastName';
+    }
+    return '$firstName $lastName';
+  }
 
-  factory EmployeeModel.fromJson(Map<String, dynamic> json, {String? id}) {
-    return EmployeeModel(
+  factory AccessRequestModel.fromJson(Map<String, dynamic> json, {String? id}) {
+    return AccessRequestModel(
       id: id,
+      uid: json['uid'],
+      email: json['email'] ?? '',
       firstName: json['firstName'] ?? '',
       middleName: json['middleName'] ?? '',
       lastName: json['lastName'] ?? '',
-      email: json['email'] ?? '',
-      nationalId: json['nationalId'] ?? '',
+      fullName: json['fullName'] ?? '',
       organizationId: json['organizationId'] ?? '',
       organizationName: json['organizationName'] ?? '',
       department: json['department'] ?? '',
-      departmentId: json['departmentId'] ?? json['department'] ?? '',
+      departmentId: json['departmentId'],
       displayId: json['displayId'] ?? '',
       status: json['status'] ?? 'pending',
       createdAt: json['createdAt'] is Timestamp
@@ -57,11 +64,12 @@ class EmployeeModel {
 
   Map<String, dynamic> toJson() {
     return {
+      'uid': uid,
+      'email': email,
       'firstName': firstName,
       'middleName': middleName,
       'lastName': lastName,
-      'email': email,
-      'nationalId': nationalId,
+      'fullName': fullName.isNotEmpty ? fullName : displayName,
       'organizationId': organizationId,
       'organizationName': organizationName,
       'department': department,

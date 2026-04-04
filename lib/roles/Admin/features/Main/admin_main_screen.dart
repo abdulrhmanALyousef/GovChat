@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/App_color.dart';
+import '../../../../core/theme/app_color.dart';
 import '../requests/requests_screen.dart';
 import '../emplyees/employees_screen.dart';
-import '../Logs/logs_screen.dart';
+import '../logs/logs_screen.dart';
 import '../profile/admin_profile_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
@@ -50,7 +50,14 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
               activeIcon: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(height: 3, width: 36, decoration: BoxDecoration(color: AppColors.primaryColor, borderRadius: BorderRadius.circular(2))),
+                  Container(
+                    height: 3,
+                    width: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Icon(Icons.inbox),
                 ],
@@ -62,7 +69,14 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
               activeIcon: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(height: 3, width: 36, decoration: BoxDecoration(color: AppColors.primaryColor, borderRadius: BorderRadius.circular(2))),
+                  Container(
+                    height: 3,
+                    width: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Icon(Icons.people),
                 ],
@@ -74,7 +88,14 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
               activeIcon: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(height: 3, width: 36, decoration: BoxDecoration(color: AppColors.primaryColor, borderRadius: BorderRadius.circular(2))),
+                  Container(
+                    height: 3,
+                    width: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Icon(Icons.history),
                 ],
@@ -86,7 +107,14 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
               activeIcon: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(height: 3, width: 36, decoration: BoxDecoration(color: AppColors.primaryColor, borderRadius: BorderRadius.circular(2))),
+                  Container(
+                    height: 3,
+                    width: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Icon(Icons.person),
                 ],

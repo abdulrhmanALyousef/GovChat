@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_color.dart';
 
-class AdminProfileScreen extends StatelessWidget {
-  const AdminProfileScreen({super.key});
+class LogsScreen extends StatelessWidget {
+  const LogsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -10,7 +10,7 @@ class AdminProfileScreen extends StatelessWidget {
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         title: const Text(
-          'Profile',
+          'Logs',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
@@ -24,10 +24,10 @@ class AdminProfileScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.person, size: 100, color: AppColors.primaryColor),
+            Icon(Icons.history, size: 100, color: AppColors.primaryColor),
             SizedBox(height: 24),
             Text(
-              'Profile',
+              'Logs',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,

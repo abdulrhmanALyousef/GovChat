@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/App_color.dart';
+import '../theme/app_color.dart';
 
 class TextFieldForLogin extends StatefulWidget {
   final TextEditingController controller;
@@ -36,24 +36,22 @@ class _TextFieldForLoginState extends State<TextFieldForLogin> {
       keyboardType: widget.keyboardType,
       style: GoogleFonts.manrope(
         color: AppColors.textPrimary,
-        fontSize: 14,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
       ),
       decoration: InputDecoration(
         hintText: widget.hintText,
         hintStyle: GoogleFonts.manrope(
           color: AppColors.hintText,
-          fontSize: 14,
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
         ),
         filled: true,
         fillColor: AppColors.inputFill,
         prefixIcon: widget.icon != null
             ? Padding(
                 padding: const EdgeInsets.only(left: 16, right: 12),
-                child: Icon(
-                  widget.icon,
-                  color: AppColors.hintText,
-                  size: 20,
-                ),
+                child: Icon(widget.icon, color: AppColors.hintText, size: 20),
               )
             : null,
         prefixIconConstraints: widget.icon != null
@@ -95,10 +93,7 @@ class _TextFieldForLoginState extends State<TextFieldForLogin> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        errorStyle: GoogleFonts.manrope(
-          color: AppColors.error,
-          fontSize: 11,
-        ),
+        errorStyle: GoogleFonts.manrope(color: AppColors.error, fontSize: 11),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 14,

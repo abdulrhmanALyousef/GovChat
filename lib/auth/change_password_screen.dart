@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../core/theme/App_color.dart';
+import '../core/theme/app_color.dart';
 import '../core/constants/app_size.dart';
 import '../core/Widgets/text_field_for_login.dart';
 import 'controllers/change_password_controller.dart';
@@ -142,13 +142,22 @@ class _ChangePasswordView extends StatelessWidget {
                 // ── Password Rules ──
                 _buildRule('Minimum 8 characters', controller.hasMinLength),
                 SizedBox(height: AppSizes.ph12),
-                _buildRule('At least 1 uppercase letter', controller.hasUppercase),
+                _buildRule(
+                  'At least 1 uppercase letter',
+                  controller.hasUppercase,
+                ),
                 SizedBox(height: AppSizes.ph12),
-                _buildRule('At least 1 lowercase letter', controller.hasLowercase),
+                _buildRule(
+                  'At least 1 lowercase letter',
+                  controller.hasLowercase,
+                ),
                 SizedBox(height: AppSizes.ph12),
                 _buildRule('At least 1 number', controller.hasNumber),
                 SizedBox(height: AppSizes.ph12),
-                _buildRule('At least 1 special character', controller.hasSpecialChar),
+                _buildRule(
+                  'At least 1 special character',
+                  controller.hasSpecialChar,
+                ),
                 SizedBox(height: AppSizes.ph30),
 
                 // ── Error Message ──
@@ -191,7 +200,9 @@ class _ChangePasswordView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppSizes.r16),
                     ),
                     child: ElevatedButton(
-                      onPressed: controller.isLoading ? null : () => controller.updatePassword(context),
+                      onPressed: controller.isLoading
+                          ? null
+                          : () => controller.updatePassword(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
@@ -265,7 +276,9 @@ class _ChangePasswordView extends StatelessWidget {
               text,
               style: GoogleFonts.manrope(
                 fontSize: AppSizes.sp12,
-                color: isValid ? AppColors.textPrimary : AppColors.textSecondary,
+                color: isValid
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
               ),
             ),
           ),

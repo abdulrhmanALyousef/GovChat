@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
 
 class OrganizationsController extends ChangeNotifier {
-  final TextEditingController organizationNameController = TextEditingController();
+  final TextEditingController organizationNameController =
+      TextEditingController();
   final TextEditingController countryController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
@@ -73,7 +74,8 @@ class OrganizationsController extends ChangeNotifier {
         return;
       }
 
-      successMessage = result['message'] ??
+      successMessage =
+          result['message'] ??
           'Admin account created. Temporary password sent to $email';
 
       // Clear form

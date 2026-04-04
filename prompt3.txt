@@ -1,0 +1,35 @@
+PS C:\Users\bssam\StudioProjects\cargo\GovChat> firebase deploy --only functions
+
+=== Deploying to 'govchat-2a5dc'...
+
+i  deploying functions
+Running command: npm --prefix "$RESOURCE_DIR" run lint
+
+> lint
+> eslint .
+
+'eslint' is not recognized as an internal or external command,
+operable program or batch file.
+node:events:486
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: spawn npm --prefix "%RESOURCE_DIR%" run lint ENOENT
+    at notFoundError (C:\Users\bssam\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:6:26)
+    at verifyENOENT (C:\Users\bssam\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:40:16)
+    at cp.emit (C:\Users\bssam\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:27:25)
+    at ChildProcess._handle.onexit (node:internal/child_process:294:12)
+Emitted 'error' event on ChildProcess instance at:
+    at cp.emit (C:\Users\bssam\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:30:37)
+    at ChildProcess._handle.onexit (node:internal/child_process:294:12) {
+  code: 'ENOENT',
+  errno: 'ENOENT',
+  syscall: 'spawn npm --prefix "%RESOURCE_DIR%" run lint',
+  path: 'npm --prefix "%RESOURCE_DIR%" run lint',
+  spawnargs: []
+}
+
+Node.js v24.14.1
+
+Error: functions predeploy error: Command terminated with non-zero exit code 1
+PS C:\Users\bssam\StudioProjects\cargo\GovChat> Error: functions predeploy error: Command terminated with non-zero exit code 1

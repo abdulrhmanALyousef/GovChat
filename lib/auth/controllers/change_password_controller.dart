@@ -4,11 +4,12 @@ import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../models/admin_model.dart';
 import '../../roles/Admin/features/Main/admin_main_screen.dart';
-import '../../roles/primary Admin/Features/Main/Main_screen.dart';
+import '../../roles/primary Admin/Features/Main/main_screen.dart';
 
 class ChangePasswordController extends ChangeNotifier {
   final TextEditingController newPasswordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
@@ -16,10 +17,13 @@ class ChangePasswordController extends ChangeNotifier {
   String? errorMessage;
 
   bool get hasMinLength => newPasswordController.text.length >= 8;
-  bool get hasUppercase => newPasswordController.text.contains(RegExp(r'[A-Z]'));
-  bool get hasLowercase => newPasswordController.text.contains(RegExp(r'[a-z]'));
+  bool get hasUppercase =>
+      newPasswordController.text.contains(RegExp(r'[A-Z]'));
+  bool get hasLowercase =>
+      newPasswordController.text.contains(RegExp(r'[a-z]'));
   bool get hasNumber => newPasswordController.text.contains(RegExp(r'[0-9]'));
-  bool get hasSpecialChar => newPasswordController.text.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'));
+  bool get hasSpecialChar =>
+      newPasswordController.text.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'));
 
   ChangePasswordController() {
     newPasswordController.addListener(notifyListeners);
@@ -48,10 +52,7 @@ class ChangePasswordController extends ChangeNotifier {
       await FirebaseService.instance.firestore
           .collection('users')
           .doc(user.uid)
-          .update({
-        'firstLogin': false,
-        'mustChangePassword': false,
-      });
+          .update({'firstLogin': false, 'mustChangePassword': false});
 
       // 3. Update SharedPreferences
       final prefs = PreferencesManager();
