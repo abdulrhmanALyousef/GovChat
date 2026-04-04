@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Organizations collection
+    match /organizations/{orgId} {
+      allow read, write: if true;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // Mail collection (for sending emails)
+    match /mail/{mailId} {
+      allow read, write: if true;
+    }
+
+
+    // Default rule for other collections
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
