@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_size.dart';
-import '../theme/App_color.dart';
+import '../theme/app_color.dart';
 
 class CustomDropdownField extends StatelessWidget {
   const CustomDropdownField({
@@ -68,10 +68,7 @@ class CustomDropdownField extends StatelessWidget {
 
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: AppColors.inputBorder,
-                width: 1,
-              ),
+              borderSide: BorderSide(color: AppColors.inputBorder, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -82,31 +79,19 @@ class CustomDropdownField extends StatelessWidget {
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: AppColors.error,
-                width: 1,
-              ),
+              borderSide: BorderSide(color: AppColors.error, width: 1),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: AppColors.error,
-                width: 1.5,
-              ),
+              borderSide: BorderSide(color: AppColors.error, width: 1.5),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: AppColors.inputBorder,
-                width: 1,
-              ),
+              borderSide: BorderSide(color: AppColors.inputBorder, width: 1),
             ),
           ),
           items: items.map((item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item),
-            );
+            return DropdownMenuItem<String>(value: item, child: Text(item));
           }).toList(),
         ),
       ],

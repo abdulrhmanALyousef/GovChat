@@ -9,8 +9,9 @@ class FirebaseService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseFunctions _functions =
-      FirebaseFunctions.instanceFor(region: 'us-central1');
+  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
+    region: 'us-central1',
+  );
 
   // ─── Getters ───
   FirebaseAuth get auth => _auth;
@@ -52,26 +53,7 @@ class FirebaseService {
       if (e is FirebaseException) {
         errorMessage = e.message ?? e.toString();
       }
-      return {
-        'success': false,
-        'error': errorMessage,
-      };
-    }
-  }
-
-  // ─── Map Firebase Auth Errors ───
-  String _mapAuthError(String code) {
-    switch (code) {
-      case 'email-already-in-use':
-        return 'This email is already registered';
-      case 'invalid-email':
-        return 'Invalid email address';
-      case 'weak-password':
-        return 'Password is too weak';
-      case 'operation-not-allowed':
-        return 'Email/Password sign-in is not enabled';
-      default:
-        return 'An error occurred: $code';
+      return {'success': false, 'error': errorMessage};
     }
   }
 }

@@ -421,6 +421,8 @@ exports.createEmployeeRequest = onCall(
 
         const uid = userRecord.uid;
 
+        const displayId = "EMP-" + uid.substring(0, 5).toUpperCase();
+
         // 2. Save employee in users collection (pending)
         await admin.firestore()
             .collection("users").doc(uid).set({
@@ -435,6 +437,7 @@ exports.createEmployeeRequest = onCall(
               organizationId: orgId,
               organizationName: orgName,
               department: department,
+              displayId: displayId,
               status: "pending",
               firstLogin: true,
               mustChangePassword: false,
@@ -456,6 +459,7 @@ exports.createEmployeeRequest = onCall(
               organizationName: orgName,
               department: department,
               role: "employee",
+              displayId: displayId,
               status: "pending",
               createdAt:
                 admin.firestore.FieldValue.serverTimestamp(),
@@ -532,6 +536,92 @@ exports.createEmployeeRequest = onCall(
       } catch (error) {
         console.error("Error:", error.message, error);
         if (error instanceof HttpsError) throw error;
+        throw new HttpsError(
+            "internal",
+            error.message || "Unexpected error",
+        );
+      }
+    },
+);
+
+/**
+ * Cloud Function: Send Access Approval Email
+ */
+exports.sendAccessApprovedEmail = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+      secrets: [resendApiKey],
+    },
+    async (request) => {
+      const resend = new Resend(resendApiKey.value());
+      const data = request.data;
+
+      const email = data.email;
+      const name = data.name || "there";
+
+      if (!email) {
+        throw new HttpsError(
+            "invalid-argument",
+            "Email is required",
+        );
+      }
+
+      try {
+        console.log("sendAccessApprovedEmail -> sending to", email);
+        const html =
+          "<div style=\"font-family:Arial;" +
+          "max-width:500px;margin:auto;" +
+          "padding:30px;background:#0F1320;" +
+          "border-radius:12px;color:#fff;\">" +
+          "<h2 style=\"color:#4ADE80;" +
+          "text-align:center;\">GovChat</h2>" +
+          "<h3 style=\"text-align:center;" +
+          "color:#DAE2FD;\">Access Approved</h3>" +
+          "<p style=\"color:#BCCBB9;\">Hello " + name + ",</p>" +
+          "<p style=\"color:#BCCBB9;\">Your request has been approved. " +
+          "You can now log in to GovChat.</p>" +
+          "<div style=\"background:#2D3449;" +
+          "padding:18px;border-radius:8px;" +
+          "margin:18px 0;\">" +
+          "<p style=\"margin:8px 0;color:#DAE2FD;\">Email: " + email + "</p>" +
+          "<p style=\"margin:8px 0;color:#DAE2FD;\">Status: Approved</p>" +
+          "</div>" +
+          "<p style=\"color:#8A95A3;" +
+          "font-size:12px;\">If you did not request this, " +
+          "please ignore this email.</p>" +
+          "</div>";
+
+        const result = await resend.emails.send({
+          from: "GovChat <support@awlamateam.team>",
+          to: [email],
+          subject: "GovChat - Access Approved",
+          html: html,
+        });
+
+        if (result.error) {
+          console.error("Resend error: " + JSON.stringify(result.error));
+          return {
+            success: true,
+            emailSent: false,
+            message: "Approval saved but email failed: " + result.error.message,
+          };
+        }
+
+        console.log("sendAccessApprovedEmail -> email sent", result.data);
+        return {
+          success: true,
+          emailSent: true,
+          message: "Approval email sent successfully.",
+        };
+      } catch (error) {
+        console.error("Approval email error: " + error.message, error);
+
+        if (error instanceof HttpsError) {
+          throw error;
+        }
+
         throw new HttpsError(
             "internal",
             error.message || "Unexpected error",

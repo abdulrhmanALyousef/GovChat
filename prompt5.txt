@@ -1,0 +1,244 @@
+You are a senior Flutter + Firebase engineer.
+
+We need to implement a COMPLETE Department Chat system with correct architecture, real-time updates, and strict data isolation.
+
+This is a CRITICAL feature.
+You must ensure everything works correctly before finishing.
+
+DO NOT skip testing.
+DO NOT leave partial implementation.
+
+--------------------------------------------------
+GOAL:
+
+Employees (from "employees" collection) can:
+
+✔ Login
+✔ Enter the system
+✔ Access ONLY their department chat
+✔ Send and receive messages in real-time
+
+--------------------------------------------------
+CRITICAL REQUIREMENTS:
+
+==================================================
+1) DATA ISOLATION (MOST IMPORTANT)
+==================================================
+
+You MUST enforce strict isolation.
+
+Chat MUST be separated by:
+
+organizationId + departmentId
+
+--------------------------------------------------
+
+REQUIRED STRUCTURE:
+
+organizations/{orgId}/departments/{deptId}/messages/{messageId}
+
+--------------------------------------------------
+
+RULE:
+
+ DO NOT store messages globally
+ DO NOT filter only by department name
+
+✔ MUST use BOTH:
+- organizationId
+- departmentId
+
+--------------------------------------------------
+
+EXAMPLE:
+
+- SDAIA / IT → sees only SDAIA IT chat
+- STC / IT → sees only STC IT chat
+
+They MUST NEVER see each other’s messages
+
+==================================================
+2) LOGIN FOR EMPLOYEES
+==================================================
+
+Employees stored in:
+
+"employees" collection
+
+--------------------------------------------------
+
+On login:
+
+✔ Authenticate using FirebaseAuth
+✔ Fetch employee profile from Firestore
+✔ Get:
+  - organizationId
+  - departmentId
+  - displayId
+
+--------------------------------------------------
+
+==================================================
+3) REAL-TIME CHAT (MANDATORY)
+==================================================
+
+Messages MUST be real-time.
+
+Use:
+
+.snapshots()
+
+--------------------------------------------------
+
+When message is added in Firestore:
+
+✔ UI updates automatically
+✔ No manual refresh
+
+--------------------------------------------------
+
+==================================================
+4) SEND MESSAGE LOGIC
+==================================================
+
+When user sends message:
+
+Store:
+
+- text
+- senderId → displayId (NOT name)
+- organizationId
+- departmentId
+- createdAt (timestamp)
+
+--------------------------------------------------
+
+==================================================
+5) CHAT UI (FOLLOW PROVIDED DESIGN)
+==================================================
+
+- You will receive UI design → follow it STRICTLY
+- Do NOT change layout unless necessary
+
+--------------------------------------------------
+
+==================================================
+6) STATE MANAGEMENT (IMPORTANT)
+==================================================
+
+Use SAME pattern as project (Provider)
+
+- Create controller inside feature folder
+- Manage:
+  - messages stream
+  - send message
+  - loading state
+
+--------------------------------------------------
+
+==================================================
+7) LOGOUT (MANDATORY)
+==================================================
+
+Logout MUST work correctly.
+
+On logout:
+
+await FirebaseAuth.instance.signOut();
+
+Navigator.pushNamedAndRemoveUntil(
+  context,
+  '/login',
+  (route) => false,
+);
+
+--------------------------------------------------
+
+✔ NO black screen
+✔ Stack cleared
+
+==================================================
+8) SMOOTH USER EXPERIENCE
+==================================================
+
+✔ Sending message must be instant
+✔ UI must not freeze
+✔ Input clears after sending
+✔ Scroll to latest message automatically
+
+--------------------------------------------------
+
+==================================================
+9) PROJECT STRUCTURE (MANDATORY)
+==================================================
+
+Follow SAME structure as project.
+
+--------------------------------------------------
+
+DO NOT change structure
+DO NOT introduce new architecture
+
+==================================================
+10) DEBUG LOGS (REQUIRED)
+==================================================
+
+Add logs:
+
+debugPrint("OrgId: ...");
+debugPrint("DeptId: ...");
+debugPrint("Messages count: ...");
+
+--------------------------------------------------
+
+==================================================
+11) TESTING (MANDATORY - NO SKIP)
+==================================================
+
+You MUST test ALL scenarios:
+
+1) Login as Employee A (SDAIA / IT)
+   → Send message
+
+2) Login as Employee B (STC / IT)
+   → MUST NOT see SDAIA messages
+
+3) Login as another employee in SAME org/department
+   → MUST see same messages
+
+4) Real-time:
+   → Send message → appears instantly
+
+5) Logout:
+   → Returns to login screen
+   → No black screen
+
+--------------------------------------------------
+
+==================================================
+FINAL OUTPUT REQUIRED
+==================================================
+
+Return:
+
+1) Chat controller code
+2) Chat screen code
+3) Firestore structure used
+4) Send/receive logic
+5) Logout implementation
+6) Confirmation:
+
+"Department chat implemented successfully with full isolation and real-time updates. All tests passed."
+
+--------------------------------------------------
+
+IMPORTANT FINAL INSTRUCTION:
+
+This task is FAILED if:
+
+ Messages are shared between organizations
+ Real-time does not work
+ Logout fails
+ UI does not update properly
+
+Everything MUST be working before finishing.

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/App_color.dart';
+import '../../../../core/theme/app_color.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -24,11 +24,7 @@ class DashboardScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.dashboard,
-              size: 100,
-              color: AppColors.primaryColor,
-            ),
+            Icon(Icons.dashboard, size: 100, color: AppColors.primaryColor),
             SizedBox(height: 24),
             Text(
               'Dashboard',
@@ -41,18 +37,12 @@ class DashboardScreen extends StatelessWidget {
             SizedBox(height: 16),
             Text(
               'Under Development',
-              style: TextStyle(
-                fontSize: 18,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
             ),
             SizedBox(height: 8),
             Text(
-               'Under Development',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-              ),
+              'Under Development',
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
             ),
           ],
         ),
