@@ -71,18 +71,12 @@ class _OrganizationsView extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                CustomTextFormField(
-                  controller: controller.countryController,
-                  title: 'Country',
-                  hintText: 'Enter country',
-                  validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                ),
-                const SizedBox(height: 16),
-
-                CustomTextFormField(
-                  controller: controller.cityController,
+                CustomDropdownField(
                   title: 'City',
-                  hintText: 'Enter city',
+                  hintText: 'Select city',
+                  value: controller.selectedCity,
+                  items: controller.cities,
+                  onChanged: controller.setCity,
                   validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 16),

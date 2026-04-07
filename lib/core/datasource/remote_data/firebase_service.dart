@@ -32,7 +32,6 @@ class FirebaseService {
   Future<Map<String, dynamic>> createOrganizationWithAdmin({
     required String email,
     required String organizationName,
-    required String country,
     required String city,
     String? address,
     String? industry,
@@ -44,7 +43,6 @@ class FirebaseService {
       final result = await callable.call({
         'email': email,
         'organizationName': organizationName,
-        'country': country,
         'city': city,
         'address': address ?? '',
         'industry': industry ?? '',

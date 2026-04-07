@@ -40,9 +40,10 @@ class CustomDropdownField extends StatelessWidget {
         SizedBox(height: AppSizes.h8),
 
         DropdownButtonFormField<String>(
-          initialValue: value,
+          value: value,
           onChanged: onChanged,
           validator: validator,
+          menuMaxHeight: 250,
           dropdownColor: AppColors.cardBackground,
           style: TextStyle(
             color: AppColors.textPrimary,

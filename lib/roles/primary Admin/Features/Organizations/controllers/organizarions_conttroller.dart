@@ -4,13 +4,12 @@ import '../../../../../core/datasource/remote_data/firebase_service.dart';
 class OrganizationsController extends ChangeNotifier {
   final TextEditingController organizationNameController =
       TextEditingController();
-  final TextEditingController countryController = TextEditingController();
-  final TextEditingController cityController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController adminEmailController = TextEditingController();
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  String? selectedCity;
   String? selectedIndustry;
   String? selectedEmployeeRange;
   bool isLoading = false;
@@ -34,6 +33,37 @@ class OrganizationsController extends ChangeNotifier {
     '201-500',
     '500+',
   ];
+
+  final List<String> cities = [
+    'Riyadh',
+    'Jeddah',
+    'Mecca',
+    'Medina',
+    'Dammam',
+    'Khobar',
+    'Dhahran',
+    'Tabuk',
+    'Abha',
+    'Taif',
+    'Hail',
+    'Jubail',
+    'Yanbu',
+    'Najran',
+    'Jazan',
+    'Al Baha',
+    'Sakaka',
+    'Arar',
+    'Buraydah',
+    'Unaizah',
+    'Khamis Mushait',
+    'Al Ahsa',
+    'Al Qatif',
+  ];
+
+  void setCity(String? value) {
+    selectedCity = value;
+    notifyListeners();
+  }
 
   void setIndustry(String? value) {
     selectedIndustry = value;
@@ -70,8 +100,7 @@ class OrganizationsController extends ChangeNotifier {
       final result = await firebase.createOrganizationWithAdmin(
         email: email,
         organizationName: orgName,
-        country: countryController.text.trim(),
-        city: cityController.text.trim(),
+        city: selectedCity ?? '',
         address: addressController.text.trim(),
         industry: selectedIndustry,
         employeeRange: selectedEmployeeRange,
@@ -100,10 +129,9 @@ class OrganizationsController extends ChangeNotifier {
 
   void _clearForm() {
     organizationNameController.clear();
-    countryController.clear();
-    cityController.clear();
     addressController.clear();
     adminEmailController.clear();
+    selectedCity = null;
     selectedIndustry = null;
     selectedEmployeeRange = null;
   }
@@ -117,8 +145,6 @@ class OrganizationsController extends ChangeNotifier {
   @override
   void dispose() {
     organizationNameController.dispose();
-    countryController.dispose();
-    cityController.dispose();
     addressController.dispose();
     adminEmailController.dispose();
     super.dispose();
