@@ -1,10 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../auth/login_screen.dart';
 import '../../../../core/constants/app_size.dart';
+import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
 import '../../../../models/chat_message.dart';
 import '../../../../models/employee_model.dart';
@@ -76,13 +75,7 @@ class _ChatView extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout, color: AppColors.textPrimary),
             onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              if (!context.mounted) return;
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
-              );
+              await SessionManager.instance.logout(context);
             },
           ),
         ],
