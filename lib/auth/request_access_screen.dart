@@ -147,7 +147,7 @@ class _RequestAccessView extends StatelessWidget {
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.firstNameController,
-                        hintText: 'e.g. John',
+                        hintText: '',
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'Required';
                           if (RegExp(r'[0-9]').hasMatch(v)) {
@@ -162,7 +162,7 @@ class _RequestAccessView extends StatelessWidget {
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.middleNameController,
-                        hintText: 'e.g. Quency',
+                        hintText: '',
                       ),
                       SizedBox(height: AppSizes.h16),
 
@@ -170,7 +170,7 @@ class _RequestAccessView extends StatelessWidget {
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.lastNameController,
-                        hintText: 'e.g. Doe',
+                        hintText: '',
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'Required';
                           if (RegExp(r'[0-9]').hasMatch(v)) {
@@ -185,7 +185,7 @@ class _RequestAccessView extends StatelessWidget {
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.emailController,
-                        hintText: 'john.doe@department.gov',
+                        hintText: 'example@gmail.com',
                         icon: Icons.alternate_email,
                         keyboardType: TextInputType.emailAddress,
                         validator: (v) {
@@ -218,7 +218,7 @@ class _RequestAccessView extends StatelessWidget {
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.nationalIdController,
-                        hintText: 'ID-0000-0000-00',
+                        hintText: '',
                         icon: Icons.badge_outlined,
                         validator: (v) =>
                             v == null || v.isEmpty ? 'Required' : null,

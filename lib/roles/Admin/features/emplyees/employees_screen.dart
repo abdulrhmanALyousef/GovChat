@@ -167,7 +167,7 @@ class _EmployeeCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: AppSizes.ph12),
-          _InfoRow(icon: Icons.person_outline, label: employee.fullName),
+          _InfoRow(icon: Icons.person_outline, label: employee.name),
           SizedBox(height: AppSizes.h8),
           _InfoRow(icon: Icons.email_outlined, label: employee.email),
           SizedBox(height: AppSizes.h8),
