@@ -18,6 +18,16 @@ class FirebaseService {
   FirebaseFirestore get firestore => _firestore;
   User? get currentUser => _auth.currentUser;
 
+  // ─── Check if Organization Name Already Exists ───
+  Future<bool> isOrganizationNameTaken(String name) async {
+    final query = await _firestore
+        .collection('organizations')
+        .where('name', isEqualTo: name)
+        .limit(1)
+        .get();
+    return query.docs.isNotEmpty;
+  }
+
   // ─── Create Organization + Admin via Cloud Function ───
   Future<Map<String, dynamic>> createOrganizationWithAdmin({
     required String email,
@@ -50,7 +60,12 @@ class FirebaseService {
       };
     } catch (e) {
       String errorMessage = e.toString();
-      if (e is FirebaseException) {
+      if (e is FirebaseFunctionsException) {
+        errorMessage = e.message ?? e.toString();
+        if (e.code == 'already-exists') {
+          errorMessage = e.message ?? 'Already exists';
+        }
+      } else if (e is FirebaseException) {
         errorMessage = e.message ?? e.toString();
       }
       return {'success': false, 'error': errorMessage};

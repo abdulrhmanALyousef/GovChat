@@ -55,11 +55,21 @@ class OrganizationsController extends ChangeNotifier {
 
     final firebase = FirebaseService.instance;
     final email = adminEmailController.text.trim();
+    final orgName = organizationNameController.text.trim();
 
     try {
+      // Check if organization name already exists
+      final nameTaken = await firebase.isOrganizationNameTaken(orgName);
+      if (nameTaken) {
+        errorMessage = 'Organization name "$orgName" already exists. Please choose a different name.';
+        isLoading = false;
+        notifyListeners();
+        return;
+      }
+
       final result = await firebase.createOrganizationWithAdmin(
         email: email,
-        organizationName: organizationNameController.text.trim(),
+        organizationName: orgName,
         country: countryController.text.trim(),
         city: cityController.text.trim(),
         address: addressController.text.trim(),
