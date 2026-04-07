@@ -67,6 +67,20 @@ exports.createAdminWithCode = onCall(
       const employeeRange = data.employeeRange || "";
 
       try {
+        // 0. Check if organization name already exists
+        const existingOrg = await admin.firestore()
+            .collection("organizations")
+            .where("name", "==", orgName)
+            .limit(1)
+            .get();
+
+        if (!existingOrg.empty) {
+          throw new HttpsError(
+              "already-exists",
+              "Organization name already exists",
+          );
+        }
+
         // 1. Generate 8-digit temp password
         const tempPassword = generateTempPassword();
 
