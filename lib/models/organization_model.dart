@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class OrganizationModel {
   final String? id;
   final String name;
-  final String country;
   final String city;
   final String address;
   final String industry;
@@ -16,7 +15,6 @@ class OrganizationModel {
   OrganizationModel({
     this.id,
     required this.name,
-    required this.country,
     required this.city,
     this.address = '',
     this.industry = '',
@@ -31,7 +29,6 @@ class OrganizationModel {
     return OrganizationModel(
       id: id,
       name: json['name'] ?? '',
-      country: json['country'] ?? '',
       city: json['city'] ?? '',
       address: json['address'] ?? '',
       industry: json['industry'] ?? '',
@@ -48,7 +45,6 @@ class OrganizationModel {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'country': country,
       'city': city,
       'address': address,
       'industry': industry,

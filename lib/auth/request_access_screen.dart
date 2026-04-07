@@ -148,8 +148,13 @@ class _RequestAccessView extends StatelessWidget {
                       TextFieldForLogin(
                         controller: controller.firstNameController,
                         hintText: 'e.g. John',
-                        validator: (v) =>
-                            v == null || v.isEmpty ? 'Required' : null,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Required';
+                          if (RegExp(r'[0-9]').hasMatch(v)) {
+                            return 'Name cannot contain numbers';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: AppSizes.h16),
 
@@ -166,8 +171,13 @@ class _RequestAccessView extends StatelessWidget {
                       TextFieldForLogin(
                         controller: controller.lastNameController,
                         hintText: 'e.g. Doe',
-                        validator: (v) =>
-                            v == null || v.isEmpty ? 'Required' : null,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Required';
+                          if (RegExp(r'[0-9]').hasMatch(v)) {
+                            return 'Name cannot contain numbers';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: AppSizes.h16),
 
@@ -196,6 +206,9 @@ class _RequestAccessView extends StatelessWidget {
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'Required';
                           if (v.length < 8) return 'Minimum 8 characters';
+                          if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]').hasMatch(v)) {
+                            return 'Must contain at least one special character';
+                          }
                           return null;
                         },
                       ),

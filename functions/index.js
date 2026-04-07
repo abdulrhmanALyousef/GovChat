@@ -60,7 +60,6 @@ exports.createAdminWithCode = onCall(
 
       const email = data.email;
       const orgName = data.organizationName;
-      const country = data.country || "";
       const city = data.city || "";
       const address = data.address || "";
       const industry = data.industry || "";
@@ -115,7 +114,6 @@ exports.createAdminWithCode = onCall(
         const orgRef = await admin.firestore()
             .collection("organizations").add({
               name: orgName,
-              country: country,
               city: city,
               address: address,
               industry: industry,
