@@ -2,9 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EmployeeModel {
   final String? id;
-  final String firstName;
-  final String middleName;
-  final String lastName;
+  final String name; // single name field
   final String email;
   final String nationalId;
   final String organizationId;
@@ -17,9 +15,7 @@ class EmployeeModel {
 
   EmployeeModel({
     this.id,
-    required this.firstName,
-    this.middleName = '',
-    required this.lastName,
+    required this.name,
     required this.email,
     required this.nationalId,
     required this.organizationId,
@@ -31,16 +27,13 @@ class EmployeeModel {
     this.createdAt,
   });
 
-  String get fullName => middleName.isNotEmpty
-      ? '$firstName $middleName $lastName'
-      : '$firstName $lastName';
+  String get fullName => name;
 
   factory EmployeeModel.fromJson(Map<String, dynamic> json, {String? id}) {
+    final nameValue = (json['name'] ?? '').toString().trim();
     return EmployeeModel(
       id: id,
-      firstName: json['firstName'] ?? '',
-      middleName: json['middleName'] ?? '',
-      lastName: json['lastName'] ?? '',
+      name: nameValue.isNotEmpty ? nameValue : '— لا يوجد اسم —',
       email: json['email'] ?? '',
       nationalId: json['nationalId'] ?? '',
       organizationId: json['organizationId'] ?? '',
@@ -57,9 +50,7 @@ class EmployeeModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'firstName': firstName,
-      'middleName': middleName,
-      'lastName': lastName,
+      'name': name,
       'email': email,
       'nationalId': nationalId,
       'organizationId': organizationId,

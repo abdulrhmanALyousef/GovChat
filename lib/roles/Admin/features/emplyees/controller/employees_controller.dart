@@ -97,6 +97,11 @@ class EmployeesController extends ChangeNotifier {
     });
 
     debugPrint('Fetched employees: ${employees.length}');
+    // Log each employee's name so we can verify documents use the `name` field
+    for (final e in employees) {
+      debugPrint('Employee loaded -> id: ${e.id}, name: "${e.name}", displayId: ${e.displayId}');
+    }
+
     errorMessage = null;
     isLoading = false;
     notifyListeners();
