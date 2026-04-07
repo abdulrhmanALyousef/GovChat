@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
 import '../Audit/audit_screen.dart';
 import '../Dashboard/dash_board_screen.dart';
@@ -15,6 +16,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  bool _checkingAccess = true;
+  bool _authorized = false;
 
   final List<Widget> _screens = const [
     DashboardScreen(),
@@ -25,6 +28,18 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_checkingAccess) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryColor),
+        ),
+      );
+    }
+
+    if (!_authorized) {
+      return const SizedBox.shrink();
+    }
+
     return Scaffold(
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(
@@ -127,5 +142,21 @@ class _MainScreenState extends State<MainScreen> {
       ),
       body: _screens[_currentIndex],
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final allowed = await SessionManager.instance.ensureRole(
+        context,
+        allowedRoles: const ['primary_admin'],
+      );
+      if (!mounted) return;
+      setState(() {
+        _authorized = allowed;
+        _checkingAccess = false;
+      });
+    });
   }
 }

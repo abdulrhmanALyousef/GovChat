@@ -1,0 +1,221 @@
+# GovChat Test Cases
+
+## Authentication
+- TC-AUTH-001 Login with valid credentials
+  - Role: Employee
+  - Preconditions: Employee account approved and active within an organization.
+  - Steps: 1) Open app; 2) Enter valid username and password; 3) Tap Login.
+  - Expected Result: User reaches the home screen for their organization with an active session.
+  - Type: Positive
+- TC-AUTH-002 Login with invalid password
+  - Role: Employee
+  - Preconditions: Employee account exists and is active.
+  - Steps: 1) Open app; 2) Enter valid username and incorrect password; 3) Tap Login.
+  - Expected Result: Login is blocked with an error message; no session is created.
+  - Type: Negative
+- TC-AUTH-003 Login before approval
+  - Role: Employee
+  - Preconditions: Registration request submitted but not yet approved.
+  - Steps: 1) Open app; 2) Enter submitted username and password; 3) Tap Login.
+  - Expected Result: Access is denied with a pending/unauthorized message; no data is shown.
+  - Type: Negative
+- TC-AUTH-004 First-time admin password change required
+  - Role: Admin
+  - Preconditions: Admin account created with a temporary password; first login not completed.
+  - Steps: 1) Enter temp credentials; 2) Login; 3) Observe forced password change prompt; 4) Set new compliant password; 5) Confirm.
+  - Expected Result: User must set a new password before accessing any screen; login succeeds after change.
+  - Type: Positive
+- TC-AUTH-005 Bypass attempt on first-time password change
+  - Role: Admin
+  - Preconditions: Admin account with temporary password; first login not completed.
+  - Steps: 1) Login with temp password; 2) Attempt to navigate back or close prompt without changing password; 3) Reopen app.
+  - Expected Result: Access to app content remains blocked until password is changed; prompt reappears on relaunch.
+  - Type: Negative
+- TC-AUTH-006 Login with whitespace or case variation
+  - Role: Employee
+  - Preconditions: Approved account with known credentials.
+  - Steps: 1) Enter username/password with leading/trailing spaces or mixed case (if case-insensitive expected); 2) Tap Login.
+  - Expected Result: Credentials are normalized per policy (e.g., trimmed); successful login only when effective values match.
+  - Type: Edge
+
+## Access Requests
+- TC-AR-001 Submit registration request with valid data
+  - Role: Employee
+  - Preconditions: Organization exists; registration open; app installed.
+  - Steps: 1) Open access request form; 2) Enter required fields (name, org code, department selection if required, contact, credentials); 3) Submit.
+  - Expected Result: Request is stored with pending status; confirmation shown to requester.
+  - Type: Positive
+- TC-AR-002 Submit registration with missing mandatory fields
+  - Role: Employee
+  - Preconditions: Organization exists; form accessible.
+  - Steps: 1) Open form; 2) Leave mandatory fields blank or invalid; 3) Submit.
+  - Expected Result: Validation errors highlight missing/invalid fields; request not created.
+  - Type: Negative
+- TC-AR-003 Duplicate registration request by same user
+  - Role: Employee
+  - Preconditions: Prior pending request exists for same identifier (email/username) in the organization.
+  - Steps: 1) Open form; 2) Enter same identifier; 3) Submit.
+  - Expected Result: Duplicate is blocked or merged; user is informed request is already pending/approved.
+  - Type: Edge
+- TC-AR-004 Registration request for non-existent organization
+  - Role: Employee
+  - Preconditions: User does not belong to any organization; provided org code/name is invalid.
+  - Steps: 1) Open form; 2) Enter invalid organization code/name; 3) Submit.
+  - Expected Result: Submission is rejected with an invalid organization error; no record is created.
+  - Type: Negative
+
+## Organization Management
+- TC-ORG-001 Create organization successfully
+  - Role: Primary Admin
+  - Preconditions: Primary admin account issued with temporary credentials; no existing organization for this primary admin.
+  - Steps: 1) Login; 2) Complete forced password change if prompted; 3) Open organization creation; 4) Enter organization details; 5) Submit.
+  - Expected Result: New organization is created and activated; primary admin is linked as owner.
+  - Type: Positive
+- TC-ORG-002 Prevent duplicate organization creation
+  - Role: Primary Admin
+  - Preconditions: Organization already exists with same identifier.
+  - Steps: 1) Attempt to create organization with existing identifier; 2) Submit.
+  - Expected Result: Creation is blocked with duplicate identifier error; existing org remains unchanged.
+  - Type: Negative
+- TC-ORG-003 Create admin account within organization
+  - Role: Primary Admin
+  - Preconditions: Organization exists and active; primary admin logged in.
+  - Steps: 1) Navigate to admin management; 2) Add new admin with required details; 3) Save; 4) Verify admin receives temp credentials.
+  - Expected Result: Admin account is created in the same organization with temp password and admin role.
+  - Type: Positive
+- TC-ORG-004 Non-primary admin attempts organization creation
+  - Role: Admin
+  - Preconditions: Admin account active; logged in.
+  - Steps: 1) Try to access organization creation entry points; 2) Attempt creation if UI reachable.
+  - Expected Result: Access denied or option hidden; no organization is created.
+  - Type: Negative
+
+## Admin Features
+- TC-ADM-001 Approve employee registration
+  - Role: Admin
+  - Preconditions: Pending employee request exists for this organization.
+  - Steps: 1) Open pending requests; 2) Review details; 3) Approve; 4) Assign department if required.
+  - Expected Result: Employee status becomes approved; credentials activated; department set; user notified.
+  - Type: Positive
+- TC-ADM-002 Reject employee registration
+  - Role: Admin
+  - Preconditions: Pending employee request exists for this organization.
+  - Steps: 1) Open pending requests; 2) Reject with optional reason; 3) Confirm.
+  - Expected Result: Request marked rejected; no login access granted; applicant informed if notification exists.
+  - Type: Negative
+- TC-ADM-003 View employees list with roles and statuses
+  - Role: Admin
+  - Preconditions: Organization has employees with mixed statuses (approved, pending, rejected) and roles.
+  - Steps: 1) Navigate to employees list; 2) Observe entries, roles, departments, statuses.
+  - Expected Result: List displays only organization members with correct role, status, and department data; no cross-org users appear.
+  - Type: Positive
+- TC-ADM-004 Assign employee to department within org
+  - Role: Admin
+  - Preconditions: Approved employee exists without department or needs reassignment; target department exists.
+  - Steps: 1) Open employee detail; 2) Choose department; 3) Save.
+  - Expected Result: Employee assigned to selected department; chat access aligns with department; change reflected in list.
+  - Type: Positive
+- TC-ADM-005 Attempt cross-organization assignment or approval
+  - Role: Admin
+  - Preconditions: Admin logged in to Organization A; pending/employee from Organization B exists.
+  - Steps: 1) Try to view or act on requests or users from another organization (via direct link or manipulated ID).
+  - Expected Result: Access is denied; no data leakage or modification across organizations.
+  - Type: Negative
+
+## Employee Features
+- TC-EMP-001 Auto-join department after approval
+  - Role: Employee
+  - Preconditions: Pending employee approved and assigned a department by admin.
+  - Steps: 1) Login post-approval; 2) Navigate to chats.
+  - Expected Result: User is automatically a member of assigned department chat without manual join.
+  - Type: Positive
+- TC-EMP-002 Block access before approval
+  - Role: Employee
+  - Preconditions: Registration submitted; not approved.
+  - Steps: 1) Attempt login; 2) Attempt to open chat screens if accessible.
+  - Expected Result: Access blocked; no chat or org data visible; informative pending status shown.
+  - Type: Negative
+- TC-EMP-003 Display unique internal ID instead of real name
+  - Role: Employee
+  - Preconditions: Employee approved and logged in; profile has real name stored.
+  - Steps: 1) View self in chat participant list or message thread; 2) Observe identifiers.
+  - Expected Result: Only internal ID is shown to others; real name hidden.
+  - Type: Positive
+- TC-EMP-004 Update department reassignment behavior
+  - Role: Employee
+  - Preconditions: Employee currently in Department A; admin reassigns to Department B.
+  - Steps: 1) Admin reassigns; 2) Employee reopens chat list.
+  - Expected Result: Membership shifts to Department B chat; Department A access revoked; history access follows policy (view-only or removed per design).
+  - Type: Edge
+
+## Chat System
+- TC-CHAT-001 Send message within assigned department
+  - Role: Employee
+  - Preconditions: Employee approved and in Department A; online; chat service reachable.
+  - Steps: 1) Open Department A chat; 2) Send text message.
+  - Expected Result: Message sends successfully, attributed to internal ID, visible to Department A members only.
+  - Type: Positive
+- TC-CHAT-002 Attempt to access unassigned department chat
+  - Role: Employee
+  - Preconditions: Employee assigned to Department A only.
+  - Steps: 1) Attempt to open Department B chat via UI or deep link.
+  - Expected Result: Access is blocked or chat not listed; no messages from Department B are visible.
+  - Type: Negative
+- TC-CHAT-003 Network interruption during send
+  - Role: Employee
+  - Preconditions: In Department A chat; intermittent connectivity.
+  - Steps: 1) Send message while network drops mid-send.
+  - Expected Result: Message shows send failure or retry state; no duplicate messages after reconnection when retrying.
+  - Type: Edge
+
+## Security & Permissions
+- TC-SEC-001 Role-based access: admin-only screens
+  - Role: Employee
+  - Preconditions: Employee logged in.
+  - Steps: 1) Attempt to open admin approvals or organization management screens.
+  - Expected Result: Access denied or screens hidden; no privileged data exposed.
+  - Type: Negative
+- TC-SEC-002 Role-based access: primary-admin-only functions
+  - Role: Admin
+  - Preconditions: Admin logged in; organization exists.
+  - Steps: 1) Attempt to create organization or primary-admin controls.
+  - Expected Result: Actions unavailable; clear permission error; no organization changes occur.
+  - Type: Negative
+- TC-SEC-003 Organization isolation in listings and chats
+  - Role: Admin
+  - Preconditions: Multiple organizations exist; admin belongs to Organization A.
+  - Steps: 1) View employees list; 2) View departments/chats; 3) Search for users not in Organization A.
+  - Expected Result: Only Organization A data is visible; no cross-organization entries or chats appear.
+  - Type: Positive
+- TC-SEC-004 Privacy in chat displays
+  - Role: Employee
+  - Preconditions: Employee participates in department chat; real name stored in profile.
+  - Steps: 1) Send messages; 2) Other employees view conversation.
+  - Expected Result: Messages and participant info show internal IDs only; real names remain hidden.
+  - Type: Positive
+
+## Session Management
+- TC-SES-001 Manual logout from profile
+  - Role: Employee
+  - Preconditions: User logged in; profile tab accessible.
+  - Steps: 1) Open profile; 2) Tap Logout; 3) Confirm if prompted.
+  - Expected Result: Session tokens cleared; user returned to login screen; no access to protected screens on back navigation.
+  - Type: Positive
+- TC-SES-002 Auto logout after inactivity threshold
+  - Role: Admin
+  - Preconditions: Admin logged in; inactivity timer configured; no input for threshold duration.
+  - Steps: 1) Stay idle until after timeout; 2) Attempt action post-timeout.
+  - Expected Result: Session expires; user is redirected to login; action requires re-authentication.
+  - Type: Positive
+- TC-SES-003 Inactivity logout during draft/typing
+  - Role: Employee
+  - Preconditions: In department chat composing a message; inactivity timer near threshold.
+  - Steps: 1) Stop typing to exceed timeout; 2) Resume typing or send after timeout.
+  - Expected Result: User is logged out; unsent draft not delivered; must re-login; no partial message leaks.
+  - Type: Edge
+- TC-SES-004 Reuse of expired session token
+  - Role: Employee
+  - Preconditions: Previous session expired due to logout or timeout.
+  - Steps: 1) Attempt to access protected endpoint or screen via cached session; 2) Observe response.
+  - Expected Result: Access denied; redirected to login; new authentication required; no stale session accepted.
+  - Type: Negative

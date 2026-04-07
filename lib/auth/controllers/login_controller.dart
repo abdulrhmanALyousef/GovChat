@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
+import '../../core/services/session_manager.dart';
 import '../../models/admin_model.dart';
 import '../../models/employee_model.dart';
 import '../../roles/Admin/features/Main/admin_main_screen.dart';
@@ -71,9 +72,9 @@ class LoginController extends ChangeNotifier {
 
       if (!context.mounted) return;
 
-      // 3. If employee and status is pending -> block login
+      // 3. Enforce account status + role-specific checks
+      final status = doc.data()!['status'] ?? 'active';
       if (user.role == 'employee') {
-        final status = doc.data()!['status'] ?? 'pending';
         if (status == 'pending') {
           await FirebaseService.instance.auth.signOut();
           errorMessage =
@@ -89,6 +90,12 @@ class LoginController extends ChangeNotifier {
           notifyListeners();
           return;
         }
+      } else if (status != 'active') {
+        await FirebaseService.instance.auth.signOut();
+        errorMessage = 'This account is $status. Please contact support.';
+        isLoading = false;
+        notifyListeners();
+        return;
       }
 
       // 4. Save user data in SharedPreferences
@@ -97,10 +104,26 @@ class LoginController extends ChangeNotifier {
       await prefs.setString('email', user.email);
       await prefs.setString('role', user.role);
       await prefs.setBool('firstLogin', user.firstLogin);
+      await prefs.setBool('mustChangePassword', user.mustChangePassword);
+      if (user.organizationId != null) {
+        await prefs.setString('organizationId', user.organizationId!);
+      }
+      if (user.organizationName != null) {
+        await prefs.setString('organizationName', user.organizationName!);
+      }
 
-      // 5. If admin and first login -> change password screen
+      // 5. Enforce password rotation for admins
       if (!context.mounted) return;
-      if (user.role == 'admin' && user.firstLogin) {
+      final mustRotatePassword = user.firstLogin || user.mustChangePassword;
+      if (user.role == 'admin' && mustRotatePassword) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+          (route) => false,
+        );
+        return;
+      }
+      if (user.role == 'primary_admin' && user.mustChangePassword) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
@@ -120,6 +143,15 @@ class LoginController extends ChangeNotifier {
           break;
         case 'employee':
           final employee = await _loadEmployeeProfile(uid, doc.data()!);
+          if (!context.mounted) return;
+          final orgId = user.organizationId ?? '';
+          if (orgId.isNotEmpty && employee.organizationId != orgId) {
+            await SessionManager.instance.logout(
+              context,
+              reason: 'Organization mismatch detected. Please sign in again.',
+            );
+            return;
+          }
           destination = EmployeeChatScreen(employee: employee);
           break;
         default:
