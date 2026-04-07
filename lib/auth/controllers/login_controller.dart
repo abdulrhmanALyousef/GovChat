@@ -202,9 +202,7 @@ class LoginController extends ChangeNotifier {
 
         return EmployeeModel(
           id: employee.id,
-          firstName: employee.firstName,
-          middleName: employee.middleName,
-          lastName: employee.lastName,
+          name: employee.name,
           email: employee.email,
           nationalId: employee.nationalId,
           organizationId: employee.organizationId,
@@ -223,9 +221,7 @@ class LoginController extends ChangeNotifier {
     final deptId = _slugDepartment(userData['department'] ?? '');
     return EmployeeModel(
       id: uid,
-      firstName: userData['firstName'] ?? '',
-      middleName: userData['middleName'] ?? '',
-      lastName: userData['lastName'] ?? '',
+      name: userData['name'] ?? '',
       email: userData['email'] ?? '',
       nationalId: userData['nationalId'] ?? '',
       organizationId: userData['organizationId'] ?? '',
