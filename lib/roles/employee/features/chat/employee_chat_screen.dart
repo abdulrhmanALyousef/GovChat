@@ -133,6 +133,7 @@ class _ChatView extends StatelessWidget {
                   displayId: controller.displayId,
                   scrollController: controller.scrollController,
                   onEditTap: controller.startEditing,
+                  onDeleteTap: controller.deleteMessage,
                 ),
               ),
               _InputBar(controller: controller),
@@ -152,12 +153,14 @@ class _MessagesList extends StatelessWidget {
     required this.displayId,
     required this.scrollController,
     required this.onEditTap,
+    required this.onDeleteTap,
   });
 
   final List<ChatMessage> messages;
   final String displayId;
   final ScrollController scrollController;
   final ValueChanged<ChatMessage> onEditTap;
+  final ValueChanged<ChatMessage> onDeleteTap;
 
   @override
   Widget build(BuildContext context) {
@@ -171,6 +174,7 @@ class _MessagesList extends StatelessWidget {
           message: message,
           isMine: message.senderId == displayId,
           onEditTap: onEditTap,
+          onDeleteTap: onDeleteTap,
         );
       },
     );
@@ -184,11 +188,13 @@ class _MessageItem extends StatelessWidget {
     required this.message,
     required this.isMine,
     required this.onEditTap,
+    required this.onDeleteTap,
   });
 
   final ChatMessage message;
   final bool isMine;
   final ValueChanged<ChatMessage> onEditTap;
+  final ValueChanged<ChatMessage> onDeleteTap;
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +222,7 @@ class _MessageItem extends StatelessWidget {
                 isMine ? Alignment.centerRight : Alignment.centerLeft,
             child: GestureDetector(
               onLongPress: isMine
-                  ? () => _showEditSheet(context)
+                  ? () => _showActionsSheet(context)
                   : null,
               child: Container(
                 constraints: BoxConstraints(maxWidth: AppSizes.w240),
@@ -271,7 +277,15 @@ class _MessageItem extends StatelessWidget {
     );
   }
 
-  void _showEditSheet(BuildContext context) {
+  bool _canDelete() {
+    final createdAt = message.createdAt;
+    if (createdAt == null) return false;
+    return DateTime.now().difference(createdAt) <=
+        const Duration(minutes: 5);
+  }
+
+  void _showActionsSheet(BuildContext context) {
+    final deletable = _canDelete();
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.cardBackground,
@@ -280,22 +294,43 @@ class _MessageItem extends StatelessWidget {
           top: Radius.circular(AppSizes.r20),
         ),
       ),
-      builder: (_) => _EditSheet(
+      builder: (_) => _MessageActionsSheet(
         onEdit: () {
           Navigator.pop(context);
           onEditTap(message);
+        },
+        onDelete: deletable
+            ? () {
+                Navigator.pop(context);
+                _showDeleteConfirmation(context);
+              }
+            : null,
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => _DeleteConfirmationDialog(
+        onConfirm: () {
+          Navigator.pop(context);
+          onDeleteTap(message);
         },
       ),
     );
   }
 }
 
-// ─── Bottom sheet ─────────────────────────────────────────────────────────────
+// ─── Message actions bottom sheet ────────────────────────────────────────────
 
-class _EditSheet extends StatelessWidget {
-  const _EditSheet({required this.onEdit});
+class _MessageActionsSheet extends StatelessWidget {
+  const _MessageActionsSheet({required this.onEdit, this.onDelete});
 
   final VoidCallback onEdit;
+
+  /// Null when the 5-minute deletion window has expired.
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -329,9 +364,84 @@ class _EditSheet extends StatelessWidget {
             ),
             onTap: onEdit,
           ),
+          if (onDelete != null)
+            ListTile(
+              leading: Icon(
+                Icons.delete_outline,
+                color: AppColors.error,
+                size: AppSizes.sp20,
+              ),
+              title: Text(
+                'Delete Message',
+                style: GoogleFonts.manrope(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w600,
+                  fontSize: AppSizes.sp14,
+                ),
+              ),
+              onTap: onDelete,
+            ),
           SizedBox(height: AppSizes.ph16),
         ],
       ),
+    );
+  }
+}
+
+// ─── Delete confirmation dialog ───────────────────────────────────────────────
+
+class _DeleteConfirmationDialog extends StatelessWidget {
+  const _DeleteConfirmationDialog({required this.onConfirm});
+
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.cardBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.r16),
+      ),
+      title: Text(
+        'Delete Message',
+        style: GoogleFonts.manrope(
+          color: AppColors.textTitle,
+          fontWeight: FontWeight.w800,
+          fontSize: AppSizes.sp16,
+        ),
+      ),
+      content: Text(
+        'This message will be permanently removed for everyone. This action cannot be undone.',
+        style: GoogleFonts.manrope(
+          color: AppColors.textMuted,
+          fontSize: AppSizes.sp13,
+          height: 1.5,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Cancel',
+            style: GoogleFonts.manrope(
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w600,
+              fontSize: AppSizes.sp14,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: onConfirm,
+          child: Text(
+            'Delete',
+            style: GoogleFonts.manrope(
+              color: AppColors.error,
+              fontWeight: FontWeight.w700,
+              fontSize: AppSizes.sp14,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
