@@ -93,6 +93,18 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ─── Delete helper ───────────────────────────────────────────────────────
+
+  Future<void> deleteMessage(ChatMessage message) async {
+    if (message.id == null) return;
+    try {
+      await _messagesCollection().doc(message.id!).delete();
+    } catch (e) {
+      errorMessage = e.toString();
+      notifyListeners();
+    }
+  }
+
   // ─── Edit helpers ────────────────────────────────────────────────────────
 
   void startEditing(ChatMessage message) {
