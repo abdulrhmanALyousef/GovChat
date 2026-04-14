@@ -52,6 +52,8 @@ class EmployeeChatScreen extends StatelessWidget {
   }
 }
 
+// ─── Main view ────────────────────────────────────────────────────────────────
+
 class _ChatView extends StatelessWidget {
   const _ChatView({
     required this.employee,
@@ -130,6 +132,7 @@ class _ChatView extends StatelessWidget {
                   messages: controller.messages,
                   displayId: controller.displayId,
                   scrollController: controller.scrollController,
+                  onEditTap: controller.startEditing,
                 ),
               ),
               _InputBar(controller: controller),
@@ -141,16 +144,20 @@ class _ChatView extends StatelessWidget {
   }
 }
 
+// ─── Messages list ────────────────────────────────────────────────────────────
+
 class _MessagesList extends StatelessWidget {
   const _MessagesList({
     required this.messages,
     required this.displayId,
     required this.scrollController,
+    required this.onEditTap,
   });
 
   final List<ChatMessage> messages;
   final String displayId;
   final ScrollController scrollController;
+  final ValueChanged<ChatMessage> onEditTap;
 
   @override
   Widget build(BuildContext context) {
@@ -160,53 +167,85 @@ class _MessagesList extends StatelessWidget {
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[index];
-        final isMine = message.senderId == displayId;
-        final time = message.createdAt != null
-            ? TimeOfDay.fromDateTime(message.createdAt!).format(context)
-            : '';
+        return _MessageItem(
+          message: message,
+          isMine: message.senderId == displayId,
+          onEditTap: onEditTap,
+        );
+      },
+    );
+  }
+}
 
-        return Padding(
-          padding: EdgeInsets.only(bottom: AppSizes.ph12),
-          child: Column(
-            crossAxisAlignment: isMine
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
-            children: [
-              Text(
-                message.senderId,
-                style: GoogleFonts.manrope(
-                  color: AppColors.textMuted,
-                  fontSize: AppSizes.sp10,
-                  letterSpacing: 0.6,
+// ─── Single message item ──────────────────────────────────────────────────────
+
+class _MessageItem extends StatelessWidget {
+  const _MessageItem({
+    required this.message,
+    required this.isMine,
+    required this.onEditTap,
+  });
+
+  final ChatMessage message;
+  final bool isMine;
+  final ValueChanged<ChatMessage> onEditTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final time = message.createdAt != null
+        ? TimeOfDay.fromDateTime(message.createdAt!).format(context)
+        : '';
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppSizes.ph12),
+      child: Column(
+        crossAxisAlignment:
+            isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Text(
+            message.senderId,
+            style: GoogleFonts.manrope(
+              color: AppColors.textMuted,
+              fontSize: AppSizes.sp10,
+              letterSpacing: 0.6,
+            ),
+          ),
+          SizedBox(height: AppSizes.h4),
+          Align(
+            alignment:
+                isMine ? Alignment.centerRight : Alignment.centerLeft,
+            child: GestureDetector(
+              onLongPress: isMine
+                  ? () => _showEditSheet(context)
+                  : null,
+              child: Container(
+                constraints: BoxConstraints(maxWidth: AppSizes.w240),
+                padding: EdgeInsets.all(AppSizes.ph14),
+                decoration: BoxDecoration(
+                  color: isMine
+                      ? AppColors.primaryColor
+                      : AppColors.sectionBackground,
+                  borderRadius: BorderRadius.circular(AppSizes.r16),
                 ),
-              ),
-              SizedBox(height: AppSizes.h4),
-              Align(
-                alignment: isMine
-                    ? Alignment.centerRight
-                    : Alignment.centerLeft,
-                child: Container(
-                  constraints: BoxConstraints(maxWidth: AppSizes.w240),
-                  padding: EdgeInsets.all(AppSizes.ph14),
-                  decoration: BoxDecoration(
+                child: Text(
+                  message.text,
+                  style: GoogleFonts.manrope(
                     color: isMine
-                        ? AppColors.primaryColor
-                        : AppColors.sectionBackground,
-                    borderRadius: BorderRadius.circular(AppSizes.r16),
-                  ),
-                  child: Text(
-                    message.text,
-                    style: GoogleFonts.manrope(
-                      color: isMine
-                          ? AppColors.buttonText
-                          : AppColors.textPrimary,
-                      fontSize: AppSizes.sp14,
-                      height: 1.4,
-                    ),
+                        ? AppColors.buttonText
+                        : AppColors.textPrimary,
+                    fontSize: AppSizes.sp14,
+                    height: 1.4,
                   ),
                 ),
               ),
-              SizedBox(height: AppSizes.h4),
+            ),
+          ),
+          SizedBox(height: AppSizes.h4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment:
+                isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+            children: [
               Text(
                 time,
                 style: GoogleFonts.manrope(
@@ -214,13 +253,159 @@ class _MessagesList extends StatelessWidget {
                   fontSize: AppSizes.sp10,
                 ),
               ),
+              if (message.isEdited) ...[
+                SizedBox(width: AppSizes.w6),
+                Text(
+                  '· edited',
+                  style: GoogleFonts.manrope(
+                    color: AppColors.textMuted,
+                    fontSize: AppSizes.sp10,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ],
           ),
-        );
-      },
+        ],
+      ),
+    );
+  }
+
+  void _showEditSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.cardBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSizes.r20),
+        ),
+      ),
+      builder: (_) => _EditSheet(
+        onEdit: () {
+          Navigator.pop(context);
+          onEditTap(message);
+        },
+      ),
     );
   }
 }
+
+// ─── Bottom sheet ─────────────────────────────────────────────────────────────
+
+class _EditSheet extends StatelessWidget {
+  const _EditSheet({required this.onEdit});
+
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            width: AppSizes.w42,
+            height: AppSizes.h4,
+            margin: EdgeInsets.symmetric(vertical: AppSizes.ph12),
+            decoration: BoxDecoration(
+              color: AppColors.textMuted.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(AppSizes.r4),
+            ),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.edit_outlined,
+              color: AppColors.primaryColor,
+              size: AppSizes.sp20,
+            ),
+            title: Text(
+              'Edit Message',
+              style: GoogleFonts.manrope(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: AppSizes.sp14,
+              ),
+            ),
+            onTap: onEdit,
+          ),
+          SizedBox(height: AppSizes.ph16),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Edit context strip ───────────────────────────────────────────────────────
+
+class _EditContextStrip extends StatelessWidget {
+  const _EditContextStrip({required this.controller});
+
+  final ChatController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final msg = controller.editingMessage;
+    if (msg == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSizes.pw16,
+        vertical: AppSizes.ph8,
+      ),
+      color: AppColors.sectionBackground,
+      child: Row(
+        children: [
+          Container(
+            width: AppSizes.w2,
+            height: AppSizes.h40,
+            decoration: BoxDecoration(
+              color: AppColors.primaryColor,
+              borderRadius: BorderRadius.circular(AppSizes.r4),
+            ),
+          ),
+          SizedBox(width: AppSizes.w12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Editing message',
+                  style: GoogleFonts.manrope(
+                    color: AppColors.primaryColor,
+                    fontSize: AppSizes.sp11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: AppSizes.h2),
+                Text(
+                  msg.text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.manrope(
+                    color: AppColors.textMuted,
+                    fontSize: AppSizes.sp12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.close,
+              color: AppColors.textMuted,
+              size: AppSizes.sp20,
+            ),
+            onPressed: controller.cancelEditing,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Encryption pill ──────────────────────────────────────────────────────────
 
 class _EncryptionPill extends StatelessWidget {
   @override
@@ -258,6 +443,8 @@ class _EncryptionPill extends StatelessWidget {
   }
 }
 
+// ─── Input bar ────────────────────────────────────────────────────────────────
+
 class _InputBar extends StatelessWidget {
   const _InputBar({required this.controller});
 
@@ -265,78 +452,96 @@ class _InputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        AppSizes.pw16,
-        AppSizes.ph12,
-        AppSizes.pw16,
-        AppSizes.ph16,
-      ),
-      color: Colors.transparent,
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSizes.pw16,
-                vertical: AppSizes.ph12,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(AppSizes.r16),
-                border: Border.all(color: AppColors.inputBorder),
-              ),
-              child: TextField(
-                controller: controller.messageController,
-                style: GoogleFonts.manrope(
-                  color: AppColors.textPrimary,
-                  fontSize: AppSizes.sp14,
-                ),
-                onSubmitted: (_) => controller.sendMessage(),
-                decoration: InputDecoration(
-                  isCollapsed: true,
-                  hintText: 'Type a message',
-                  hintStyle: GoogleFonts.manrope(
-                    color: AppColors.hintText,
-                    fontSize: AppSizes.sp14,
-                  ),
-                  border: InputBorder.none,
-                ),
-              ),
-            ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _EditContextStrip(controller: controller),
+        Container(
+          padding: EdgeInsets.fromLTRB(
+            AppSizes.pw16,
+            AppSizes.ph12,
+            AppSizes.pw16,
+            AppSizes.ph16,
           ),
-          SizedBox(width: AppSizes.w12),
-          GestureDetector(
-            onTap: controller.isSending ? null : controller.sendMessage,
-            child: Container(
-              height: AppSizes.h48,
-              width: AppSizes.h48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [AppColors.gradientStart, AppColors.gradientEnd],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryColor.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+          color: Colors.transparent,
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSizes.pw16,
+                    vertical: AppSizes.ph12,
                   ),
-                ],
-              ),
-              child: controller.isSending
-                  ? const Padding(
-                      padding: EdgeInsets.all(12.0),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.buttonText,
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBackground,
+                    borderRadius: BorderRadius.circular(AppSizes.r16),
+                    border: Border.all(color: AppColors.inputBorder),
+                  ),
+                  child: TextField(
+                    controller: controller.messageController,
+                    focusNode: controller.inputFocusNode,
+                    style: GoogleFonts.manrope(
+                      color: AppColors.textPrimary,
+                      fontSize: AppSizes.sp14,
+                    ),
+                    onSubmitted: (_) => controller.isEditing
+                        ? controller.confirmEdit()
+                        : controller.sendMessage(),
+                    decoration: InputDecoration(
+                      isCollapsed: true,
+                      hintText: controller.isEditing
+                          ? 'Edit message'
+                          : 'Type a message',
+                      hintStyle: GoogleFonts.manrope(
+                        color: AppColors.hintText,
+                        fontSize: AppSizes.sp14,
                       ),
-                    )
-                  : const Icon(Icons.send, color: AppColors.buttonText),
-            ),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: AppSizes.w12),
+              GestureDetector(
+                onTap: controller.isSending
+                    ? null
+                    : controller.isEditing
+                        ? controller.confirmEdit
+                        : controller.sendMessage,
+                child: Container(
+                  height: AppSizes.h48,
+                  width: AppSizes.h48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [AppColors.gradientStart, AppColors.gradientEnd],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryColor.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: controller.isSending
+                      ? const Padding(
+                          padding: EdgeInsets.all(12.0),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.buttonText,
+                          ),
+                        )
+                      : Icon(
+                          controller.isEditing ? Icons.check : Icons.send,
+                          color: AppColors.buttonText,
+                        ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

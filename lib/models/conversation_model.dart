@@ -41,6 +41,14 @@ class ConversationModel {
     );
   }
 
+  /// Full Firestore collection path for messages in this conversation.
+  String get messagesCollectionPath {
+    if (type == 'private') {
+      return 'organizations/$organizationId/private_chats/$id/messages';
+    }
+    return 'organizations/$organizationId/departments/$departmentId/messages';
+  }
+
   static DateTime? timestampToDateTime(dynamic value) {
     if (value is Timestamp) return value.toDate();
     return null;

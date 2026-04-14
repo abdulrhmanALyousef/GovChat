@@ -7,6 +7,7 @@ import '../../../../../core/datasource/remote_data/firebase_service.dart';
 import '../../../../../models/chat_message.dart';
 
 class ChatController extends ChangeNotifier {
+  // Exposed so _InputBar can attach it to the TextField for auto-focus.
   ChatController({
     required this.organizationId,
     required this.departmentId,
@@ -20,6 +21,7 @@ class ChatController extends ChangeNotifier {
   final FirebaseService _firebase = FirebaseService.instance;
   final TextEditingController messageController = TextEditingController();
   final ScrollController scrollController = ScrollController();
+  final FocusNode inputFocusNode = FocusNode();
 
   final String organizationId;
   final String departmentId;
@@ -34,6 +36,10 @@ class ChatController extends ChangeNotifier {
   List<ChatMessage> messages = [];
   bool isSending = false;
   String? errorMessage;
+
+  /// Non-null while the user is editing an existing message.
+  ChatMessage? editingMessage;
+  bool get isEditing => editingMessage != null;
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
 
@@ -87,6 +93,57 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ─── Edit helpers ────────────────────────────────────────────────────────
+
+  void startEditing(ChatMessage message) {
+    editingMessage = message;
+    messageController.text = message.text;
+    messageController.selection = TextSelection.fromPosition(
+      TextPosition(offset: message.text.length),
+    );
+    notifyListeners();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      inputFocusNode.requestFocus();
+    });
+  }
+
+  void cancelEditing() {
+    editingMessage = null;
+    messageController.clear();
+    notifyListeners();
+  }
+
+  Future<void> confirmEdit() async {
+    final msg = editingMessage;
+    if (msg == null || msg.id == null) return;
+
+    final newText = messageController.text.trim();
+    if (newText.isEmpty) return;
+    if (newText == msg.text) {
+      cancelEditing();
+      return;
+    }
+
+    isSending = true;
+    notifyListeners();
+
+    try {
+      await _messagesCollection().doc(msg.id!).update({
+        'text': newText,
+        'isEdited': true,
+        'editedAt': FieldValue.serverTimestamp(),
+      });
+      cancelEditing();
+    } catch (e) {
+      errorMessage = e.toString();
+    }
+
+    isSending = false;
+    notifyListeners();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   CollectionReference<Map<String, dynamic>> _messagesCollection() {
     if (messagesPath != null && messagesPath!.isNotEmpty) {
       return _firebase.firestore.collection(messagesPath!);
@@ -130,6 +187,7 @@ class ChatController extends ChangeNotifier {
   void dispose() {
     messageController.dispose();
     scrollController.dispose();
+    inputFocusNode.dispose();
     _subscription?.cancel();
     super.dispose();
   }

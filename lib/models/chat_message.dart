@@ -7,6 +7,8 @@ class ChatMessage {
   final String organizationId;
   final String departmentId;
   final DateTime? createdAt;
+  final bool isEdited;
+  final DateTime? editedAt;
 
   ChatMessage({
     this.id,
@@ -15,6 +17,8 @@ class ChatMessage {
     required this.organizationId,
     required this.departmentId,
     this.createdAt,
+    this.isEdited = false,
+    this.editedAt,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json, {String? id}) {
@@ -26,6 +30,10 @@ class ChatMessage {
       departmentId: json['departmentId'] ?? '',
       createdAt: json['createdAt'] is Timestamp
           ? (json['createdAt'] as Timestamp).toDate()
+          : null,
+      isEdited: json['isEdited'] as bool? ?? false,
+      editedAt: json['editedAt'] is Timestamp
+          ? (json['editedAt'] as Timestamp).toDate()
           : null,
     );
   }
