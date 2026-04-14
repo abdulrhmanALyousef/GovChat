@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -137,6 +139,7 @@ class _ChatView extends StatelessWidget {
                   onDeleteTap: controller.deleteMessage,
                 ),
               ),
+              _TypingIndicator(typingIds: controller.typingDisplayIds),
               _InputBar(controller: controller),
             ],
           ),
@@ -556,6 +559,84 @@ class _EditContextStrip extends StatelessWidget {
   }
 }
 
+// ─── Typing indicator ─────────────────────────────────────────────────────────
+
+class _TypingIndicator extends StatelessWidget {
+  const _TypingIndicator({required this.typingIds});
+
+  final List<String> typingIds;
+
+  @override
+  Widget build(BuildContext context) {
+    if (typingIds.isEmpty) return const SizedBox.shrink();
+
+    final label = typingIds.length == 1
+        ? '${typingIds.first} is typing'
+        : '${typingIds.length} people are typing';
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.pw16,
+        0,
+        AppSizes.pw16,
+        AppSizes.ph8,
+      ),
+      child: Row(
+        children: [
+          const _TypingDots(),
+          SizedBox(width: AppSizes.w8),
+          Text(
+            label,
+            style: GoogleFonts.manrope(
+              color: AppColors.textMuted,
+              fontSize: AppSizes.sp12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TypingDots extends StatefulWidget {
+  const _TypingDots();
+
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots> {
+  int _dotCount = 1;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      if (mounted) setState(() => _dotCount = _dotCount % 3 + 1);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '.' * _dotCount,
+      style: GoogleFonts.manrope(
+        color: AppColors.primaryColor,
+        fontSize: AppSizes.sp16,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+}
+
 // ─── Encryption pill ──────────────────────────────────────────────────────────
 
 class _EncryptionPill extends StatelessWidget {
@@ -635,6 +716,7 @@ class _InputBar extends StatelessWidget {
                       color: AppColors.textPrimary,
                       fontSize: AppSizes.sp14,
                     ),
+                    onChanged: controller.onTextChanged,
                     onSubmitted: (_) => controller.isEditing
                         ? controller.confirmEdit()
                         : controller.sendMessage(),
