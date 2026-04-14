@@ -10,9 +10,24 @@ import '../../../../models/employee_model.dart';
 import 'controller/chat_controller.dart';
 
 class EmployeeChatScreen extends StatelessWidget {
-  const EmployeeChatScreen({super.key, required this.employee});
+  const EmployeeChatScreen({
+    super.key,
+    required this.employee,
+    this.chatTitle,
+    this.chatSubtitle,
+    this.messagesPath,
+  });
 
   final EmployeeModel employee;
+
+  /// Override the AppBar title (defaults to employee's department name).
+  final String? chatTitle;
+
+  /// Override the AppBar subtitle (defaults to 'GROUP CHAT').
+  final String? chatSubtitle;
+
+  /// Override the Firestore messages collection path (for private chats).
+  final String? messagesPath;
 
   @override
   Widget build(BuildContext context) {
@@ -26,20 +41,33 @@ class EmployeeChatScreen extends StatelessWidget {
         departmentId: deptKey,
         departmentName: employee.department,
         displayId: employee.displayId,
+        messagesPath: messagesPath,
       ),
-      child: _ChatView(employee: employee),
+      child: _ChatView(
+        employee: employee,
+        chatTitle: chatTitle,
+        chatSubtitle: chatSubtitle,
+      ),
     );
   }
 }
 
 class _ChatView extends StatelessWidget {
-  const _ChatView({required this.employee});
+  const _ChatView({
+    required this.employee,
+    this.chatTitle,
+    this.chatSubtitle,
+  });
 
   final EmployeeModel employee;
+  final String? chatTitle;
+  final String? chatSubtitle;
 
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ChatController>();
+    final title = chatTitle ?? employee.department;
+    final subtitle = chatSubtitle ?? 'GROUP CHAT';
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -54,7 +82,7 @@ class _ChatView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              employee.department,
+              title,
               style: GoogleFonts.manrope(
                 color: AppColors.textTitle,
                 fontWeight: FontWeight.w800,
@@ -62,7 +90,7 @@ class _ChatView extends StatelessWidget {
               ),
             ),
             Text(
-              'GROUP CHAT',
+              subtitle,
               style: GoogleFonts.manrope(
                 color: AppColors.textMuted,
                 fontSize: AppSizes.sp10,

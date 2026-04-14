@@ -8,6 +8,7 @@ import '../../../../core/theme/app_color.dart';
 import '../../../../models/conversation_model.dart';
 import '../../../../models/employee_model.dart';
 import '../chat/employee_chat_screen.dart';
+import '../new_chat/new_chat_screen.dart';
 import 'controller/chat_list_controller.dart';
 
 class ChatListScreen extends StatelessWidget {
@@ -74,18 +75,92 @@ class _ChatListView extends StatelessWidget {
         ],
       ),
       body: SafeArea(
-        child: controller.isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryColor,
+        child: Column(
+          children: [
+            _NewChatButton(employee: employee),
+            Expanded(
+              child: controller.isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryColor,
+                      ),
+                    )
+                  : controller.conversations.isEmpty
+                      ? _EmptyState()
+                      : _ConversationList(
+                          conversations: controller.conversations,
+                          employee: employee,
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NewChatButton extends StatelessWidget {
+  const _NewChatButton({required this.employee});
+
+  final EmployeeModel employee;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.pw16,
+        AppSizes.ph16,
+        AppSizes.pw16,
+        0,
+      ),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NewChatScreen(currentEmployee: employee),
+            ),
+          );
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            vertical: AppSizes.ph14,
+            horizontal: AppSizes.pw16,
+          ),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.gradientStart, AppColors.gradientEnd],
+            ),
+            borderRadius: BorderRadius.circular(AppSizes.r16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryColor.withValues(alpha: 0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.edit_outlined,
+                color: AppColors.buttonText,
+                size: AppSizes.sp20,
+              ),
+              SizedBox(width: AppSizes.w8),
+              Text(
+                'NEW CHAT',
+                style: GoogleFonts.manrope(
+                  color: AppColors.buttonText,
+                  fontWeight: FontWeight.w800,
+                  fontSize: AppSizes.sp14,
+                  letterSpacing: 1.2,
                 ),
-              )
-            : controller.conversations.isEmpty
-                ? _EmptyState()
-                : _ConversationList(
-                    conversations: controller.conversations,
-                    employee: employee,
-                  ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
