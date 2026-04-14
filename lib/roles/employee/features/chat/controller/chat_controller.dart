@@ -56,6 +56,7 @@ class ChatController extends ChangeNotifier {
                 .map((doc) => ChatMessage.fromJson(doc.data(), id: doc.id))
                 .toList();
             debugPrint('Messages count: ${messages.length}');
+            _markMessagesAsRead(snapshot.docs).ignore();
             notifyListeners();
             _scrollToBottom();
           },
@@ -152,6 +153,35 @@ class ChatController extends ChangeNotifier {
 
     isSending = false;
     notifyListeners();
+  }
+
+  // ─── Read receipts ───────────────────────────────────────────────────────
+
+  /// Batch-marks every message sent by someone else as read by [displayId].
+  /// Called fire-and-forget from the stream listener; errors are swallowed so
+  /// they never surface to the UI.
+  Future<void> _markMessagesAsRead(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) async {
+    final unread = docs.where((doc) {
+      final data = doc.data();
+      final senderId = data['senderId'] as String? ?? '';
+      if (senderId == displayId) return false;
+      final readBy = List<String>.from(data['readBy'] as List? ?? []);
+      return !readBy.contains(displayId);
+    }).toList();
+
+    if (unread.isEmpty) return;
+
+    final batch = _firebase.firestore.batch();
+    for (final doc in unread) {
+      batch.update(doc.reference, {
+        'readBy': FieldValue.arrayUnion([displayId]),
+      });
+    }
+    try {
+      await batch.commit();
+    } catch (_) {}
   }
 
   // ─────────────────────────────────────────────────────────────────────────
