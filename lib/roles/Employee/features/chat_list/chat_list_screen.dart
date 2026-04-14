@@ -212,14 +212,7 @@ class _ConversationTile extends StatelessWidget {
     final timeLabel = _formatTime(conversation.lastMessageTime);
 
     return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => EmployeeChatScreen(employee: employee),
-          ),
-        );
-      },
+      onTap: () => _openChat(context),
       borderRadius: BorderRadius.circular(AppSizes.r12),
       child: Padding(
         padding: EdgeInsets.symmetric(
@@ -267,6 +260,21 @@ class _ConversationTile extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _openChat(BuildContext context) {
+    final isPrivate = conversation.type == 'private';
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EmployeeChatScreen(
+          employee: employee,
+          chatTitle: isPrivate ? conversation.name : null,
+          chatSubtitle: isPrivate ? 'PRIVATE CHAT' : null,
+          messagesPath: isPrivate ? conversation.messagesCollectionPath : null,
         ),
       ),
     );
