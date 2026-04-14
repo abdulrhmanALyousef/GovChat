@@ -5,7 +5,8 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_size.dart';
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
-import '../../../../models/chat_message.dart';
+import '../../../../models/chat_message.dart'
+    show ChatMessage, MessageStatus;
 import '../../../../models/employee_model.dart';
 import 'controller/chat_controller.dart';
 
@@ -130,7 +131,7 @@ class _ChatView extends StatelessWidget {
               Expanded(
                 child: _MessagesList(
                   messages: controller.messages,
-                  displayId: controller.displayId,
+                  myDisplayId: controller.displayId,
                   scrollController: controller.scrollController,
                   onEditTap: controller.startEditing,
                   onDeleteTap: controller.deleteMessage,
@@ -150,14 +151,14 @@ class _ChatView extends StatelessWidget {
 class _MessagesList extends StatelessWidget {
   const _MessagesList({
     required this.messages,
-    required this.displayId,
+    required this.myDisplayId,
     required this.scrollController,
     required this.onEditTap,
     required this.onDeleteTap,
   });
 
   final List<ChatMessage> messages;
-  final String displayId;
+  final String myDisplayId;
   final ScrollController scrollController;
   final ValueChanged<ChatMessage> onEditTap;
   final ValueChanged<ChatMessage> onDeleteTap;
@@ -170,9 +171,11 @@ class _MessagesList extends StatelessWidget {
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[index];
+        final isMine = message.senderId == myDisplayId;
         return _MessageItem(
           message: message,
-          isMine: message.senderId == displayId,
+          isMine: isMine,
+          status: isMine ? message.statusFor(myDisplayId) : null,
           onEditTap: onEditTap,
           onDeleteTap: onDeleteTap,
         );
@@ -189,10 +192,12 @@ class _MessageItem extends StatelessWidget {
     required this.isMine,
     required this.onEditTap,
     required this.onDeleteTap,
+    this.status,
   });
 
   final ChatMessage message;
   final bool isMine;
+  final MessageStatus? status;
   final ValueChanged<ChatMessage> onEditTap;
   final ValueChanged<ChatMessage> onDeleteTap;
 
@@ -270,6 +275,10 @@ class _MessageItem extends StatelessWidget {
                   ),
                 ),
               ],
+              if (status != null) ...[
+                SizedBox(width: AppSizes.w6),
+                _StatusIcon(status: status!),
+              ],
             ],
           ),
         ],
@@ -319,6 +328,38 @@ class _MessageItem extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+// ─── Status icon ─────────────────────────────────────────────────────────────
+
+class _StatusIcon extends StatelessWidget {
+  const _StatusIcon({required this.status});
+
+  final MessageStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (status) {
+      case MessageStatus.sent:
+        return Icon(
+          Icons.check,
+          size: AppSizes.sp12,
+          color: AppColors.textMuted,
+        );
+      case MessageStatus.delivered:
+        return Icon(
+          Icons.done_all,
+          size: AppSizes.sp12,
+          color: AppColors.textMuted,
+        );
+      case MessageStatus.read:
+        return Icon(
+          Icons.done_all,
+          size: AppSizes.sp12,
+          color: AppColors.primaryColor,
+        );
+    }
   }
 }
 

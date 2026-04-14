@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+enum MessageStatus { sent, delivered, read }
+
 class ChatMessage {
   final String? id;
   final String text;
@@ -10,6 +12,9 @@ class ChatMessage {
   final bool isEdited;
   final DateTime? editedAt;
 
+  /// DisplayIds of participants who have opened this message.
+  final List<String> readBy;
+
   ChatMessage({
     this.id,
     required this.text,
@@ -19,7 +24,16 @@ class ChatMessage {
     this.createdAt,
     this.isEdited = false,
     this.editedAt,
+    this.readBy = const [],
   });
+
+  /// Returns the delivery/read status from the perspective of [myDisplayId].
+  /// Only meaningful for messages sent by [myDisplayId].
+  MessageStatus statusFor(String myDisplayId) {
+    if (readBy.any((id) => id != myDisplayId)) return MessageStatus.read;
+    if (createdAt != null) return MessageStatus.delivered;
+    return MessageStatus.sent;
+  }
 
   factory ChatMessage.fromJson(Map<String, dynamic> json, {String? id}) {
     return ChatMessage(
@@ -35,6 +49,7 @@ class ChatMessage {
       editedAt: json['editedAt'] is Timestamp
           ? (json['editedAt'] as Timestamp).toDate()
           : null,
+      readBy: List<String>.from(json['readBy'] as List? ?? []),
     );
   }
 
