@@ -16,6 +16,7 @@ class ChatController extends ChangeNotifier {
     this.messagesPath,
   }) {
     _listenForMessages();
+    _listenToTyping();
   }
 
   final FirebaseService _firebase = FirebaseService.instance;
@@ -41,7 +42,19 @@ class ChatController extends ChangeNotifier {
   ChatMessage? editingMessage;
   bool get isEditing => editingMessage != null;
 
+  /// DisplayIds of other participants currently typing.
+  List<String> typingDisplayIds = [];
+
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
+      _typingSubscription;
+
+  Timer? _typingDebounceTimer;
+  Timer? _typingClearTimer;
+
+  /// True once we have written our own typing status to Firestore, so we know
+  /// it is safe (and necessary) to delete it on clear.
+  bool _isTypingSet = false;
 
   void _listenForMessages() {
     debugPrint('OrgId: $organizationId');
@@ -70,6 +83,10 @@ class ChatController extends ChangeNotifier {
   Future<void> sendMessage() async {
     final text = messageController.text.trim();
     if (text.isEmpty) return;
+
+    _typingDebounceTimer?.cancel();
+    _typingClearTimer?.cancel();
+    _setTyping(false).ignore();
 
     isSending = true;
     errorMessage = null;
@@ -155,6 +172,89 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ─── Typing indicators ───────────────────────────────────────────────────
+
+  /// Called by the TextField's onChanged; debounces Firestore writes and
+  /// auto-clears the status after 4 s of inactivity.
+  void onTextChanged(String text) {
+    if (text.isNotEmpty) {
+      _typingDebounceTimer?.cancel();
+      _typingDebounceTimer = Timer(
+        const Duration(milliseconds: 300),
+        () => _setTyping(true).ignore(),
+      );
+      _typingClearTimer?.cancel();
+      _typingClearTimer = Timer(
+        const Duration(seconds: 4),
+        () => _setTyping(false).ignore(),
+      );
+    } else {
+      _typingDebounceTimer?.cancel();
+      _typingClearTimer?.cancel();
+      _setTyping(false).ignore();
+    }
+  }
+
+  void _listenToTyping() {
+    _typingSubscription = _chatDocRef().snapshots().listen(
+      (snap) {
+        if (!snap.exists) return;
+        final data = snap.data() ?? {};
+        final raw = Map<String, dynamic>.from(data['typing'] as Map? ?? {});
+        final now = DateTime.now();
+        typingDisplayIds = raw.entries
+            .where((e) => e.key != displayId)
+            .where((e) {
+              final ts = e.value;
+              if (ts is Timestamp) {
+                return now.difference(ts.toDate()) <
+                    const Duration(seconds: 10);
+              }
+              return false;
+            })
+            .map((e) => e.key)
+            .toList();
+        notifyListeners();
+      },
+      onError: (_) {},
+    );
+  }
+
+  Future<void> _setTyping(bool isTyping) async {
+    try {
+      if (isTyping) {
+        await _chatDocRef().set(
+          {
+            'typing': {displayId: FieldValue.serverTimestamp()},
+          },
+          SetOptions(merge: true),
+        );
+        _isTypingSet = true;
+      } else if (_isTypingSet) {
+        await _chatDocRef()
+            .update({'typing.$displayId': FieldValue.delete()});
+        _isTypingSet = false;
+      }
+    } catch (_) {}
+  }
+
+  /// Returns the document that owns this chat (parent of the messages
+  /// collection). Used to read/write the `typing` map.
+  DocumentReference<Map<String, dynamic>> _chatDocRef() {
+    if (messagesPath != null && messagesPath!.isNotEmpty) {
+      // e.g. "organizations/orgId/private_chats/chatId/messages"
+      //  → drop the last path segment to get the chat document.
+      final segments = messagesPath!.split('/');
+      final docPath = segments.sublist(0, segments.length - 1).join('/');
+      return _firebase.firestore.doc(docPath);
+    }
+    return _firebase.firestore
+        .collection('organizations')
+        .doc(organizationId)
+        .collection('departments')
+        .doc(_normalizedDepartmentId());
+  }
+
   // ─── Read receipts ───────────────────────────────────────────────────────
 
   /// Batch-marks every message sent by someone else as read by [displayId].
@@ -227,6 +327,10 @@ class ChatController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _typingDebounceTimer?.cancel();
+    _typingClearTimer?.cancel();
+    _setTyping(false).ignore();
+    _typingSubscription?.cancel();
     messageController.dispose();
     scrollController.dispose();
     inputFocusNode.dispose();
