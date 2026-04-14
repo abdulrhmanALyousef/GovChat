@@ -7,7 +7,7 @@ import '../../core/services/session_manager.dart';
 import '../../models/admin_model.dart';
 import '../../models/employee_model.dart';
 import '../../roles/Admin/features/Main/admin_main_screen.dart';
-import '../../roles/employee/features/chat/employee_chat_screen.dart';
+import '../../roles/employee/features/chat_list/chat_list_screen.dart';
 import '../../roles/primary Admin/Features/Main/main_screen.dart';
 import '../change_password_screen.dart';
 import '../request_access_screen.dart';
@@ -152,7 +152,7 @@ class LoginController extends ChangeNotifier {
             );
             return;
           }
-          destination = EmployeeChatScreen(employee: employee);
+          destination = ChatListScreen(employee: employee);
           break;
         default:
           errorMessage = 'Unknown role: ${user.role}';

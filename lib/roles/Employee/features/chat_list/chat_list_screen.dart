@@ -1,0 +1,340 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../core/constants/app_size.dart';
+import '../../../../core/services/session_manager.dart';
+import '../../../../core/theme/app_color.dart';
+import '../../../../models/conversation_model.dart';
+import '../../../../models/employee_model.dart';
+import '../chat/employee_chat_screen.dart';
+import 'controller/chat_list_controller.dart';
+
+class ChatListScreen extends StatelessWidget {
+  const ChatListScreen({super.key, required this.employee});
+
+  final EmployeeModel employee;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => ChatListController(employee: employee),
+      child: _ChatListView(employee: employee),
+    );
+  }
+}
+
+class _ChatListView extends StatelessWidget {
+  const _ChatListView({required this.employee});
+
+  final EmployeeModel employee;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.watch<ChatListController>();
+
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
+      appBar: AppBar(
+        backgroundColor: AppColors.cardBackground,
+        elevation: 0,
+        leading: Padding(
+          padding: EdgeInsets.only(left: AppSizes.pw16),
+          child: Icon(Icons.shield_outlined, color: AppColors.primaryColor),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              employee.name,
+              style: GoogleFonts.manrope(
+                color: AppColors.textTitle,
+                fontWeight: FontWeight.w800,
+                fontSize: AppSizes.sp16,
+              ),
+            ),
+            Text(
+              'MESSAGES',
+              style: GoogleFonts.manrope(
+                color: AppColors.textMuted,
+                fontSize: AppSizes.sp10,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: AppColors.textPrimary),
+            tooltip: 'Logout',
+            onPressed: () async {
+              await SessionManager.instance.logout(context);
+            },
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: controller.isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryColor,
+                ),
+              )
+            : controller.conversations.isEmpty
+                ? _EmptyState()
+                : _ConversationList(
+                    conversations: controller.conversations,
+                    employee: employee,
+                  ),
+      ),
+    );
+  }
+}
+
+class _ConversationList extends StatelessWidget {
+  const _ConversationList({
+    required this.conversations,
+    required this.employee,
+  });
+
+  final List<ConversationModel> conversations;
+  final EmployeeModel employee;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSizes.pw16,
+        vertical: AppSizes.ph12,
+      ),
+      itemCount: conversations.length,
+      separatorBuilder: (context, index) => const Divider(
+        color: AppColors.inputBorder,
+        height: 1,
+        thickness: 1,
+      ),
+      itemBuilder: (context, index) {
+        return _ConversationTile(
+          conversation: conversations[index],
+          employee: employee,
+        );
+      },
+    );
+  }
+}
+
+class _ConversationTile extends StatelessWidget {
+  const _ConversationTile({
+    required this.conversation,
+    required this.employee,
+  });
+
+  final ConversationModel conversation;
+  final EmployeeModel employee;
+
+  @override
+  Widget build(BuildContext context) {
+    final timeLabel = _formatTime(conversation.lastMessageTime);
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EmployeeChatScreen(employee: employee),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(AppSizes.r12),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          vertical: AppSizes.ph12,
+          horizontal: AppSizes.pw8,
+        ),
+        child: Row(
+          children: [
+            _ConversationAvatar(type: conversation.type),
+            SizedBox(width: AppSizes.w12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          conversation.name,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textTitle,
+                            fontWeight: FontWeight.w700,
+                            fontSize: AppSizes.sp14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (timeLabel != null)
+                        Text(
+                          timeLabel,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textMuted,
+                            fontSize: AppSizes.sp11,
+                          ),
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: AppSizes.h4),
+                  _LastMessagePreview(conversation: conversation),
+                  SizedBox(height: AppSizes.h4),
+                  _ConversationTypeBadge(type: conversation.type),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String? _formatTime(DateTime? dt) {
+    if (dt == null) return null;
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+}
+
+class _LastMessagePreview extends StatelessWidget {
+  const _LastMessagePreview({required this.conversation});
+
+  final ConversationModel conversation;
+
+  @override
+  Widget build(BuildContext context) {
+    final lastMsg = conversation.lastMessage;
+    final senderId = conversation.lastSenderId;
+
+    if (lastMsg == null || lastMsg.isEmpty) {
+      return Text(
+        'No messages yet',
+        style: GoogleFonts.manrope(
+          color: AppColors.textMuted,
+          fontSize: AppSizes.sp12,
+          fontStyle: FontStyle.italic,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        children: [
+          if (senderId != null && senderId.isNotEmpty)
+            TextSpan(
+              text: '$senderId: ',
+              style: GoogleFonts.manrope(
+                color: AppColors.primaryColor,
+                fontSize: AppSizes.sp12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          TextSpan(
+            text: lastMsg,
+            style: GoogleFonts.manrope(
+              color: AppColors.textMuted,
+              fontSize: AppSizes.sp12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConversationAvatar extends StatelessWidget {
+  const _ConversationAvatar({required this.type});
+
+  final String type;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon =
+        type == 'department' ? Icons.groups_outlined : Icons.chat_bubble_outline;
+
+    return Container(
+      height: AppSizes.h48,
+      width: AppSizes.w48,
+      decoration: BoxDecoration(
+        color: AppColors.sectionBackground,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.inputBorder),
+      ),
+      child: Icon(icon, color: AppColors.primaryColor, size: AppSizes.sp20),
+    );
+  }
+}
+
+class _ConversationTypeBadge extends StatelessWidget {
+  const _ConversationTypeBadge({required this.type});
+
+  final String type;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = type == 'department' ? 'GROUP CHAT' : 'PRIVATE';
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.lock_outline,
+          color: AppColors.textMuted,
+          size: AppSizes.sp10,
+        ),
+        SizedBox(width: AppSizes.w6),
+        Text(
+          label,
+          style: GoogleFonts.manrope(
+            color: AppColors.textMuted,
+            fontSize: AppSizes.sp10,
+            letterSpacing: 0.8,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            color: AppColors.textMuted,
+            size: AppSizes.sp40,
+          ),
+          SizedBox(height: AppSizes.h16),
+          Text(
+            'No conversations yet',
+            style: GoogleFonts.manrope(
+              color: AppColors.textMuted,
+              fontSize: AppSizes.sp16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
