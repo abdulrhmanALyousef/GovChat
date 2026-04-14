@@ -12,6 +12,7 @@ class ChatController extends ChangeNotifier {
     required this.departmentId,
     required this.departmentName,
     required this.displayId,
+    this.messagesPath,
   }) {
     _listenForMessages();
   }
@@ -25,6 +26,11 @@ class ChatController extends ChangeNotifier {
   final String departmentName;
   final String displayId;
 
+  /// When set, overrides the default department-based Firestore path.
+  /// Must be a full slash-separated collection path, e.g.:
+  /// "organizations/orgId/private_chats/chatId/messages"
+  final String? messagesPath;
+
   List<ChatMessage> messages = [];
   bool isSending = false;
   String? errorMessage;
@@ -35,12 +41,7 @@ class ChatController extends ChangeNotifier {
     debugPrint('OrgId: $organizationId');
     debugPrint('DeptId: $departmentId');
 
-    _subscription = _firebase.firestore
-        .collection('organizations')
-        .doc(organizationId)
-        .collection('departments')
-        .doc(_normalizedDepartmentId())
-        .collection('messages')
+    _subscription = _messagesCollection()
         .orderBy('createdAt')
         .snapshots()
         .listen(
@@ -68,13 +69,7 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _firebase.firestore
-          .collection('organizations')
-          .doc(organizationId)
-          .collection('departments')
-          .doc(_normalizedDepartmentId())
-          .collection('messages')
-          .add({
+      await _messagesCollection().add({
             'text': text,
             'senderId': displayId,
             'organizationId': organizationId,
@@ -90,6 +85,18 @@ class ChatController extends ChangeNotifier {
 
     isSending = false;
     notifyListeners();
+  }
+
+  CollectionReference<Map<String, dynamic>> _messagesCollection() {
+    if (messagesPath != null && messagesPath!.isNotEmpty) {
+      return _firebase.firestore.collection(messagesPath!);
+    }
+    return _firebase.firestore
+        .collection('organizations')
+        .doc(organizationId)
+        .collection('departments')
+        .doc(_normalizedDepartmentId())
+        .collection('messages');
   }
 
   void _scrollToBottom() {
