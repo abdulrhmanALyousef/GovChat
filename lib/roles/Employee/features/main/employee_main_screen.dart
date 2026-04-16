@@ -112,7 +112,7 @@ class _EmployeeMainScreenState extends State<EmployeeMainScreen> {
           ],
         ),
       ),
-      body: _screens[_currentIndex],
+      body: IndexedStack(index: _currentIndex, children: _screens),
     );
   }
 
