@@ -64,8 +64,17 @@ createdByDisplayId  String   — e.g. "EMP-XXXXX" — used for ownership checks
 createdByName       String
 likes               Int      — default 0
 commentsCount       Int      — default 0
+likedBy             [String] — display-IDs of employees who liked the post
 ```
-**Index required:** collection-group index on `posts` / `createdAt DESC`.
+**No index required** — collection-group query has no `orderBy`; sorted client-side.
+
+### `employees/{employeeId}/posts/{postId}/comments/{commentId}`
+```
+text                String
+createdAt           Timestamp
+createdByDisplayId  String
+createdByName       String
+```
 
 ---
 
@@ -77,7 +86,8 @@ commentsCount       Int      — default 0
 | `EmployeeModel` | `lib/models/employee_model.dart` | id, name, email, nationalId, organizationId, organizationName, department, departmentId, displayId, status |
 | `ConversationModel` | `lib/models/conversation_model.dart` | id, name, type, lastMessage, lastMessageTime, organizationId, departmentId |
 | `ChatMessage` | `lib/models/chat_message.dart` | id, text, senderId, createdAt, isEdited, status |
-| `PostModel` | `lib/models/post_model.dart` | id, employeeId, text, mediaUrls, createdAt, createdByDisplayId, createdByName, likes, commentsCount + `copyWith()` |
+| `PostModel` | `lib/models/post_model.dart` | id, employeeId, text, mediaUrls, createdAt, createdByDisplayId, createdByName, likes, commentsCount, likedBy + `copyWith()` |
+| `CommentModel` | `lib/models/comment_model.dart` | id, text, createdAt, createdByDisplayId, createdByName |
 
 ---
 

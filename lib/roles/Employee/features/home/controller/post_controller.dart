@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
@@ -86,6 +87,28 @@ class PostController extends ChangeNotifier {
             notifyListeners();
           },
         );
+  }
+
+  // ─── Like ────────────────────────────────────────────────────────────────
+
+  /// Toggles like on a post for [currentDisplayId].
+  /// Adds to [likedBy] array and increments [likes] if not yet liked;
+  /// removes and decrements if already liked.
+  Future<void> toggleLike(PostModel post, String currentDisplayId) async {
+    if (post.id == null || post.employeeId.isEmpty) return;
+    final ref = FirebaseService.instance.firestore
+        .collection('employees')
+        .doc(post.employeeId)
+        .collection('posts')
+        .doc(post.id!);
+
+    final alreadyLiked = post.likedBy.contains(currentDisplayId);
+    await ref.update({
+      'likedBy': alreadyLiked
+          ? FieldValue.arrayRemove([currentDisplayId])
+          : FieldValue.arrayUnion([currentDisplayId]),
+      'likes': FieldValue.increment(alreadyLiked ? -1 : 1),
+    });
   }
 
   // ─── Delete ───────────────────────────────────────────────────────────────

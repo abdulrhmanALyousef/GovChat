@@ -14,6 +14,9 @@ class PostModel {
   final int likes;
   final int commentsCount;
 
+  /// Display-IDs of employees who have liked this post.
+  final List<String> likedBy;
+
   const PostModel({
     this.id,
     required this.employeeId,
@@ -24,6 +27,7 @@ class PostModel {
     required this.createdByName,
     this.likes = 0,
     this.commentsCount = 0,
+    this.likedBy = const [],
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json, {String? id}) {
@@ -41,6 +45,9 @@ class PostModel {
       createdByName: json['createdByName'] as String? ?? '',
       likes: (json['likes'] as num?)?.toInt() ?? 0,
       commentsCount: (json['commentsCount'] as num?)?.toInt() ?? 0,
+      likedBy: List<String>.from(
+        (json['likedBy'] as List<dynamic>?) ?? [],
+      ),
     );
   }
 
@@ -54,6 +61,7 @@ class PostModel {
       'createdByName': createdByName,
       'likes': likes,
       'commentsCount': commentsCount,
+      'likedBy': likedBy,
     };
   }
 
@@ -62,6 +70,7 @@ class PostModel {
     List<String>? mediaUrls,
     int? likes,
     int? commentsCount,
+    List<String>? likedBy,
   }) {
     return PostModel(
       id: id,
@@ -73,6 +82,7 @@ class PostModel {
       createdByName: createdByName,
       likes: likes ?? this.likes,
       commentsCount: commentsCount ?? this.commentsCount,
+      likedBy: likedBy ?? this.likedBy,
     );
   }
 }
