@@ -177,6 +177,7 @@ class ChatController extends ChangeNotifier {
   /// Called by the TextField's onChanged; debounces Firestore writes and
   /// auto-clears the status after 4 s of inactivity.
   void onTextChanged(String text) {
+    debugPrint('[Typing] onTextChanged: "${text.length} chars"');
     if (text.isNotEmpty) {
       _typingDebounceTimer?.cancel();
       _typingDebounceTimer = Timer(
@@ -196,11 +197,20 @@ class ChatController extends ChangeNotifier {
   }
 
   void _listenToTyping() {
+    debugPrint('[Typing] _listenToTyping() started for doc: ${_chatDocRef().path}');
     _typingSubscription = _chatDocRef().snapshots().listen(
       (snap) {
-        if (!snap.exists) return;
+        if (!snap.exists) {
+          debugPrint('[Typing] chat doc does not exist');
+          if (typingDisplayIds.isNotEmpty) {
+            typingDisplayIds = [];
+            notifyListeners();
+          }
+          return;
+        }
         final data = snap.data() ?? {};
         final raw = Map<String, dynamic>.from(data['typing'] as Map? ?? {});
+        debugPrint('[Typing] raw typing map: $raw');
         final now = DateTime.now();
         typingDisplayIds = raw.entries
             .where((e) => e.key != displayId)
@@ -214,28 +224,35 @@ class ChatController extends ChangeNotifier {
             })
             .map((e) => e.key)
             .toList();
+        debugPrint('[Typing] typingDisplayIds: $typingDisplayIds');
         notifyListeners();
       },
-      onError: (_) {},
+      onError: (e) {
+        debugPrint('[Typing] stream error: $e');
+      },
     );
   }
 
   Future<void> _setTyping(bool isTyping) async {
     try {
       if (isTyping) {
+        debugPrint('[Typing] setting typing=true for $displayId');
         await _chatDocRef().set(
           {
             'typing': {displayId: FieldValue.serverTimestamp()},
           },
-          SetOptions(merge: true),
+          SetOptions(mergeFields: [FieldPath(['typing', displayId])]),
         );
         _isTypingSet = true;
       } else if (_isTypingSet) {
+        debugPrint('[Typing] clearing typing for $displayId');
         await _chatDocRef()
             .update({'typing.$displayId': FieldValue.delete()});
         _isTypingSet = false;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[Typing] _setTyping error: $e');
+    }
   }
 
   /// Returns the document that owns this chat (parent of the messages
