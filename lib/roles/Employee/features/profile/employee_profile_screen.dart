@@ -167,37 +167,26 @@ class EmployeeProfileScreen extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       height: AppSizes.h48,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              AppColors.gradientStart,
-                              AppColors.gradientEnd,
-                            ],
+                      child: ElevatedButton.icon(
+                        onPressed: () => _confirmLogout(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          shadowColor: Colors.transparent,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSizes.r12),
                           ),
-                          borderRadius: BorderRadius.circular(AppSizes.r12),
                         ),
-                        child: ElevatedButton.icon(
-                          onPressed: () => _confirmLogout(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppSizes.r12),
-                            ),
-                          ),
-                          icon: const Icon(
-                            Icons.logout,
-                            color: AppColors.buttonText,
-                          ),
-                          label: Text(
-                            'Logout',
-                            style: GoogleFonts.manrope(
-                              color: AppColors.buttonText,
-                              fontWeight: FontWeight.w800,
-                              fontSize: AppSizes.sp14,
-                            ),
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          color: AppColors.textPrimary,
+                        ),
+                        label: Text(
+                          'Sign Out',
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: AppSizes.sp14,
                           ),
                         ),
                       ),
@@ -213,50 +202,114 @@ class EmployeeProfileScreen extends StatelessWidget {
   }
 
   Future<void> _confirmLogout(BuildContext context) async {
-    final shouldLogout =
-        await showDialog<bool>(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              backgroundColor: AppColors.cardBackground,
-              title: Text(
-                'Confirm Logout',
-                style: GoogleFonts.manrope(
-                  color: AppColors.textTitle,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              content: Text(
-                'This will sign you out and clear your local session.',
-                style: GoogleFonts.manrope(
-                  color: AppColors.textSubtitle,
-                  fontSize: AppSizes.sp13,
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text(
-                    'CANCEL',
-                    style: GoogleFonts.manrope(color: AppColors.textMuted),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text(
-                    'LOGOUT',
-                    style: GoogleFonts.manrope(color: AppColors.primaryColor),
-                  ),
-                ),
-              ],
-            );
-          },
-        ) ??
-        false;
-
+    final shouldLogout = await _showLogoutDialog(context);
     if (!shouldLogout || !context.mounted) return;
     await SessionManager.instance.logout(context);
   }
+}
+
+Future<bool> _showLogoutDialog(BuildContext context) async {
+  return await showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) => Dialog(
+          backgroundColor: AppColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizes.r20),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(AppSizes.pw24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(AppSizes.ph16),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.logout_rounded,
+                    color: AppColors.error,
+                    size: AppSizes.sp28,
+                  ),
+                ),
+                SizedBox(height: AppSizes.h16),
+                Text(
+                  'Sign Out',
+                  style: GoogleFonts.manrope(
+                    color: AppColors.textTitle,
+                    fontWeight: FontWeight.w800,
+                    fontSize: AppSizes.sp18,
+                  ),
+                ),
+                SizedBox(height: AppSizes.h8),
+                Text(
+                  'You will be signed out and your local session will be cleared from this device.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.manrope(
+                    color: AppColors.textMuted,
+                    fontSize: AppSizes.sp13,
+                    height: 1.5,
+                  ),
+                ),
+                SizedBox(height: AppSizes.h24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.inputBorder),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSizes.r12),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSizes.ph14,
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w600,
+                            fontSize: AppSizes.sp14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: AppSizes.w12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSizes.r12),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSizes.ph14,
+                          ),
+                        ),
+                        child: Text(
+                          'Sign Out',
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: AppSizes.sp14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ) ??
+      false;
 }
 
 class _InfoRow extends StatelessWidget {

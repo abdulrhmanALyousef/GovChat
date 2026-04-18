@@ -66,9 +66,11 @@ class _ChatListView extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.textPrimary),
-            tooltip: 'Logout',
+            icon: const Icon(Icons.logout_rounded, color: AppColors.error),
+            tooltip: 'Sign Out',
             onPressed: () async {
+              final confirmed = await _showLogoutDialog(context);
+              if (!confirmed || !context.mounted) return;
               await SessionManager.instance.logout(context);
             },
           ),
@@ -267,14 +269,21 @@ class _ConversationTile extends StatelessWidget {
 
   void _openChat(BuildContext context) {
     final isPrivate = conversation.type == 'private';
+    final isOrg = conversation.type == 'organization';
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => EmployeeChatScreen(
           employee: employee,
-          chatTitle: isPrivate ? conversation.name : null,
-          chatSubtitle: isPrivate ? 'PRIVATE CHAT' : null,
-          messagesPath: isPrivate ? conversation.messagesCollectionPath : null,
+          chatTitle: (isPrivate || isOrg) ? conversation.name : null,
+          chatSubtitle: isPrivate
+              ? 'PRIVATE CHAT'
+              : isOrg
+                  ? 'ORG CHAT'
+                  : null,
+          messagesPath: (isPrivate || isOrg)
+              ? conversation.messagesCollectionPath
+              : null,
         ),
       ),
     );
@@ -348,8 +357,11 @@ class _ConversationAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final icon =
-        type == 'department' ? Icons.groups_outlined : Icons.chat_bubble_outline;
+    final icon = type == 'organization'
+        ? Icons.corporate_fare_outlined
+        : type == 'department'
+            ? Icons.groups_outlined
+            : Icons.chat_bubble_outline;
 
     return Container(
       height: AppSizes.h48,
@@ -371,7 +383,11 @@ class _ConversationTypeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = type == 'department' ? 'GROUP CHAT' : 'PRIVATE';
+    final label = type == 'organization'
+        ? 'ORG CHAT'
+        : type == 'department'
+            ? 'GROUP CHAT'
+            : 'PRIVATE';
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -420,4 +436,108 @@ class _EmptyState extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<bool> _showLogoutDialog(BuildContext context) async {
+  return await showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) => Dialog(
+          backgroundColor: AppColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizes.r20),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(AppSizes.pw24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(AppSizes.ph16),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.logout_rounded,
+                    color: AppColors.error,
+                    size: AppSizes.sp28,
+                  ),
+                ),
+                SizedBox(height: AppSizes.h16),
+                Text(
+                  'Sign Out',
+                  style: GoogleFonts.manrope(
+                    color: AppColors.textTitle,
+                    fontWeight: FontWeight.w800,
+                    fontSize: AppSizes.sp18,
+                  ),
+                ),
+                SizedBox(height: AppSizes.h8),
+                Text(
+                  'You will be signed out and your local session will be cleared from this device.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.manrope(
+                    color: AppColors.textMuted,
+                    fontSize: AppSizes.sp13,
+                    height: 1.5,
+                  ),
+                ),
+                SizedBox(height: AppSizes.h24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.inputBorder),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSizes.r12),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSizes.ph14,
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w600,
+                            fontSize: AppSizes.sp14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: AppSizes.w12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSizes.r12),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSizes.ph14,
+                          ),
+                        ),
+                        child: Text(
+                          'Sign Out',
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: AppSizes.sp14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ) ??
+      false;
 }

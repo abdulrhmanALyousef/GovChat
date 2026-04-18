@@ -130,33 +130,19 @@ class _PostDetailsView extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    _Avatar(name: post.createdByName),
+                    _Avatar(displayId: post.createdByDisplayId),
                     SizedBox(width: AppSizes.w10),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            post.createdByName,
-                            style: GoogleFonts.manrope(
-                              color: AppColors.textTitle,
-                              fontWeight: FontWeight.w700,
-                              fontSize: AppSizes.sp14,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: AppSizes.h2),
-                          Text(
-                            post.createdByDisplayId,
-                            style: GoogleFonts.manrope(
-                              color: AppColors.primaryColor,
-                              fontSize: AppSizes.sp10,
-                              letterSpacing: 0.8,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        post.createdByDisplayId,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.primaryColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: AppSizes.sp14,
+                          letterSpacing: 0.8,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Text(
@@ -341,7 +327,7 @@ class _CommentTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Avatar(name: comment.createdByName, size: 34),
+          _Avatar(displayId: comment.createdByDisplayId, size: 34),
           SizedBox(width: AppSizes.w10),
           Expanded(
             child: Column(
@@ -351,11 +337,12 @@ class _CommentTile extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        comment.createdByName,
+                        comment.createdByDisplayId,
                         style: GoogleFonts.manrope(
-                          color: AppColors.textTitle,
+                          color: AppColors.primaryColor,
                           fontWeight: FontWeight.w700,
                           fontSize: AppSizes.sp13,
+                          letterSpacing: 0.6,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -369,16 +356,6 @@ class _CommentTile extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
-                SizedBox(height: AppSizes.h2),
-                Text(
-                  comment.createdByDisplayId,
-                  style: GoogleFonts.manrope(
-                    color: AppColors.primaryColor,
-                    fontSize: AppSizes.sp10,
-                    letterSpacing: 0.6,
-                    fontWeight: FontWeight.w600,
-                  ),
                 ),
                 SizedBox(height: AppSizes.h6),
                 Text(
@@ -553,14 +530,14 @@ class _CommentInputBarState extends State<_CommentInputBar> {
 // ─── Shared avatar ────────────────────────────────────────────────────────────
 
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.name, this.size = 42});
+  const _Avatar({required this.displayId, this.size = 42});
 
-  final String name;
+  final String displayId;
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final initial = displayId.isNotEmpty ? displayId[0].toUpperCase() : '?';
     return Container(
       width: size,
       height: size,
