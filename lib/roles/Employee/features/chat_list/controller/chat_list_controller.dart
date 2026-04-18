@@ -33,8 +33,29 @@ class ChatListController extends ChangeNotifier {
   // ─── Init ────────────────────────────────────────────────────────────────
 
   void _init() {
+    _addOrganizationChat();
     _addDepartmentChat();
     _listenToPrivateChats();
+  }
+
+  // ─── Organization-wide general chat ──────────────────────────────────────
+
+  void _addOrganizationChat() {
+    const convId = 'org_general';
+
+    final conv = ConversationModel(
+      id: convId,
+      name: employee.organizationName.isNotEmpty
+          ? employee.organizationName
+          : 'General Chat',
+      type: 'organization',
+      organizationId: employee.organizationId,
+      departmentId: '',
+      department: '',
+    );
+
+    _convMap[convId] = conv;
+    _subscribeToLastMessage(convId, conv.messagesCollectionPath);
   }
 
   // ─── Department chat ──────────────────────────────────────────────────────
@@ -105,14 +126,14 @@ class ChatListController extends ChangeNotifier {
     final otherId =
         participants.firstWhere((id) => id != myId, orElse: () => '');
 
-    final names = _toStringMap(data['participantNames']);
-    final otherName = names[otherId]?.trim().isNotEmpty == true
-        ? names[otherId]!
+    final displayIds = _toStringMap(data['participantDisplayIds']);
+    final otherDisplayId = displayIds[otherId]?.trim().isNotEmpty == true
+        ? displayIds[otherId]!
         : 'Unknown';
 
     final conv = ConversationModel(
       id: chatId,
-      name: otherName,
+      name: otherDisplayId,
       type: 'private',
       organizationId: employee.organizationId,
       departmentId: '',
@@ -163,15 +184,10 @@ class ChatListController extends ChangeNotifier {
 
   // ─── List ordering ────────────────────────────────────────────────────────
 
-  /// Department chat always appears at the top; private chats are sorted
-  /// by most-recent message, newest first.
+  /// All conversations sorted by most-recent message, newest first.
+  /// Conversations with no messages yet sink to the bottom.
   void _rebuildList() {
-    final dept =
-        _convMap.values.where((c) => c.type == 'department').toList();
-
-    final privates = _convMap.values
-        .where((c) => c.type == 'private')
-        .toList()
+    conversations = _convMap.values.toList()
       ..sort((a, b) {
         final aTime =
             a.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -179,8 +195,6 @@ class ChatListController extends ChangeNotifier {
             b.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
         return bTime.compareTo(aTime);
       });
-
-    conversations = [...dept, ...privates];
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

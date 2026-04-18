@@ -442,33 +442,19 @@ class _PostCardState extends State<PostCard>
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      _PostAvatar(name: post.createdByName),
+                      _PostAvatar(displayId: post.createdByDisplayId),
                       SizedBox(width: AppSizes.w10),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              post.createdByName,
-                              style: GoogleFonts.manrope(
-                                color: AppColors.textTitle,
-                                fontWeight: FontWeight.w700,
-                                fontSize: AppSizes.sp14,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: AppSizes.h2),
-                            Text(
-                              post.createdByDisplayId,
-                              style: GoogleFonts.manrope(
-                                color: AppColors.primaryColor,
-                                fontSize: AppSizes.sp10,
-                                letterSpacing: 0.8,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          post.createdByDisplayId,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.primaryColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: AppSizes.sp14,
+                            letterSpacing: 0.8,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Text(
@@ -707,13 +693,13 @@ enum _PostAction { edit, delete }
 // ─── Post avatar ──────────────────────────────────────────────────────────────
 
 class _PostAvatar extends StatelessWidget {
-  const _PostAvatar({required this.name});
+  const _PostAvatar({required this.displayId});
 
-  final String name;
+  final String displayId;
 
   @override
   Widget build(BuildContext context) {
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final initial = displayId.isNotEmpty ? displayId[0].toUpperCase() : '?';
     return Container(
       width: AppSizes.w42,
       height: AppSizes.h42,

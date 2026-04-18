@@ -108,7 +108,7 @@ class _NewChatView extends StatelessWidget {
       MaterialPageRoute(
         builder: (_) => EmployeeChatScreen(
           employee: currentEmployee,
-          chatTitle: other.name,
+          chatTitle: other.displayId,
           chatSubtitle: 'PRIVATE CHAT',
           messagesPath: messagesPath,
         ),
@@ -225,28 +225,15 @@ class _EmployeeTile extends StatelessWidget {
             _Avatar(),
             SizedBox(width: AppSizes.w12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    employee.name,
-                    style: GoogleFonts.manrope(
-                      color: AppColors.textTitle,
-                      fontWeight: FontWeight.w700,
-                      fontSize: AppSizes.sp14,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: AppSizes.h4),
-                  Text(
-                    employee.displayId,
-                    style: GoogleFonts.manrope(
-                      color: AppColors.textMuted,
-                      fontSize: AppSizes.sp12,
-                    ),
-                  ),
-                ],
+              child: Text(
+                employee.displayId,
+                style: GoogleFonts.manrope(
+                  color: AppColors.textTitle,
+                  fontWeight: FontWeight.w700,
+                  fontSize: AppSizes.sp14,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             Icon(

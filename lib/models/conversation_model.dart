@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ConversationModel {
   final String id;
   final String name;
-  final String type; // 'department', 'private'
+  final String type; // 'organization', 'department', 'private'
   final String? lastMessage;
   final String? lastSenderId;
   final DateTime? lastMessageTime;
@@ -45,6 +45,9 @@ class ConversationModel {
   String get messagesCollectionPath {
     if (type == 'private') {
       return 'organizations/$organizationId/private_chats/$id/messages';
+    }
+    if (type == 'organization') {
+      return 'organizations/$organizationId/org_chats/general/messages';
     }
     return 'organizations/$organizationId/departments/$departmentId/messages';
   }

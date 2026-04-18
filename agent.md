@@ -32,6 +32,15 @@ organizationId?, organizationName?, createdAt
 name, city, address?, industry?, employeeRange?, createdAt
 ```
 
+### `organizations/{orgId}/org_chats/general`
+Organization-wide general chat document. Holds the `typing` map (same shape as department chat).
+
+### `organizations/{orgId}/org_chats/general/messages/{msgId}`
+Organization-wide general chat messages. Shared across every employee in the organization.
+```
+text, senderId, createdAt, isEdited, status (map), deletedAt?
+```
+
 ### `organizations/{orgId}/departments/{deptId}/messages/{msgId}`
 Department group-chat messages.
 ```
@@ -84,7 +93,7 @@ createdByName       String
 |---|---|---|
 | `AdminModel` | `lib/models/admin_model.dart` | uid, email, role, organizationId, firstLogin, mustChangePassword |
 | `EmployeeModel` | `lib/models/employee_model.dart` | id, name, email, nationalId, organizationId, organizationName, department, departmentId, displayId, status |
-| `ConversationModel` | `lib/models/conversation_model.dart` | id, name, type, lastMessage, lastMessageTime, organizationId, departmentId |
+| `ConversationModel` | `lib/models/conversation_model.dart` | id, name, type (`'organization'`\|`'department'`\|`'private'`), lastMessage, lastMessageTime, organizationId, departmentId |
 | `ChatMessage` | `lib/models/chat_message.dart` | id, text, senderId, createdAt, isEdited, status |
 | `PostModel` | `lib/models/post_model.dart` | id, employeeId, text, mediaUrls, createdAt, createdByDisplayId, createdByName, likes, commentsCount, likedBy + `copyWith()` |
 | `CommentModel` | `lib/models/comment_model.dart` | id, text, createdAt, createdByDisplayId, createdByName |
@@ -113,9 +122,51 @@ Password-rotation screens intercept before destination for `admin`/`primary_admi
 |---|---|---|---|
 | 0 | HOME | `HomeScreen` | Live — post feed + create/edit/delete |
 | 1 | ANNOUNCE | `AnnounceScreen` | Under development |
-| 2 | CHAT | `ChatListScreen` | Live — department + private chats |
+| 2 | CHAT | `ChatListScreen` | Live — org general + department + private chats |
 | 3 | REMIND | `RemindScreen` | Under development |
 | 4 | PROFILE | `EmployeeProfileScreen` | Live — employee info + logout |
+
+---
+
+## Organization-Wide General Chat
+
+All employees in the same organization share a single general chat, separate from and independent of department chats.
+
+### Firestore paths
+
+| Path | Purpose |
+|---|---|
+| `organizations/{orgId}/org_chats/general` | Chat document — holds the `typing` map |
+| `organizations/{orgId}/org_chats/general/messages/{msgId}` | Messages subcollection |
+
+Message schema is identical to department messages: `text, senderId, createdAt, isEdited, status (map), deletedAt?`.
+
+### ConversationModel — type `'organization'`
+
+`messagesCollectionPath` returns `organizations/{orgId}/org_chats/general/messages` when `type == 'organization'`.
+
+### ChatListController (`features/chat_list/controller/chat_list_controller.dart`)
+
+- `_addOrganizationChat()` — called first in `_init()`. Inserts a `ConversationModel(type:'organization', id:'org_general')` into `_convMap` and subscribes to its last-message stream. Chat name defaults to `employee.organizationName` or `'General Chat'`.
+- `_rebuildList()` — all conversation types (org, department, private) sorted together by `lastMessageTime` descending. Conversations with no messages yet sink to the bottom. No type has a fixed pinned position.
+- Private chat `name` is set to the other participant's `displayId` (from `participantDisplayIds` map in the Firestore doc), **not** their full name.
+
+### ChatListScreen UI (`features/chat_list/chat_list_screen.dart`)
+
+| Element | Org value |
+|---|---|
+| `_ConversationAvatar` icon | `Icons.corporate_fare_outlined` |
+| `_ConversationTypeBadge` label | `'ORG CHAT'` |
+| AppBar subtitle on open | `'ORG CHAT'` |
+
+### Navigation flow
+
+`_ConversationTile._openChat()` detects `type == 'organization'` and opens the existing `EmployeeChatScreen` with:
+- `chatTitle` = `conversation.name` (org name)
+- `chatSubtitle` = `'ORG CHAT'`
+- `messagesPath` = `conversation.messagesCollectionPath`
+
+The existing `ChatController` derives the typing-indicator document reference by dropping the last path segment from `messagesPath`, yielding `organizations/{orgId}/org_chats/general` — no controller changes required.
 
 ---
 
@@ -159,10 +210,19 @@ has completed successfully** and returned a valid download URL.
 
 **`PostController`** (`features/home/controller/post_controller.dart`)
 - `ChangeNotifier`
-- Opens a real-time `collectionGroup('posts').orderBy('createdAt', descending: true)` stream on init.
+- Opens a real-time `collectionGroup('posts')` stream on init (no `orderBy`).
 - Exposes: `List<PostModel> posts`, `bool isLoading`, `String? errorMessage`.
+- `toggleLike(PostModel, String currentDisplayId)` — `FieldValue.arrayUnion/Remove` on `likedBy` + `FieldValue.increment(±1)` on `likes`.
 - `deletePost(PostModel)` — deletes the Firestore document. Caller must verify ownership first.
 - Dispose cancels the stream subscription.
+
+**`PostDetailsController`** (`features/home/controller/post_details_controller.dart`)
+- `ChangeNotifier`, requires `employeeId` + `postId`.
+- Streams a single post document (regular snapshots — immediate updates for likes).
+- Streams the `comments` subcollection with `includeMetadataChanges: true`; sorts client-side ascending (oldest first); `null createdAt` (pending write) floats to bottom.
+- `toggleLike(String currentDisplayId)` — same array + increment logic as PostController.
+- `addComment({text, createdByDisplayId, createdByName})` — `WriteBatch`: sets comment doc + increments `commentsCount`.
+- Dispose cancels both subscriptions.
 
 **`CreatePostController`** (`features/home/controller/create_post_controller.dart`)
 - `ChangeNotifier`, requires `EmployeeModel`. Accepts optional `PostModel? existingPost`.
@@ -187,6 +247,7 @@ has completed successfully** and returned a valid download URL.
 - Provides `PostController`.
 - Shows shimmer cards while loading, error state, empty state, or feed.
 - Passes `employee.displayId` as `currentDisplayId` to every `PostCard`.
+- **`NewChatScreen`** (`features/new_chat/new_chat_screen.dart`) employee tiles show only `displayId` (no name). `chatTitle` passed to `EmployeeChatScreen` is also `other.displayId`.
 - Handles **delete confirmation dialog** before calling `PostController.deletePost`.
 - Fixed **ADD POST** gradient button at bottom (same style as NEW CHAT in chat list).
 
@@ -201,8 +262,7 @@ has completed successfully** and returned a valid download URL.
 ### PostCard layout
 ```
 ┌─────────────────────────────────────────────┐
-│ [Avatar]  Name                   2h ago  ⋮  │  ← ⋮ only for post owner
-│           EMP-XXXXX                          │
+│ [Avatar]  EMP-XXXXX              2h ago  ⋮  │  ← ⋮ only for post owner
 │                                              │
 │  Post text content...                        │
 │                                              │
@@ -213,14 +273,18 @@ has completed successfully** and returned a valid download URL.
 └─────────────────────────────────────────────┘
 ```
 
-Field usage in the card:
-- `createdByName` → bold name in header
-- `createdByDisplayId` → green sub-label in header; compared to `currentDisplayId` for ownership
+Field usage in the card (both `PostCard` in feed and `PostDetailsScreen`):
+- `createdByDisplayId` → sole identifier in header (green, bold); compared to `currentDisplayId` for ownership. Employee name is **not shown** anywhere.
+- `_PostAvatar` / `_Avatar` shows first character of `createdByDisplayId` as the avatar initial.
 - `createdAt` → relative time string top-right (`Just now`, `2m ago`, `3h ago`, `5d ago`, `d/m/y`)
 - `text` → body paragraph (omitted if empty)
 - `mediaUrls` → single full-width image or horizontal scroll of tiles
 - `likes` → `♡ N Likes` chip in footer
 - `commentsCount` → `💬 N Comments` chip in footer
+
+**`PostDetailsScreen`** (`features/home/post_details_screen.dart`)
+- Post header: only `createdByDisplayId` shown (no name). `_Avatar` takes `displayId`.
+- Comment tiles (`_CommentTile`): only `createdByDisplayId` shown as the primary label (no name row). `_Avatar` takes `displayId`.
 
 ---
 
