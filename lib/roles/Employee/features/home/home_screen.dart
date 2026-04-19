@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -36,6 +37,7 @@ class _HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<PostController>();
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -61,7 +63,7 @@ class _HomeView extends StatelessWidget {
               ),
             ),
             Text(
-              'FEED',
+              l.feedLabel,
               style: GoogleFonts.manrope(
                 color: AppColors.textMuted,
                 fontSize: AppSizes.sp10,
@@ -74,7 +76,7 @@ class _HomeView extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            Expanded(child: _buildBody(context, controller)),
+            Expanded(child: _buildBody(context, controller, l)),
             _AddPostButton(employee: employee),
           ],
         ),
@@ -82,7 +84,7 @@ class _HomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(BuildContext context, PostController controller) {
+  Widget _buildBody(BuildContext context, PostController controller, AppLocalizations l) {
     if (controller.isLoading) {
       return ListView.builder(
         padding: EdgeInsets.symmetric(
@@ -114,7 +116,7 @@ class _HomeView extends StatelessWidget {
     }
 
     if (controller.posts.isEmpty) {
-      return const _EmptyFeed();
+      return _EmptyFeed();
     }
 
     return ListView.separated(
@@ -138,7 +140,7 @@ class _HomeView extends StatelessWidget {
               ),
             ),
           ),
-          onDelete: (p) => _confirmDelete(context, controller, p),
+          onDelete: (p) => _confirmDelete(context, controller, p, l),
           onLike: (p) => controller.toggleLike(p, employee.displayId),
           onTap: (p) {
             if (p.id == null) return;
@@ -161,6 +163,7 @@ class _HomeView extends StatelessWidget {
     BuildContext context,
     PostController controller,
     PostModel post,
+    AppLocalizations l,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -170,7 +173,7 @@ class _HomeView extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSizes.r16),
         ),
         title: Text(
-          'Delete Post',
+          l.deletePostTitle,
           style: GoogleFonts.manrope(
             color: AppColors.textTitle,
             fontWeight: FontWeight.w800,
@@ -178,7 +181,7 @@ class _HomeView extends StatelessWidget {
           ),
         ),
         content: Text(
-          'This post will be permanently removed. This action cannot be undone.',
+          l.deletePostConfirm,
           style: GoogleFonts.manrope(
             color: AppColors.textMuted,
             fontSize: AppSizes.sp13,
@@ -189,7 +192,7 @@ class _HomeView extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
-              'Cancel',
+              l.cancelButton,
               style: GoogleFonts.manrope(
                 color: AppColors.textMuted,
                 fontWeight: FontWeight.w600,
@@ -199,7 +202,7 @@ class _HomeView extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Delete',
+              l.deleteButton,
               style: GoogleFonts.manrope(
                 color: AppColors.error,
                 fontWeight: FontWeight.w700,
@@ -224,6 +227,7 @@ class _AddPostButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSizes.pw16,
@@ -266,7 +270,7 @@ class _AddPostButton extends StatelessWidget {
               ),
               SizedBox(width: AppSizes.w8),
               Text(
-                'ADD POST',
+                l.addPostButton,
                 style: GoogleFonts.manrope(
                   color: AppColors.buttonText,
                   fontWeight: FontWeight.w800,
@@ -283,24 +287,6 @@ class _AddPostButton extends StatelessWidget {
 }
 
 // ─── Post card ────────────────────────────────────────────────────────────────
-//
-// Layout:
-//   ┌──────────────────────────────────────────┐
-//   │ [Avatar]  Name               • 2h ago  ⋮ │  ← header (⋮ only for owner)
-//   │           EMP-XXXXX                       │
-//   ├──────────────────────────────────────────┤
-//   │  Post text content...                     │  ← body
-//   │                                           │
-//   │  [media: full-width single / h-scroll]   │
-//   ├──────────────────────────────────────────┤
-//   │  ♥/♡ Likes    💬 Comments               │  ← footer
-//   └──────────────────────────────────────────┘
-//
-// Interactions:
-//   • Single tap  → opens PostDetailsScreen
-//   • Double tap  → toggles like + shows floating heart animation
-//   • ⋮ menu      → Edit / Delete (owner only)
-//   • Like button → same as double tap
 
 class PostCard extends StatefulWidget {
   const PostCard({
@@ -330,9 +316,8 @@ class _PostCardState extends State<PostCard>
   late Animation<double> _heartScale;
   late Animation<double> _heartOpacity;
 
-  // Optimistic like state — kept in sync with widget.post in didUpdateWidget.
   late bool _optimisticLiked;
-  late int _likesDelta; // +1 or -1 applied on top of post.likes
+  late int _likesDelta;
 
   bool get _isOwner =>
       widget.post.createdByDisplayId == widget.currentDisplayId;
@@ -349,39 +334,21 @@ class _PostCardState extends State<PostCard>
       duration: const Duration(milliseconds: 700),
     );
 
-    // Scale: 0 → 1.3 (40%) → 1.0 (20%) → hold (40%)
     _heartScale = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween(begin: 0.0, end: 1.3),
-        weight: 40,
-      ),
-      TweenSequenceItem(
-        tween: Tween(begin: 1.3, end: 1.0),
-        weight: 20,
-      ),
-      TweenSequenceItem(
-        tween: ConstantTween(1.0),
-        weight: 40,
-      ),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.3), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.3, end: 1.0), weight: 20),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 40),
     ]).animate(_heartController);
 
-    // Opacity: hold visible (60%) → fade out (40%)
     _heartOpacity = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: ConstantTween(1.0),
-        weight: 60,
-      ),
-      TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 0.0),
-        weight: 40,
-      ),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 60),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 40),
     ]).animate(_heartController);
   }
 
   @override
   void didUpdateWidget(PostCard old) {
     super.didUpdateWidget(old);
-    // When Firestore confirms the like, reset optimistic delta.
     if (old.post != widget.post) {
       _optimisticLiked =
           widget.post.likedBy.contains(widget.currentDisplayId);
@@ -414,6 +381,7 @@ class _PostCardState extends State<PostCard>
   Widget build(BuildContext context) {
     final post = widget.post;
     final displayedLikes = post.likes + _likesDelta;
+    final l = AppLocalizations.of(context)!;
 
     return GestureDetector(
       onTap: () => widget.onTap(post),
@@ -458,7 +426,7 @@ class _PostCardState extends State<PostCard>
                         ),
                       ),
                       Text(
-                        _formatTime(post.createdAt),
+                        _formatTime(post.createdAt, l),
                         style: GoogleFonts.manrope(
                           color: AppColors.textMuted,
                           fontSize: AppSizes.sp11,
@@ -468,6 +436,7 @@ class _PostCardState extends State<PostCard>
                         _PostActionsMenu(
                           onEdit: () => widget.onEdit(post),
                           onDelete: () => widget.onDelete(post),
+                          l: l,
                         ),
                       if (!_isOwner) SizedBox(width: AppSizes.pw8),
                     ],
@@ -535,7 +504,7 @@ class _PostCardState extends State<PostCard>
                                 ),
                                 SizedBox(width: AppSizes.w6),
                                 Text(
-                                  '$displayedLikes ${displayedLikes == 1 ? 'Like' : 'Likes'}',
+                                  '$displayedLikes ${displayedLikes == 1 ? l.likeSingular : l.likePlural}',
                                   style: GoogleFonts.manrope(
                                     color: _optimisticLiked
                                         ? AppColors.error
@@ -548,7 +517,7 @@ class _PostCardState extends State<PostCard>
                             ),
                           ),
                           SizedBox(width: AppSizes.w16),
-                          // Comments chip (tapping opens details)
+                          // Comments chip
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -559,7 +528,7 @@ class _PostCardState extends State<PostCard>
                               ),
                               SizedBox(width: AppSizes.w6),
                               Text(
-                                '${post.commentsCount} ${post.commentsCount == 1 ? 'Comment' : 'Comments'}',
+                                '${post.commentsCount} ${post.commentsCount == 1 ? l.commentSingular : l.commentPlural}',
                                 style: GoogleFonts.manrope(
                                   color: AppColors.textMuted,
                                   fontSize: AppSizes.sp12,
@@ -577,7 +546,7 @@ class _PostCardState extends State<PostCard>
             ),
           ),
 
-          // ── Floating heart animation (double-tap feedback) ──
+          // ── Floating heart animation ──
           IgnorePointer(
             child: AnimatedBuilder(
               animation: _heartController,
@@ -604,13 +573,13 @@ class _PostCardState extends State<PostCard>
     );
   }
 
-  String _formatTime(DateTime? dt) {
+  String _formatTime(DateTime? dt, AppLocalizations l) {
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inSeconds < 60) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inSeconds < 60) return l.justNow;
+    if (diff.inMinutes < 60) return l.timeMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l.timeHoursAgo(diff.inHours);
+    if (diff.inDays < 7) return l.timeDaysAgo(diff.inDays);
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 }
@@ -618,10 +587,15 @@ class _PostCardState extends State<PostCard>
 // ─── Owner actions menu (⋮) ───────────────────────────────────────────────────
 
 class _PostActionsMenu extends StatelessWidget {
-  const _PostActionsMenu({required this.onEdit, required this.onDelete});
+  const _PostActionsMenu({
+    required this.onEdit,
+    required this.onDelete,
+    required this.l,
+  });
 
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final AppLocalizations l;
 
   @override
   Widget build(BuildContext context) {
@@ -652,7 +626,7 @@ class _PostActionsMenu extends StatelessWidget {
               ),
               SizedBox(width: AppSizes.w10),
               Text(
-                'Edit',
+                l.editMenuItem,
                 style: GoogleFonts.manrope(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.w600,
@@ -673,7 +647,7 @@ class _PostActionsMenu extends StatelessWidget {
               ),
               SizedBox(width: AppSizes.w10),
               Text(
-                'Delete',
+                l.deleteMenuItem,
                 style: GoogleFonts.manrope(
                   color: AppColors.error,
                   fontWeight: FontWeight.w600,
@@ -725,9 +699,6 @@ class _PostAvatar extends StatelessWidget {
 }
 
 // ─── Media row ────────────────────────────────────────────────────────────────
-//
-// Single image  → full-width, fixed height 240.
-// 2–4 images    → horizontal scroll, each tile 200×200.
 
 class _MediaRow extends StatelessWidget {
   const _MediaRow({required this.urls});
@@ -800,6 +771,7 @@ class _EmptyFeed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -807,7 +779,7 @@ class _EmptyFeed extends StatelessWidget {
           Icon(Icons.article_outlined, color: AppColors.textMuted, size: AppSizes.sp40),
           SizedBox(height: AppSizes.h16),
           Text(
-            'No posts yet',
+            l.noPostsYet,
             style: GoogleFonts.manrope(
               color: AppColors.textMuted,
               fontSize: AppSizes.sp16,
@@ -816,7 +788,7 @@ class _EmptyFeed extends StatelessWidget {
           ),
           SizedBox(height: AppSizes.h8),
           Text(
-            'Be the first to share something.',
+            l.beFirstToShare,
             style: GoogleFonts.manrope(
               color: AppColors.navUnselected,
               fontSize: AppSizes.sp13,

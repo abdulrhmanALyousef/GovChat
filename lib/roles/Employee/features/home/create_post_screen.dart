@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -43,6 +44,7 @@ class _CreatePostView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<CreatePostController>();
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -54,7 +56,7 @@ class _CreatePostView extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          controller.isEditMode ? 'Edit Post' : 'New Post',
+          controller.isEditMode ? l.editPostTitle : l.newPostTitle,
           style: GoogleFonts.manrope(
             color: AppColors.textTitle,
             fontWeight: FontWeight.w800,
@@ -122,7 +124,7 @@ class _CreatePostView extends StatelessWidget {
                         height: 1.6,
                       ),
                       decoration: InputDecoration(
-                        hintText: "What's on your mind?",
+                        hintText: l.whatsOnYourMind,
                         hintStyle: GoogleFonts.manrope(
                           color: AppColors.hintText,
                           fontSize: AppSizes.sp14,
@@ -132,7 +134,7 @@ class _CreatePostView extends StatelessWidget {
                       ),
                     ),
 
-                    // ── Media preview (kept remote + new local) ──
+                    // ── Media preview ──
                     if (controller.totalMediaCount > 0) ...[
                       SizedBox(height: AppSizes.h16),
                       _MediaPreviewGrid(controller: controller),
@@ -183,6 +185,7 @@ class _PostButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: controller.canPost
           ? () async {
@@ -214,7 +217,7 @@ class _PostButton extends StatelessWidget {
                 ),
               )
             : Text(
-                controller.isEditMode ? 'SAVE' : 'POST',
+                controller.isEditMode ? l.savePostButton : l.postButton,
                 style: GoogleFonts.manrope(
                   color: controller.canPost
                       ? AppColors.buttonText
@@ -264,11 +267,6 @@ class _AuthorAvatar extends StatelessWidget {
 }
 
 // ─── Media preview grid ───────────────────────────────────────────────────────
-//
-// Shows two groups in one Wrap:
-//   1. Kept remote images (network URLs from the post being edited)
-//   2. Newly picked local images (XFile from this session)
-// Each thumbnail has an ✕ button to remove it.
 
 class _MediaPreviewGrid extends StatelessWidget {
   const _MediaPreviewGrid({required this.controller});
@@ -352,6 +350,7 @@ class _BottomToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final atLimit = controller.totalMediaCount >= 4;
     return Container(
       padding: EdgeInsets.symmetric(
@@ -365,7 +364,7 @@ class _BottomToolbar extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            'ADD TO POST',
+            l.addToPostLabel,
             style: GoogleFonts.manrope(
               color: AppColors.textMuted,
               fontSize: AppSizes.sp11,
@@ -398,7 +397,7 @@ class _BottomToolbar extends StatelessWidget {
                   ),
                   SizedBox(width: AppSizes.w6),
                   Text(
-                    'Photo (${controller.totalMediaCount}/4)',
+                    l.photoCountLabel(controller.totalMediaCount),
                     style: GoogleFonts.manrope(
                       color: atLimit
                           ? AppColors.navUnselected

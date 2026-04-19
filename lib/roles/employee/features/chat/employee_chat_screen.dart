@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -71,8 +72,9 @@ class _ChatView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ChatController>();
+    final l = AppLocalizations.of(context)!;
     final title = chatTitle ?? employee.department;
-    final subtitle = chatSubtitle ?? 'GROUP CHAT';
+    final subtitle = chatSubtitle ?? l.groupChatTitle;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -110,9 +112,9 @@ class _ChatView extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: AppColors.error),
-            tooltip: 'Sign Out',
+            tooltip: l.signOutButton,
             onPressed: () async {
-              final confirmed = await _showLogoutDialog(context);
+              final confirmed = await _showLogoutDialog(context, l);
               if (!confirmed || !context.mounted) return;
               await SessionManager.instance.logout(context);
             },
@@ -276,7 +278,7 @@ class _MessageItem extends StatelessWidget {
               if (message.isEdited) ...[
                 SizedBox(width: AppSizes.w6),
                 Text(
-                  '· edited',
+                  AppLocalizations.of(context)!.editedLabel,
                   style: GoogleFonts.manrope(
                     color: AppColors.textMuted,
                     fontSize: AppSizes.sp10,
@@ -384,6 +386,7 @@ class _MessageActionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -405,7 +408,7 @@ class _MessageActionsSheet extends StatelessWidget {
               size: AppSizes.sp20,
             ),
             title: Text(
-              'Edit Message',
+              l.editMessageTitle,
               style: GoogleFonts.manrope(
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
@@ -422,7 +425,7 @@ class _MessageActionsSheet extends StatelessWidget {
                 size: AppSizes.sp20,
               ),
               title: Text(
-                'Delete Message',
+                l.deleteMessageTitle,
                 style: GoogleFonts.manrope(
                   color: AppColors.error,
                   fontWeight: FontWeight.w600,
@@ -447,13 +450,14 @@ class _DeleteConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return AlertDialog(
       backgroundColor: AppColors.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.r16),
       ),
       title: Text(
-        'Delete Message',
+        l.deleteMessageTitle,
         style: GoogleFonts.manrope(
           color: AppColors.textTitle,
           fontWeight: FontWeight.w800,
@@ -461,7 +465,7 @@ class _DeleteConfirmationDialog extends StatelessWidget {
         ),
       ),
       content: Text(
-        'This message will be permanently removed for everyone. This action cannot be undone.',
+        l.deleteMessageConfirm,
         style: GoogleFonts.manrope(
           color: AppColors.textMuted,
           fontSize: AppSizes.sp13,
@@ -472,7 +476,7 @@ class _DeleteConfirmationDialog extends StatelessWidget {
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(
-            'Cancel',
+            l.cancelButton,
             style: GoogleFonts.manrope(
               color: AppColors.textMuted,
               fontWeight: FontWeight.w600,
@@ -483,7 +487,7 @@ class _DeleteConfirmationDialog extends StatelessWidget {
         TextButton(
           onPressed: onConfirm,
           child: Text(
-            'Delete',
+            l.deleteButton,
             style: GoogleFonts.manrope(
               color: AppColors.error,
               fontWeight: FontWeight.w700,
@@ -505,6 +509,7 @@ class _EditContextStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final msg = controller.editingMessage;
     if (msg == null) return const SizedBox.shrink();
 
@@ -531,7 +536,7 @@ class _EditContextStrip extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Editing message',
+                  l.editingMessage,
                   style: GoogleFonts.manrope(
                     color: AppColors.primaryColor,
                     fontSize: AppSizes.sp11,
@@ -576,9 +581,10 @@ class _TypingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     if (typingIds.isEmpty) return const SizedBox.shrink();
 
+    final l = AppLocalizations.of(context)!;
     final label = typingIds.length == 1
-        ? '${typingIds.first} is typing'
-        : '${typingIds.length} people are typing';
+        ? l.isTypingSingle(typingIds.first)
+        : l.arePeopleTyping(typingIds.length);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -648,6 +654,7 @@ class _TypingDotsState extends State<_TypingDots> {
 class _EncryptionPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppSizes.pw16,
@@ -667,7 +674,7 @@ class _EncryptionPill extends StatelessWidget {
           ),
           SizedBox(width: AppSizes.w8),
           Text(
-            'END-TO-END ENCRYPTED CHANNEL',
+            l.endToEndEncryptedChannel,
             style: GoogleFonts.manrope(
               color: AppColors.textPrimary,
               fontSize: AppSizes.sp10,
@@ -729,8 +736,8 @@ class _InputBar extends StatelessWidget {
                     decoration: InputDecoration(
                       isCollapsed: true,
                       hintText: controller.isEditing
-                          ? 'Edit message'
-                          : 'Type a message',
+                          ? AppLocalizations.of(context)!.editMessageHint
+                          : AppLocalizations.of(context)!.typeAMessage,
                       hintStyle: GoogleFonts.manrope(
                         color: AppColors.hintText,
                         fontSize: AppSizes.sp14,
@@ -785,7 +792,7 @@ class _InputBar extends StatelessWidget {
   }
 }
 
-Future<bool> _showLogoutDialog(BuildContext context) async {
+Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
   return await showDialog<bool>(
         context: context,
         barrierDismissible: true,
@@ -813,7 +820,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                 ),
                 SizedBox(height: AppSizes.h16),
                 Text(
-                  'Sign Out',
+                  l.signOutButton,
                   style: GoogleFonts.manrope(
                     color: AppColors.textTitle,
                     fontWeight: FontWeight.w800,
@@ -822,7 +829,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                 ),
                 SizedBox(height: AppSizes.h8),
                 Text(
-                  'You will be signed out and your local session will be cleared from this device.',
+                  l.signOutConfirm,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.manrope(
                     color: AppColors.textMuted,
@@ -846,7 +853,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                           ),
                         ),
                         child: Text(
-                          'Cancel',
+                          l.cancelButton,
                           style: GoogleFonts.manrope(
                             color: AppColors.textMuted,
                             fontWeight: FontWeight.w600,
@@ -870,7 +877,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                           ),
                         ),
                         child: Text(
-                          'Sign Out',
+                          l.signOutButton,
                           style: GoogleFonts.manrope(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w700,

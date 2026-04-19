@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -48,6 +49,7 @@ class _PostDetailsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = context.watch<PostDetailsController>();
     final post = controller.post ?? initialPost;
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -59,7 +61,7 @@ class _PostDetailsView extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Post',
+          l.postTitle,
           style: GoogleFonts.manrope(
             color: AppColors.textTitle,
             fontWeight: FontWeight.w800,
@@ -86,7 +88,7 @@ class _PostDetailsView extends StatelessWidget {
                           ),
                         ),
                       )
-                    : _buildContent(context, controller, post),
+                    : _buildContent(context, controller, post, l),
           ),
           _CommentInputBar(
             employee: employee,
@@ -101,6 +103,7 @@ class _PostDetailsView extends StatelessWidget {
     BuildContext context,
     PostDetailsController controller,
     PostModel post,
+    AppLocalizations l,
   ) {
     final isLiked = post.likedBy.contains(employee.displayId);
 
@@ -146,7 +149,7 @@ class _PostDetailsView extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      _formatTime(post.createdAt),
+                      _formatTime(post.createdAt, l),
                       style: GoogleFonts.manrope(
                         color: AppColors.textMuted,
                         fontSize: AppSizes.sp11,
@@ -216,7 +219,7 @@ class _PostDetailsView extends StatelessWidget {
                               ),
                               SizedBox(width: AppSizes.w6),
                               Text(
-                                '${post.likes} ${post.likes == 1 ? 'Like' : 'Likes'}',
+                                '${post.likes} ${post.likes == 1 ? l.likeSingular : l.likePlural}',
                                 style: GoogleFonts.manrope(
                                   color: isLiked
                                       ? AppColors.error
@@ -239,7 +242,7 @@ class _PostDetailsView extends StatelessWidget {
                             ),
                             SizedBox(width: AppSizes.w6),
                             Text(
-                              '${post.commentsCount} ${post.commentsCount == 1 ? 'Comment' : 'Comments'}',
+                              '${post.commentsCount} ${post.commentsCount == 1 ? l.commentSingular : l.commentPlural}',
                               style: GoogleFonts.manrope(
                                 color: AppColors.textMuted,
                                 fontSize: AppSizes.sp12,
@@ -261,7 +264,7 @@ class _PostDetailsView extends StatelessWidget {
 
         // ── Comments section ──
         Text(
-          'Comments',
+          l.commentPlural,
           style: GoogleFonts.manrope(
             color: AppColors.textTitle,
             fontWeight: FontWeight.w800,
@@ -276,7 +279,7 @@ class _PostDetailsView extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: AppSizes.ph20),
             child: Center(
               child: Text(
-                'No comments yet. Be the first!',
+                l.noCommentsYet,
                 style: GoogleFonts.manrope(
                   color: AppColors.textMuted,
                   fontSize: AppSizes.sp13,
@@ -297,13 +300,13 @@ class _PostDetailsView extends StatelessWidget {
     );
   }
 
-  String _formatTime(DateTime? dt) {
+  String _formatTime(DateTime? dt, AppLocalizations l) {
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inSeconds < 60) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inSeconds < 60) return l.justNow;
+    if (diff.inMinutes < 60) return l.timeMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l.timeHoursAgo(diff.inHours);
+    if (diff.inDays < 7) return l.timeDaysAgo(diff.inDays);
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 }
@@ -317,6 +320,7 @@ class _CommentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: EdgeInsets.all(AppSizes.pw12),
       decoration: BoxDecoration(
@@ -349,7 +353,7 @@ class _CommentTile extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      _formatTime(comment.createdAt),
+                      _formatTime(comment.createdAt, l),
                       style: GoogleFonts.manrope(
                         color: AppColors.textMuted,
                         fontSize: AppSizes.sp10,
@@ -374,13 +378,13 @@ class _CommentTile extends StatelessWidget {
     );
   }
 
-  String _formatTime(DateTime? dt) {
+  String _formatTime(DateTime? dt, AppLocalizations l) {
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inSeconds < 60) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inSeconds < 60) return l.justNow;
+    if (diff.inMinutes < 60) return l.timeMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l.timeHoursAgo(diff.inHours);
+    if (diff.inDays < 7) return l.timeDaysAgo(diff.inDays);
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 }
@@ -434,6 +438,7 @@ class _CommentInputBarState extends State<_CommentInputBar> {
   @override
   Widget build(BuildContext context) {
     final submitting = widget.controller.isSubmitting;
+    final l = AppLocalizations.of(context)!;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -467,7 +472,7 @@ class _CommentInputBarState extends State<_CommentInputBar> {
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _submit(),
                 decoration: InputDecoration(
-                  hintText: 'Write a comment…',
+                  hintText: l.writeACommentHint,
                   hintStyle: GoogleFonts.manrope(
                     color: AppColors.textMuted,
                     fontSize: AppSizes.sp14,

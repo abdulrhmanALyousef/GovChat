@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -30,6 +31,7 @@ class _NewChatView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<NewChatController>();
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -41,7 +43,7 @@ class _NewChatView extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'New Chat',
+          l.newChatTitle,
           style: GoogleFonts.manrope(
             color: AppColors.textTitle,
             fontWeight: FontWeight.w800,
@@ -109,7 +111,7 @@ class _NewChatView extends StatelessWidget {
         builder: (_) => EmployeeChatScreen(
           employee: currentEmployee,
           chatTitle: other.displayId,
-          chatSubtitle: 'PRIVATE CHAT',
+          chatSubtitle: AppLocalizations.of(context)!.privateChatSubtitle,
           messagesPath: messagesPath,
         ),
       ),
@@ -158,7 +160,7 @@ class _SearchBar extends StatelessWidget {
                 ),
                 decoration: InputDecoration(
                   isCollapsed: true,
-                  hintText: 'Search by employee ID',
+                  hintText: AppLocalizations.of(context)!.searchByEmployeeId,
                   hintStyle: GoogleFonts.manrope(
                     color: AppColors.hintText,
                     fontSize: AppSizes.sp14,
@@ -298,7 +300,7 @@ class _EmptyState extends StatelessWidget {
           ),
           SizedBox(height: AppSizes.h16),
           Text(
-            'No employees found',
+            AppLocalizations.of(context)!.noEmployeesFound,
             style: GoogleFonts.manrope(
               color: AppColors.textMuted,
               fontSize: AppSizes.sp16,
@@ -331,7 +333,7 @@ class _ErrorState extends StatelessWidget {
             ),
             SizedBox(height: AppSizes.h16),
             Text(
-              'Something went wrong',
+              AppLocalizations.of(context)!.somethingWentWrong,
               style: GoogleFonts.manrope(
                 color: AppColors.textTitle,
                 fontSize: AppSizes.sp16,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
@@ -40,6 +41,8 @@ class _MainScreenState extends State<MainScreen> {
       return const SizedBox.shrink();
     }
 
+    final l = AppLocalizations.of(context)!;
+
     return Scaffold(
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(
@@ -78,7 +81,7 @@ class _MainScreenState extends State<MainScreen> {
                   const Icon(Icons.dashboard),
                 ],
               ),
-              label: 'DASHBOARD',
+              label: l.navDashboard,
             ),
             BottomNavigationBarItem(
               icon: const Icon(Icons.corporate_fare_outlined),
@@ -97,7 +100,7 @@ class _MainScreenState extends State<MainScreen> {
                   const Icon(Icons.corporate_fare),
                 ],
               ),
-              label: 'ORGANIZATIONS',
+              label: l.navOrganizations,
             ),
             BottomNavigationBarItem(
               icon: const Icon(Icons.security_outlined),
@@ -116,7 +119,7 @@ class _MainScreenState extends State<MainScreen> {
                   const Icon(Icons.security),
                 ],
               ),
-              label: 'AUDIT',
+              label: l.navAudit,
             ),
             BottomNavigationBarItem(
               icon: const Icon(Icons.person_outline),
@@ -135,7 +138,7 @@ class _MainScreenState extends State<MainScreen> {
                   const Icon(Icons.person),
                 ],
               ),
-              label: 'PROFILE',
+              label: l.navProfile,
             ),
           ],
         ),

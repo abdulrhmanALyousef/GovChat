@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../core/theme/app_color.dart';
 import '../core/constants/app_size.dart';
 import '../core/Widgets/text_field_for_login.dart';
@@ -24,6 +25,7 @@ class _RequestAccessView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<RequestAccessController>();
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -52,7 +54,7 @@ class _RequestAccessView extends StatelessWidget {
                           ),
                           SizedBox(width: AppSizes.w6),
                           Text(
-                            'GOVCHAT',
+                            l.appName,
                             style: GoogleFonts.manrope(
                               fontSize: AppSizes.sp14,
                               fontWeight: FontWeight.w900,
@@ -65,7 +67,7 @@ class _RequestAccessView extends StatelessWidget {
                       TextButton(
                         onPressed: () => controller.backToLogin(context),
                         child: Text(
-                          'BACK TO LOGIN',
+                          l.backToLogin,
                           style: GoogleFonts.manrope(
                             fontSize: AppSizes.sp11,
                             fontWeight: FontWeight.w700,
@@ -94,7 +96,7 @@ class _RequestAccessView extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppSizes.r6),
                         ),
                         child: Text(
-                          'SECURE ACCESS',
+                          l.secureAccessBadge,
                           style: GoogleFonts.manrope(
                             fontSize: AppSizes.sp10,
                             fontWeight: FontWeight.w700,
@@ -107,7 +109,7 @@ class _RequestAccessView extends StatelessWidget {
 
                       // ── Title ──
                       Text(
-                        'Request Access',
+                        l.requestAccessTitle,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp28,
                           fontWeight: FontWeight.w800,
@@ -117,7 +119,7 @@ class _RequestAccessView extends StatelessWidget {
                       SizedBox(height: AppSizes.h8),
 
                       Text(
-                        'Join the sovereign communications network. Your identity will be verified against national records.',
+                        l.requestAccessSubtitle,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp13,
                           color: AppColors.textSecondary,
@@ -129,36 +131,34 @@ class _RequestAccessView extends StatelessWidget {
                       // ── Info Cards ──
                       _buildInfoCard(
                         icon: Icons.shield_outlined,
-                        title: 'End-to-End Encryption',
-                        subtitle:
-                            'All communications are secured with military-grade protocols.',
+                        title: l.endToEndEncryptionTitle,
+                        subtitle: l.endToEndEncryptionSubtitle,
                       ),
                       SizedBox(height: AppSizes.h12),
                       _buildInfoCard(
                         icon: Icons.verified_outlined,
-                        title: 'Compliance Ready',
-                        subtitle:
-                            'Aligned with the latest data sovereignty regulations.',
+                        title: l.complianceReadyTitle,
+                        subtitle: l.complianceReadySubtitle,
                       ),
                       SizedBox(height: AppSizes.h32),
 
                       // ── Form ──
-                      _buildLabel(context, 'FIRST NAME'),
+                      _buildLabel(l.firstNameLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.firstNameController,
                         hintText: '',
                         validator: (v) {
-                          if (v == null || v.isEmpty) return 'Required';
+                          if (v == null || v.isEmpty) return l.requiredField;
                           if (RegExp(r'[0-9]').hasMatch(v)) {
-                            return 'Name cannot contain numbers';
+                            return l.nameCannotContainNumbers;
                           }
                           return null;
                         },
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(context, 'MIDDLE NAME (OPTIONAL)'),
+                      _buildLabel(l.middleNameOptionalLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.middleNameController,
@@ -166,37 +166,37 @@ class _RequestAccessView extends StatelessWidget {
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(context, 'LAST NAME'),
+                      _buildLabel(l.lastNameLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.lastNameController,
                         hintText: '',
                         validator: (v) {
-                          if (v == null || v.isEmpty) return 'Required';
+                          if (v == null || v.isEmpty) return l.requiredField;
                           if (RegExp(r'[0-9]').hasMatch(v)) {
-                            return 'Name cannot contain numbers';
+                            return l.nameCannotContainNumbers;
                           }
                           return null;
                         },
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(context, 'EMAIL ADDRESS'),
+                      _buildLabel(l.emailAddressLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.emailController,
-                        hintText: 'example@gmail.com',
+                        hintText: l.emailHint,
                         icon: Icons.alternate_email,
                         keyboardType: TextInputType.emailAddress,
                         validator: (v) {
-                          if (v == null || v.isEmpty) return 'Required';
-                          if (!v.contains('@')) return 'Invalid email';
+                          if (v == null || v.isEmpty) return l.requiredField;
+                          if (!v.contains('@')) return l.invalidEmail;
                           return null;
                         },
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(context, 'PASSWORD'),
+                      _buildLabel(l.passwordLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.passwordController,
@@ -204,28 +204,30 @@ class _RequestAccessView extends StatelessWidget {
                         icon: Icons.lock_outline,
                         isPassword: true,
                         validator: (v) {
-                          if (v == null || v.isEmpty) return 'Required';
-                          if (v.length < 8) return 'Minimum 8 characters';
-                          if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]').hasMatch(v)) {
-                            return 'Must contain at least one special character';
+                          if (v == null || v.isEmpty) return l.requiredField;
+                          if (v.length < 8) return l.minimumEightChars;
+                          if (!RegExp(
+                            r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]',
+                          ).hasMatch(v)) {
+                            return l.mustContainSpecialChar;
                           }
                           return null;
                         },
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(context, 'NATIONAL ID'),
+                      _buildLabel(l.nationalIdLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.nationalIdController,
                         hintText: '',
                         icon: Icons.badge_outlined,
                         validator: (v) =>
-                            v == null || v.isEmpty ? 'Required' : null,
+                            v == null || v.isEmpty ? l.requiredField : null,
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(context, 'ORGANIZATION'),
+                      _buildLabel(l.organizationLabel),
                       SizedBox(height: AppSizes.h8),
                       controller.isLoadingOrgs
                           ? Container(
@@ -249,7 +251,7 @@ class _RequestAccessView extends StatelessWidget {
                             )
                           : _buildDropdown(
                               value: controller.selectedOrganizationId,
-                              hint: 'Select Organization',
+                              hint: l.selectOrganizationHint,
                               items: controller.organizations
                                   .map(
                                     (org) => DropdownMenuItem<String>(
@@ -262,11 +264,11 @@ class _RequestAccessView extends StatelessWidget {
                             ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(context, 'DEPARTMENT'),
+                      _buildLabel(l.departmentLabel),
                       SizedBox(height: AppSizes.h8),
                       _buildDropdown(
                         value: controller.selectedDepartment,
-                        hint: 'Select Department',
+                        hint: l.selectDepartmentHint,
                         items: controller.departments
                             .map(
                               (dept) => DropdownMenuItem<String>(
@@ -343,7 +345,7 @@ class _RequestAccessView extends StatelessWidget {
                                     ),
                                   )
                                 : Text(
-                                    'Submit Request',
+                                    l.submitRequestButton,
                                     style: GoogleFonts.manrope(
                                       fontSize: AppSizes.sp16,
                                       fontWeight: FontWeight.w800,
@@ -373,7 +375,7 @@ class _RequestAccessView extends StatelessWidget {
                             SizedBox(width: AppSizes.w10),
                             Expanded(
                               child: Text(
-                                'By clicking Submit, you agree to the government\'s digital security policies and background verification protocols.',
+                                l.submitDisclaimer,
                                 style: GoogleFonts.manrope(
                                   fontSize: AppSizes.sp12,
                                   color: AppColors.textSecondary,
@@ -406,14 +408,14 @@ class _RequestAccessView extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildFooterLink('PRIVACY\nPOLICY'),
-                          _buildFooterLink('SYSTEM\nSTATUS'),
-                          _buildFooterLink('HELP\nDESK'),
+                          _buildFooterLink(l.privacyPolicyLink),
+                          _buildFooterLink(l.systemStatusLink),
+                          _buildFooterLink(l.helpDeskLink),
                         ],
                       ),
                       SizedBox(height: AppSizes.h12),
                       Text(
-                        '© 2026 GOVCHAT SECURITY CORE. ALL RIGHTS RESERVED.',
+                        l.copyright,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp9,
                           color: AppColors.hintText,
@@ -478,7 +480,7 @@ class _RequestAccessView extends StatelessWidget {
     );
   }
 
-  Widget _buildLabel(BuildContext context, String text) {
+  Widget _buildLabel(String text) {
     return Text(
       text,
       style: GoogleFonts.manrope(

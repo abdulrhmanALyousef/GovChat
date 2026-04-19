@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
 import '../requests/requests_screen.dart';
@@ -39,6 +40,8 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       return const SizedBox.shrink();
     }
 
+    final l = AppLocalizations.of(context)!;
+
     return Scaffold(
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(
@@ -77,7 +80,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                   Icon(Icons.inbox),
                 ],
               ),
-              label: 'REQUESTS',
+              label: l.navRequests,
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.people_outline),
@@ -96,7 +99,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                   Icon(Icons.people),
                 ],
               ),
-              label: 'EMPLOYEES',
+              label: l.navEmployees,
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.history_outlined),
@@ -115,7 +118,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                   Icon(Icons.history),
                 ],
               ),
-              label: 'LOGS',
+              label: l.navLogs,
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
@@ -134,7 +137,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                   Icon(Icons.person),
                 ],
               ),
-              label: 'PROFILE',
+              label: l.navProfile,
             ),
           ],
         ),

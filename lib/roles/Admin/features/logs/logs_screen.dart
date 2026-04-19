@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/theme/app_color.dart';
 
 class LogsScreen extends StatelessWidget {
@@ -6,12 +7,13 @@ class LogsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        title: const Text(
-          'Logs',
-          style: TextStyle(
+        title: Text(
+          l.logsTitle,
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
@@ -20,24 +22,24 @@ class LogsScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: const Center(
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history, size: 100, color: AppColors.primaryColor),
-            SizedBox(height: 24),
+            const Icon(Icons.history, size: 100, color: AppColors.primaryColor),
+            const SizedBox(height: 24),
             Text(
-              'Logs',
-              style: TextStyle(
+              l.logsTitle,
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
-              'Under Development',
-              style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
+              l.underDevelopment,
+              style: const TextStyle(fontSize: 18, color: AppColors.textSecondary),
             ),
           ],
         ),

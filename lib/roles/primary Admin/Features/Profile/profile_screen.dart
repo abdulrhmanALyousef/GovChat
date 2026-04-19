@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_size.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
 
@@ -10,12 +13,15 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final localeProvider = context.watch<LocaleProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        title: const Text(
-          'Profile',
-          style: TextStyle(
+        title: Text(
+          l.profileTitle,
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
@@ -58,7 +64,7 @@ class ProfileScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Primary Admin Session',
+                            l.primaryAdminSession,
                             style: GoogleFonts.manrope(
                               color: AppColors.textTitle,
                               fontSize: AppSizes.sp18,
@@ -67,7 +73,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           SizedBox(height: AppSizes.h6),
                           Text(
-                            'Manage secure access for your organizations and end the session when finished.',
+                            l.primaryAdminSessionDescription,
                             style: GoogleFonts.manrope(
                               color: AppColors.textSubtitle,
                               fontSize: AppSizes.sp12,
@@ -80,7 +86,67 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(height: AppSizes.ph24),
+              SizedBox(height: AppSizes.ph16),
+
+              // ── Language Switcher Card ──
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(AppSizes.ph16),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  borderRadius: BorderRadius.circular(AppSizes.r16),
+                  border: Border.all(color: AppColors.inputBorder),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.language,
+                          color: AppColors.primaryColor,
+                          size: AppSizes.sp20,
+                        ),
+                        SizedBox(width: AppSizes.w12),
+                        Text(
+                          l.languageLabel,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textTitle,
+                            fontWeight: FontWeight.w600,
+                            fontSize: AppSizes.sp14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () => localeProvider.toggleLocale(),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSizes.pw12,
+                          vertical: AppSizes.ph6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.sectionBackground,
+                          borderRadius: BorderRadius.circular(AppSizes.r20),
+                          border: Border.all(color: AppColors.inputBorder),
+                        ),
+                        child: Text(
+                          localeProvider.isArabic
+                              ? l.englishLanguage
+                              : l.arabicLanguage,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.primaryColor,
+                            fontSize: AppSizes.sp12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: AppSizes.ph16),
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(AppSizes.ph16),
@@ -93,7 +159,7 @@ class ProfileScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'SESSION CONTROLS',
+                      l.sessionControlsSection,
                       style: GoogleFonts.manrope(
                         color: AppColors.textMuted,
                         fontWeight: FontWeight.w700,
@@ -103,7 +169,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     SizedBox(height: AppSizes.h10),
                     Text(
-                      'Sign out securely and clear cached session data from this device.',
+                      l.signOutSecurelyDescription,
                       style: GoogleFonts.manrope(
                         color: AppColors.textSubtitle,
                         fontSize: AppSizes.sp12,
@@ -124,7 +190,7 @@ class ProfileScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppSizes.r12),
                         ),
                         child: ElevatedButton.icon(
-                          onPressed: () => _confirmLogout(context),
+                          onPressed: () => _confirmLogout(context, l),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
@@ -138,7 +204,7 @@ class ProfileScreen extends StatelessWidget {
                             color: AppColors.buttonText,
                           ),
                           label: Text(
-                            'Logout',
+                            l.logoutButton,
                             style: GoogleFonts.manrope(
                               color: AppColors.buttonText,
                               fontWeight: FontWeight.w800,
@@ -158,7 +224,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmLogout(BuildContext context) async {
+  Future<void> _confirmLogout(BuildContext context, AppLocalizations l) async {
     final shouldLogout =
         await showDialog<bool>(
           context: context,
@@ -166,14 +232,14 @@ class ProfileScreen extends StatelessWidget {
             return AlertDialog(
               backgroundColor: AppColors.cardBackground,
               title: Text(
-                'Confirm Logout',
+                l.confirmLogoutTitle,
                 style: GoogleFonts.manrope(
                   color: AppColors.textTitle,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               content: Text(
-                'This will sign you out and clear your session from this device.',
+                l.confirmLogoutContent,
                 style: GoogleFonts.manrope(
                   color: AppColors.textSubtitle,
                   fontSize: AppSizes.sp13,
@@ -183,14 +249,14 @@ class ProfileScreen extends StatelessWidget {
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
                   child: Text(
-                    'CANCEL',
+                    l.cancelUppercase,
                     style: GoogleFonts.manrope(color: AppColors.textMuted),
                   ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
                   child: Text(
-                    'LOGOUT',
+                    l.logoutUppercase,
                     style: GoogleFonts.manrope(color: AppColors.primaryColor),
                   ),
                 ),
