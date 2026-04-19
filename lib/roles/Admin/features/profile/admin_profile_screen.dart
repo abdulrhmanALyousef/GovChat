@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_size.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
 
@@ -10,14 +13,18 @@ class AdminProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final localeProvider = context.watch<LocaleProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        title: const Text(
-          'Profile',
-          style: TextStyle(
+        title: Text(
+          l.profileTitle,
+          style: GoogleFonts.manrope(
             color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w800,
+            fontSize: AppSizes.sp16,
           ),
         ),
         backgroundColor: AppColors.cardBackground,
@@ -58,7 +65,7 @@ class AdminProfileScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Admin Session',
+                            l.adminSession,
                             style: GoogleFonts.manrope(
                               color: AppColors.textTitle,
                               fontSize: AppSizes.sp18,
@@ -67,7 +74,7 @@ class AdminProfileScreen extends StatelessWidget {
                           ),
                           SizedBox(height: AppSizes.h6),
                           Text(
-                            'Securely manage your admin account and sign out when finished.',
+                            l.adminSessionDescription,
                             style: GoogleFonts.manrope(
                               color: AppColors.textSubtitle,
                               fontSize: AppSizes.sp12,
@@ -80,7 +87,67 @@ class AdminProfileScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(height: AppSizes.ph24),
+              SizedBox(height: AppSizes.ph16),
+
+              // ── Language Switcher Card ──
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(AppSizes.ph16),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  borderRadius: BorderRadius.circular(AppSizes.r16),
+                  border: Border.all(color: AppColors.inputBorder),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.language,
+                          color: AppColors.primaryColor,
+                          size: AppSizes.sp20,
+                        ),
+                        SizedBox(width: AppSizes.w12),
+                        Text(
+                          l.languageLabel,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textTitle,
+                            fontWeight: FontWeight.w600,
+                            fontSize: AppSizes.sp14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () => localeProvider.toggleLocale(),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSizes.pw12,
+                          vertical: AppSizes.ph6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.sectionBackground,
+                          borderRadius: BorderRadius.circular(AppSizes.r20),
+                          border: Border.all(color: AppColors.inputBorder),
+                        ),
+                        child: Text(
+                          localeProvider.isArabic
+                              ? l.englishLanguage
+                              : l.arabicLanguage,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.primaryColor,
+                            fontSize: AppSizes.sp12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: AppSizes.ph16),
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(AppSizes.ph16),
@@ -93,7 +160,7 @@ class AdminProfileScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'SESSION CONTROLS',
+                      l.sessionControlsSection,
                       style: GoogleFonts.manrope(
                         color: AppColors.textMuted,
                         fontWeight: FontWeight.w700,
@@ -103,7 +170,7 @@ class AdminProfileScreen extends StatelessWidget {
                     ),
                     SizedBox(height: AppSizes.h10),
                     Text(
-                      'End your session and clear cached data from this device.',
+                      l.endSessionDescription,
                       style: GoogleFonts.manrope(
                         color: AppColors.textSubtitle,
                         fontSize: AppSizes.sp12,
@@ -114,7 +181,7 @@ class AdminProfileScreen extends StatelessWidget {
                       width: double.infinity,
                       height: AppSizes.h48,
                       child: ElevatedButton.icon(
-                        onPressed: () => _confirmLogout(context),
+                        onPressed: () => _confirmLogout(context, l),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.error,
                           shadowColor: Colors.transparent,
@@ -128,7 +195,7 @@ class AdminProfileScreen extends StatelessWidget {
                           color: AppColors.textPrimary,
                         ),
                         label: Text(
-                          'Sign Out',
+                          l.signOutButton,
                           style: GoogleFonts.manrope(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w800,
@@ -147,14 +214,14 @@ class AdminProfileScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmLogout(BuildContext context) async {
-    final shouldLogout = await _showLogoutDialog(context);
+  Future<void> _confirmLogout(BuildContext context, AppLocalizations l) async {
+    final shouldLogout = await _showLogoutDialog(context, l);
     if (!shouldLogout || !context.mounted) return;
     await SessionManager.instance.logout(context);
   }
 }
 
-Future<bool> _showLogoutDialog(BuildContext context) async {
+Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
   return await showDialog<bool>(
         context: context,
         barrierDismissible: true,
@@ -182,7 +249,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                 ),
                 SizedBox(height: AppSizes.h16),
                 Text(
-                  'Sign Out',
+                  l.signOutButton,
                   style: GoogleFonts.manrope(
                     color: AppColors.textTitle,
                     fontWeight: FontWeight.w800,
@@ -191,7 +258,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                 ),
                 SizedBox(height: AppSizes.h8),
                 Text(
-                  'You will be signed out and your local session will be cleared from this device.',
+                  l.signOutConfirm,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.manrope(
                     color: AppColors.textMuted,
@@ -215,7 +282,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                           ),
                         ),
                         child: Text(
-                          'Cancel',
+                          l.cancelButton,
                           style: GoogleFonts.manrope(
                             color: AppColors.textMuted,
                             fontWeight: FontWeight.w600,
@@ -239,7 +306,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                           ),
                         ),
                         child: Text(
-                          'Sign Out',
+                          l.signOutButton,
                           style: GoogleFonts.manrope(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w700,

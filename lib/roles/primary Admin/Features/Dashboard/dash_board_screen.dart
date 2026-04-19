@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/theme/app_color.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -6,12 +7,13 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(
+        title: Text(
+          l.dashboardTitle,
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
@@ -20,29 +22,24 @@ class DashboardScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: const Center(
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.dashboard, size: 100, color: AppColors.primaryColor),
-            SizedBox(height: 24),
+            const Icon(Icons.dashboard, size: 100, color: AppColors.primaryColor),
+            const SizedBox(height: 24),
             Text(
-              'Dashboard',
-              style: TextStyle(
+              l.dashboardTitle,
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
-              'Under Development',
-              style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Under Development',
-              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+              l.underDevelopment,
+              style: const TextStyle(fontSize: 18, color: AppColors.textSecondary),
             ),
           ],
         ),

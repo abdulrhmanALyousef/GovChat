@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
@@ -63,6 +64,8 @@ class _EmployeeMainScreenState extends State<EmployeeMainScreen> {
       return const SizedBox.shrink();
     }
 
+    final l = AppLocalizations.of(context)!;
+
     return Scaffold(
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(
@@ -87,27 +90,27 @@ class _EmployeeMainScreenState extends State<EmployeeMainScreen> {
             _buildNavItem(
               icon: Icons.home_outlined,
               activeIcon: Icons.home,
-              label: 'HOME',
+              label: l.navHome,
             ),
             _buildNavItem(
               icon: Icons.campaign_outlined,
               activeIcon: Icons.campaign,
-              label: 'ANNOUNCE',
+              label: l.navAnnounce,
             ),
             _buildNavItem(
               icon: Icons.chat_bubble_outline,
               activeIcon: Icons.chat_bubble,
-              label: 'CHAT',
+              label: l.navChat,
             ),
             _buildNavItem(
               icon: Icons.notifications_outlined,
               activeIcon: Icons.notifications,
-              label: 'REMIND',
+              label: l.navRemind,
             ),
             _buildNavItem(
               icon: Icons.person_outline,
               activeIcon: Icons.person,
-              label: 'PROFILE',
+              label: l.navProfile,
             ),
           ],
         ),

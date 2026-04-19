@@ -2,18 +2,27 @@ import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 import 'core/datasource/local_data/preferences_manager.dart';
+import 'core/providers/locale_provider.dart';
 import 'core/services/session_manager.dart';
 import 'core/theme/theme_data.dart';
 import 'firebase_options.dart';
 import 'auth/login_screen.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await PreferencesManager().init();
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => LocaleProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -93,6 +102,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final localeProvider = context.watch<LocaleProvider>();
+
     return ScreenUtilInit(
       designSize: const Size(375, 812),
       minTextAdapt: true,
@@ -117,9 +128,25 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               title: 'GovChat',
               debugShowCheckedModeBanner: false,
               theme: darkTheme,
+
+              // ── Localization ──
+              locale: localeProvider.locale,
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+
               builder: (context, child) {
                 _resetInactivityTimer();
-                return child ?? const SizedBox.shrink();
+                return Directionality(
+                  textDirection: localeProvider.isArabic
+                      ? TextDirection.rtl
+                      : TextDirection.ltr,
+                  child: child ?? const SizedBox.shrink(),
+                );
               },
               home: const LoginScreen(),
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../core/theme/app_color.dart';
 import '../core/constants/app_size.dart';
 import '../core/Widgets/text_field_for_login.dart';
@@ -24,6 +25,7 @@ class _ChangePasswordView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ChangePasswordController>();
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -66,7 +68,7 @@ class _ChangePasswordView extends StatelessWidget {
                       SizedBox(height: AppSizes.h24),
 
                       Text(
-                        'Change Password',
+                        l.changePasswordTitle,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp24,
                           fontWeight: FontWeight.w700,
@@ -76,7 +78,7 @@ class _ChangePasswordView extends StatelessWidget {
                       SizedBox(height: AppSizes.h8),
 
                       Text(
-                        'To maintain sovereign security, you must update\nyour temporary password before proceeding.',
+                        l.changePasswordSubtitle,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp12,
@@ -91,7 +93,7 @@ class _ChangePasswordView extends StatelessWidget {
 
                 // ── New Password ──
                 Text(
-                  'NEW PASSWORD',
+                  l.newPasswordLabel,
                   style: GoogleFonts.manrope(
                     fontSize: AppSizes.sp12,
                     fontWeight: FontWeight.w700,
@@ -106,8 +108,8 @@ class _ChangePasswordView extends StatelessWidget {
                   icon: Icons.lock_outline,
                   isPassword: true,
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Required';
-                    if (!controller.hasMinLength) return 'Minimum 8 characters';
+                    if (v == null || v.isEmpty) return l.requiredField;
+                    if (!controller.hasMinLength) return l.minimumEightChars;
                     return null;
                   },
                 ),
@@ -115,7 +117,7 @@ class _ChangePasswordView extends StatelessWidget {
 
                 // ── Confirm Password ──
                 Text(
-                  'CONFIRM PASSWORD',
+                  l.confirmPasswordLabel,
                   style: GoogleFonts.manrope(
                     fontSize: AppSizes.sp12,
                     fontWeight: FontWeight.w700,
@@ -130,9 +132,9 @@ class _ChangePasswordView extends StatelessWidget {
                   icon: Icons.lock_outline,
                   isPassword: true,
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Required';
+                    if (v == null || v.isEmpty) return l.requiredField;
                     if (v != controller.newPasswordController.text) {
-                      return 'Passwords do not match';
+                      return l.passwordsDoNotMatch;
                     }
                     return null;
                   },
@@ -140,24 +142,15 @@ class _ChangePasswordView extends StatelessWidget {
                 SizedBox(height: AppSizes.ph24),
 
                 // ── Password Rules ──
-                _buildRule('Minimum 8 characters', controller.hasMinLength),
+                _buildRule(l.ruleMinChars, controller.hasMinLength),
                 SizedBox(height: AppSizes.ph12),
-                _buildRule(
-                  'At least 1 uppercase letter',
-                  controller.hasUppercase,
-                ),
+                _buildRule(l.ruleUppercase, controller.hasUppercase),
                 SizedBox(height: AppSizes.ph12),
-                _buildRule(
-                  'At least 1 lowercase letter',
-                  controller.hasLowercase,
-                ),
+                _buildRule(l.ruleLowercase, controller.hasLowercase),
                 SizedBox(height: AppSizes.ph12),
-                _buildRule('At least 1 number', controller.hasNumber),
+                _buildRule(l.ruleNumber, controller.hasNumber),
                 SizedBox(height: AppSizes.ph12),
-                _buildRule(
-                  'At least 1 special character',
-                  controller.hasSpecialChar,
-                ),
+                _buildRule(l.ruleSpecialChar, controller.hasSpecialChar),
                 SizedBox(height: AppSizes.ph30),
 
                 // ── Error Message ──
@@ -225,7 +218,7 @@ class _ChangePasswordView extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Update Password',
+                                  l.updatePasswordButton,
                                   style: GoogleFonts.manrope(
                                     fontSize: AppSizes.sp16,
                                     fontWeight: FontWeight.w800,

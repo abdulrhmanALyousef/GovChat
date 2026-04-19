@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_size.dart';
@@ -12,6 +13,7 @@ class AnnounceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
@@ -33,7 +35,7 @@ class AnnounceScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'ANNOUNCEMENTS',
+              l.announcementsLabel,
               style: GoogleFonts.manrope(
                 color: AppColors.textMuted,
                 fontSize: AppSizes.sp10,
@@ -62,7 +64,7 @@ class AnnounceScreen extends StatelessWidget {
             ),
             SizedBox(height: AppSizes.h24),
             Text(
-              'ANNOUNCEMENTS',
+              l.announcementsLabel,
               style: GoogleFonts.manrope(
                 color: AppColors.textTitle,
                 fontWeight: FontWeight.w800,
@@ -72,7 +74,7 @@ class AnnounceScreen extends StatelessWidget {
             ),
             SizedBox(height: AppSizes.h8),
             Text(
-              'Under Development',
+              l.underDevelopment,
               style: GoogleFonts.manrope(
                 color: AppColors.textMuted,
                 fontSize: AppSizes.sp14,
@@ -92,7 +94,7 @@ class AnnounceScreen extends StatelessWidget {
                 ),
               ),
               child: Text(
-                'COMING SOON',
+                l.comingSoon,
                 style: GoogleFonts.manrope(
                   color: AppColors.primaryColor,
                   fontSize: AppSizes.sp12,

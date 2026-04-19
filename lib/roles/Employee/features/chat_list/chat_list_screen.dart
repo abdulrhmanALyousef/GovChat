@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -33,6 +34,7 @@ class _ChatListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ChatListController>();
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -55,7 +57,7 @@ class _ChatListView extends StatelessWidget {
               ),
             ),
             Text(
-              'MESSAGES',
+              l.messagesLabel,
               style: GoogleFonts.manrope(
                 color: AppColors.textMuted,
                 fontSize: AppSizes.sp10,
@@ -67,9 +69,9 @@ class _ChatListView extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: AppColors.error),
-            tooltip: 'Sign Out',
+            tooltip: l.signOutButton,
             onPressed: () async {
-              final confirmed = await _showLogoutDialog(context);
+              final confirmed = await _showLogoutDialog(context, l);
               if (!confirmed || !context.mounted) return;
               await SessionManager.instance.logout(context);
             },
@@ -108,6 +110,7 @@ class _NewChatButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSizes.pw16,
@@ -152,7 +155,7 @@ class _NewChatButton extends StatelessWidget {
               ),
               SizedBox(width: AppSizes.w8),
               Text(
-                'NEW CHAT',
+                l.newChatButton,
                 style: GoogleFonts.manrope(
                   color: AppColors.buttonText,
                   fontWeight: FontWeight.w800,
@@ -268,6 +271,7 @@ class _ConversationTile extends StatelessWidget {
   }
 
   void _openChat(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final isPrivate = conversation.type == 'private';
     final isOrg = conversation.type == 'organization';
     Navigator.push(
@@ -277,9 +281,9 @@ class _ConversationTile extends StatelessWidget {
           employee: employee,
           chatTitle: (isPrivate || isOrg) ? conversation.name : null,
           chatSubtitle: isPrivate
-              ? 'PRIVATE CHAT'
+              ? l.privateChatSubtitle
               : isOrg
-                  ? 'ORG CHAT'
+                  ? l.orgChatLabel
                   : null,
           messagesPath: (isPrivate || isOrg)
               ? conversation.messagesCollectionPath
@@ -307,12 +311,13 @@ class _LastMessagePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final lastMsg = conversation.lastMessage;
     final senderId = conversation.lastSenderId;
 
     if (lastMsg == null || lastMsg.isEmpty) {
       return Text(
-        'No messages yet',
+        l.noMessagesYet,
         style: GoogleFonts.manrope(
           color: AppColors.textMuted,
           fontSize: AppSizes.sp12,
@@ -383,11 +388,12 @@ class _ConversationTypeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final label = type == 'organization'
-        ? 'ORG CHAT'
+        ? l.orgChatLabel
         : type == 'department'
-            ? 'GROUP CHAT'
-            : 'PRIVATE';
+            ? l.groupChatLabel
+            : l.privateChatLabel;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -414,6 +420,7 @@ class _ConversationTypeBadge extends StatelessWidget {
 class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -425,7 +432,7 @@ class _EmptyState extends StatelessWidget {
           ),
           SizedBox(height: AppSizes.h16),
           Text(
-            'No conversations yet',
+            l.noConversationsYet,
             style: GoogleFonts.manrope(
               color: AppColors.textMuted,
               fontSize: AppSizes.sp16,
@@ -438,7 +445,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-Future<bool> _showLogoutDialog(BuildContext context) async {
+Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
   return await showDialog<bool>(
         context: context,
         barrierDismissible: true,
@@ -466,7 +473,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                 ),
                 SizedBox(height: AppSizes.h16),
                 Text(
-                  'Sign Out',
+                  l.signOutButton,
                   style: GoogleFonts.manrope(
                     color: AppColors.textTitle,
                     fontWeight: FontWeight.w800,
@@ -475,7 +482,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                 ),
                 SizedBox(height: AppSizes.h8),
                 Text(
-                  'You will be signed out and your local session will be cleared from this device.',
+                  l.signOutConfirm,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.manrope(
                     color: AppColors.textMuted,
@@ -499,7 +506,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                           ),
                         ),
                         child: Text(
-                          'Cancel',
+                          l.cancelButton,
                           style: GoogleFonts.manrope(
                             color: AppColors.textMuted,
                             fontWeight: FontWeight.w600,
@@ -523,7 +530,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                           ),
                         ),
                         child: Text(
-                          'Sign Out',
+                          l.signOutButton,
                           style: GoogleFonts.manrope(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w700,

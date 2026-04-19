@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_size.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
 import '../../../../models/employee_model.dart';
@@ -13,6 +16,9 @@ class EmployeeProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final localeProvider = context.watch<LocaleProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
@@ -20,7 +26,7 @@ class EmployeeProfileScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Profile',
+          l.profileTitle,
           style: GoogleFonts.manrope(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w800,
@@ -100,7 +106,7 @@ class EmployeeProfileScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'EMPLOYEE INFO',
+                      l.employeeInfoSection,
                       style: GoogleFonts.manrope(
                         color: AppColors.textMuted,
                         fontWeight: FontWeight.w700,
@@ -111,22 +117,82 @@ class EmployeeProfileScreen extends StatelessWidget {
                     SizedBox(height: AppSizes.h12),
                     _InfoRow(
                       icon: Icons.business_outlined,
-                      label: 'Organization',
+                      label: l.organizationField,
                       value: employee.organizationName,
                     ),
                     _Divider(),
                     _InfoRow(
                       icon: Icons.workspaces_outlined,
-                      label: 'Department',
+                      label: l.departmentField,
                       value: employee.department,
                     ),
                     _Divider(),
                     _InfoRow(
                       icon: Icons.tag_outlined,
-                      label: 'Employee ID',
+                      label: l.employeeIdField,
                       value: employee.displayId.isNotEmpty
                           ? employee.displayId
                           : '—',
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: AppSizes.ph16),
+
+              // ── Language Switcher Card ──
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(AppSizes.ph16),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  borderRadius: BorderRadius.circular(AppSizes.r16),
+                  border: Border.all(color: AppColors.inputBorder),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.language,
+                          color: AppColors.primaryColor,
+                          size: AppSizes.sp20,
+                        ),
+                        SizedBox(width: AppSizes.w12),
+                        Text(
+                          l.languageLabel,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textTitle,
+                            fontWeight: FontWeight.w600,
+                            fontSize: AppSizes.sp14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () => localeProvider.toggleLocale(),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSizes.pw12,
+                          vertical: AppSizes.ph6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.sectionBackground,
+                          borderRadius: BorderRadius.circular(AppSizes.r20),
+                          border: Border.all(color: AppColors.inputBorder),
+                        ),
+                        child: Text(
+                          localeProvider.isArabic
+                              ? l.englishLanguage
+                              : l.arabicLanguage,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.primaryColor,
+                            fontSize: AppSizes.sp12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -147,7 +213,7 @@ class EmployeeProfileScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'SESSION CONTROLS',
+                      l.sessionControlsSection,
                       style: GoogleFonts.manrope(
                         color: AppColors.textMuted,
                         fontWeight: FontWeight.w700,
@@ -157,7 +223,7 @@ class EmployeeProfileScreen extends StatelessWidget {
                     ),
                     SizedBox(height: AppSizes.h10),
                     Text(
-                      'End your session and clear cached data from this device.',
+                      l.endSessionDescription,
                       style: GoogleFonts.manrope(
                         color: AppColors.textSubtitle,
                         fontSize: AppSizes.sp12,
@@ -168,7 +234,7 @@ class EmployeeProfileScreen extends StatelessWidget {
                       width: double.infinity,
                       height: AppSizes.h48,
                       child: ElevatedButton.icon(
-                        onPressed: () => _confirmLogout(context),
+                        onPressed: () => _confirmLogout(context, l),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.error,
                           shadowColor: Colors.transparent,
@@ -182,7 +248,7 @@ class EmployeeProfileScreen extends StatelessWidget {
                           color: AppColors.textPrimary,
                         ),
                         label: Text(
-                          'Sign Out',
+                          l.signOutButton,
                           style: GoogleFonts.manrope(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w800,
@@ -201,14 +267,14 @@ class EmployeeProfileScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmLogout(BuildContext context) async {
-    final shouldLogout = await _showLogoutDialog(context);
+  Future<void> _confirmLogout(BuildContext context, AppLocalizations l) async {
+    final shouldLogout = await _showLogoutDialog(context, l);
     if (!shouldLogout || !context.mounted) return;
     await SessionManager.instance.logout(context);
   }
 }
 
-Future<bool> _showLogoutDialog(BuildContext context) async {
+Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
   return await showDialog<bool>(
         context: context,
         barrierDismissible: true,
@@ -236,7 +302,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                 ),
                 SizedBox(height: AppSizes.h16),
                 Text(
-                  'Sign Out',
+                  l.signOutButton,
                   style: GoogleFonts.manrope(
                     color: AppColors.textTitle,
                     fontWeight: FontWeight.w800,
@@ -245,7 +311,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                 ),
                 SizedBox(height: AppSizes.h8),
                 Text(
-                  'You will be signed out and your local session will be cleared from this device.',
+                  l.signOutConfirm,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.manrope(
                     color: AppColors.textMuted,
@@ -269,7 +335,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                           ),
                         ),
                         child: Text(
-                          'Cancel',
+                          l.cancelButton,
                           style: GoogleFonts.manrope(
                             color: AppColors.textMuted,
                             fontWeight: FontWeight.w600,
@@ -293,7 +359,7 @@ Future<bool> _showLogoutDialog(BuildContext context) async {
                           ),
                         ),
                         child: Text(
-                          'Sign Out',
+                          l.signOutButton,
                           style: GoogleFonts.manrope(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w700,

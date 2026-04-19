@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../core/theme/app_color.dart';
 import '../core/constants/app_size.dart';
 import '../core/Widgets/text_field_for_login.dart';
+import '../core/providers/locale_provider.dart';
 import 'controllers/login_controller.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -24,6 +26,8 @@ class _LoginView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<LoginController>();
+    final l = AppLocalizations.of(context)!;
+    final localeProvider = context.watch<LocaleProvider>();
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -33,6 +37,21 @@ class _LoginView extends StatelessWidget {
           child: SingleChildScrollView(
             child: Column(
               children: [
+                // ── Language Switcher ──
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: AppSizes.h16,
+                    right: AppSizes.pw16,
+                    left: AppSizes.pw16,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _LanguageSwitcher(localeProvider: localeProvider, l: l),
+                    ],
+                  ),
+                ),
+
                 // ── Top Section ──
                 Container(
                   width: double.infinity,
@@ -65,7 +84,7 @@ class _LoginView extends StatelessWidget {
 
                       // ── App Name ──
                       Text(
-                        'GOVCHAT',
+                        l.appName,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp28,
                           fontWeight: FontWeight.w900,
@@ -76,7 +95,7 @@ class _LoginView extends StatelessWidget {
                       SizedBox(height: AppSizes.h8),
 
                       Text(
-                        'Login',
+                        l.loginTitle,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp20,
                           fontWeight: FontWeight.w500,
@@ -86,7 +105,7 @@ class _LoginView extends StatelessWidget {
                       SizedBox(height: AppSizes.h8),
 
                       Text(
-                        'Secure access to your organization',
+                        l.secureAccessSubtitle,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp14,
                           color: AppColors.textSubtitle,
@@ -119,7 +138,7 @@ class _LoginView extends StatelessWidget {
                     children: [
                       // ── Email ──
                       Text(
-                        'EMAIL',
+                        l.emailLabel,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp12,
                           fontWeight: FontWeight.w700,
@@ -130,16 +149,16 @@ class _LoginView extends StatelessWidget {
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.emailController,
-                        hintText: 'Enter your email',
+                        hintText: l.enterEmailHint,
                         icon: Icons.email_outlined,
                         validator: (v) =>
-                            v == null || v.isEmpty ? 'Required' : null,
+                            v == null || v.isEmpty ? l.requiredField : null,
                       ),
                       SizedBox(height: AppSizes.ph20),
 
                       // ── Password ──
                       Text(
-                        'PASSWORD',
+                        l.passwordLabel,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp12,
                           fontWeight: FontWeight.w700,
@@ -150,11 +169,11 @@ class _LoginView extends StatelessWidget {
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.passwordController,
-                        hintText: 'Enter your password',
+                        hintText: l.enterPasswordHint,
                         icon: Icons.lock_outline,
                         isPassword: true,
                         validator: (v) =>
-                            v == null || v.isEmpty ? 'Required' : null,
+                            v == null || v.isEmpty ? l.requiredField : null,
                       ),
                       SizedBox(height: AppSizes.h32),
 
@@ -225,7 +244,7 @@ class _LoginView extends StatelessWidget {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        'Login',
+                                        l.loginTitle,
                                         style: GoogleFonts.manrope(
                                           fontSize: AppSizes.sp16,
                                           fontWeight: FontWeight.w800,
@@ -263,7 +282,7 @@ class _LoginView extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Request Access',
+                                l.requestAccessButton,
                                 style: GoogleFonts.manrope(
                                   fontSize: AppSizes.sp16,
                                   fontWeight: FontWeight.w700,
@@ -287,7 +306,7 @@ class _LoginView extends StatelessWidget {
                         child: TextButton(
                           onPressed: controller.forgotPassword,
                           child: Text(
-                            'Forgot password?',
+                            l.forgotPasswordButton,
                             style: GoogleFonts.manrope(
                               color: AppColors.textMuted,
                               fontSize: AppSizes.sp14,
@@ -323,7 +342,7 @@ class _LoginView extends StatelessWidget {
                       SizedBox(width: AppSizes.w6),
                       Flexible(
                         child: Text(
-                          'END-TO-END ENCRYPTED',
+                          l.endToEndEncrypted,
                           style: GoogleFonts.manrope(
                             fontSize: AppSizes.sp10,
                             color: AppColors.hintText,
@@ -345,6 +364,55 @@ class _LoginView extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Language Switcher Widget ──
+class _LanguageSwitcher extends StatelessWidget {
+  const _LanguageSwitcher({
+    required this.localeProvider,
+    required this.l,
+  });
+
+  final LocaleProvider localeProvider;
+  final AppLocalizations l;
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = localeProvider.isArabic;
+    return GestureDetector(
+      onTap: () => localeProvider.toggleLocale(),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSizes.pw12,
+          vertical: AppSizes.ph6,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(AppSizes.r20),
+          border: Border.all(color: AppColors.inputBorder),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.language,
+              color: AppColors.primaryColor,
+              size: AppSizes.sp16,
+            ),
+            SizedBox(width: AppSizes.w6),
+            Text(
+              isArabic ? l.englishLanguage : l.arabicLanguage,
+              style: GoogleFonts.manrope(
+                color: AppColors.textMuted,
+                fontSize: AppSizes.sp12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
