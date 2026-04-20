@@ -764,4 +764,132 @@ class AppLocalizationsAr extends AppLocalizations {
   String timeDaysAgo(int count) {
     return 'منذ $count ي';
   }
+
+  @override
+  String get accountPendingApproval =>
+      'حسابك في انتظار الموافقة. يرجى الانتظار حتى يتم تأكيده من المشرف.';
+
+  @override
+  String get accessRequestRejected => 'تم رفض طلب الوصول الخاص بك.';
+
+  @override
+  String accountIsStatus(String status) {
+    return 'هذا الحساب $status. يرجى التواصل مع الدعم.';
+  }
+
+  @override
+  String get organizationMismatchSignIn =>
+      'تم اكتشاف عدم تطابق في المنظمة. يرجى تسجيل الدخول مجدداً.';
+
+  @override
+  String unknownRoleError(String role) {
+    return 'دور غير معروف: $role';
+  }
+
+  @override
+  String get authErrorUserNotFound =>
+      'لم يتم العثور على حساب بهذا البريد الإلكتروني';
+
+  @override
+  String get authErrorWrongPassword => 'كلمة المرور غير صحيحة';
+
+  @override
+  String get authErrorInvalidEmail => 'عنوان البريد الإلكتروني غير صالح';
+
+  @override
+  String get authErrorUserDisabled => 'تم تعطيل هذا الحساب';
+
+  @override
+  String get authErrorInvalidCredential =>
+      'بريد إلكتروني أو كلمة مرور غير صحيحة';
+
+  @override
+  String get authErrorTooManyRequests =>
+      'محاولات كثيرة جداً. حاول مرة أخرى لاحقاً';
+
+  @override
+  String get authErrorDefault => 'فشل تسجيل الدخول. حاول مرة أخرى';
+
+  @override
+  String get pleaseSelectOrganization => 'يرجى اختيار المنظمة';
+
+  @override
+  String get pleaseSelectDepartment => 'يرجى اختيار القسم';
+
+  @override
+  String get requestSubmittedSuccess =>
+      'تم إرسال الطلب! في انتظار موافقة المشرف.';
+
+  @override
+  String get emailAlreadyRegistered => 'هذا البريد الإلكتروني مسجل بالفعل.';
+
+  @override
+  String get userNotFound => 'لم يتم العثور على المستخدم';
+
+  @override
+  String get userDataNotFound => 'لم يتم العثور على بيانات المستخدم';
+
+  @override
+  String get unknownRoleSimple => 'دور غير معروف';
+
+  @override
+  String get failedToUpdatePassword => 'فشل تحديث كلمة المرور';
+
+  @override
+  String get failedToSignOut =>
+      'فشل تسجيل الخروج. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get sessionExpired => 'انتهت الجلسة. يرجى تسجيل الدخول مجدداً.';
+
+  @override
+  String get accountDataMissing => 'بيانات الحساب مفقودة. يرجى تسجيل الدخول.';
+
+  @override
+  String get unauthorizedAccess => 'وصول غير مصرح به.';
+
+  @override
+  String accountStatusMessage(String status) {
+    return 'الحساب $status.';
+  }
+
+  @override
+  String get organizationMismatchDetected => 'تم اكتشاف عدم تطابق في المنظمة.';
+
+  @override
+  String get sessionEndedInactivity => 'انتهت الجلسة بسبب عدم النشاط.';
+
+  @override
+  String get requestApproved => 'تمت الموافقة على الطلب';
+
+  @override
+  String get requestRejected => 'تم رفض الطلب';
+
+  @override
+  String get failedToApproveRequest => 'فشل قبول الطلب';
+
+  @override
+  String get failedToRejectRequest => 'فشل رفض الطلب';
+
+  @override
+  String get adminDataNotFound => 'لم يتم العثور على بيانات المشرف';
+
+  @override
+  String get organizationNotFoundForAdmin =>
+      'لم يتم العثور على منظمة لحساب المشرف';
+
+  @override
+  String get deptIT => 'قسم تقنية المعلومات';
+
+  @override
+  String get deptHR => 'قسم الموارد البشرية';
+
+  @override
+  String get deptOperations => 'العمليات';
+
+  @override
+  String get deptSecurity => 'الأمن';
+
+  @override
+  String get deptOther => 'أخرى';
 }

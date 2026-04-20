@@ -769,4 +769,129 @@ class AppLocalizationsEn extends AppLocalizations {
   String timeDaysAgo(int count) {
     return '${count}d ago';
   }
+
+  @override
+  String get accountPendingApproval =>
+      'Your account is pending approval. Please wait for admin confirmation.';
+
+  @override
+  String get accessRequestRejected => 'Your access request has been rejected.';
+
+  @override
+  String accountIsStatus(String status) {
+    return 'This account is $status. Please contact support.';
+  }
+
+  @override
+  String get organizationMismatchSignIn =>
+      'Organization mismatch detected. Please sign in again.';
+
+  @override
+  String unknownRoleError(String role) {
+    return 'Unknown role: $role';
+  }
+
+  @override
+  String get authErrorUserNotFound => 'No account found with this email';
+
+  @override
+  String get authErrorWrongPassword => 'Incorrect password';
+
+  @override
+  String get authErrorInvalidEmail => 'Invalid email address';
+
+  @override
+  String get authErrorUserDisabled => 'This account has been disabled';
+
+  @override
+  String get authErrorInvalidCredential => 'Invalid email or password';
+
+  @override
+  String get authErrorTooManyRequests => 'Too many attempts. Try again later';
+
+  @override
+  String get authErrorDefault => 'Login failed. Please try again';
+
+  @override
+  String get pleaseSelectOrganization => 'Please select an organization';
+
+  @override
+  String get pleaseSelectDepartment => 'Please select a department';
+
+  @override
+  String get requestSubmittedSuccess =>
+      'Request submitted! Waiting for admin approval.';
+
+  @override
+  String get emailAlreadyRegistered => 'This email is already registered.';
+
+  @override
+  String get userNotFound => 'User not found';
+
+  @override
+  String get userDataNotFound => 'User data not found';
+
+  @override
+  String get unknownRoleSimple => 'Unknown role';
+
+  @override
+  String get failedToUpdatePassword => 'Failed to update password';
+
+  @override
+  String get failedToSignOut =>
+      'Failed to sign out. Check your connection and try again.';
+
+  @override
+  String get sessionExpired => 'Session expired. Please sign in again.';
+
+  @override
+  String get accountDataMissing => 'Account data missing. Please sign in.';
+
+  @override
+  String get unauthorizedAccess => 'Unauthorized access.';
+
+  @override
+  String accountStatusMessage(String status) {
+    return 'Account is $status.';
+  }
+
+  @override
+  String get organizationMismatchDetected => 'Organization mismatch detected.';
+
+  @override
+  String get sessionEndedInactivity => 'Session ended due to inactivity.';
+
+  @override
+  String get requestApproved => 'Request approved';
+
+  @override
+  String get requestRejected => 'Request rejected';
+
+  @override
+  String get failedToApproveRequest => 'Failed to approve request';
+
+  @override
+  String get failedToRejectRequest => 'Failed to reject request';
+
+  @override
+  String get adminDataNotFound => 'Admin data not found';
+
+  @override
+  String get organizationNotFoundForAdmin =>
+      'Organization not found for this admin account';
+
+  @override
+  String get deptIT => 'IT Department';
+
+  @override
+  String get deptHR => 'HR Department';
+
+  @override
+  String get deptOperations => 'Operations';
+
+  @override
+  String get deptSecurity => 'Security';
+
+  @override
+  String get deptOther => 'Other';
 }

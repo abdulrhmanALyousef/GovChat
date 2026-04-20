@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:projects/l10n/app_localizations.dart';
 
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
 import '../../../../../models/access_request_model.dart';
@@ -164,15 +165,17 @@ class RequestController extends ChangeNotifier {
       debugPrint('Approved request: $requestKey');
 
       if (context.mounted) {
+        final l = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Request approved')));
+        ).showSnackBar(SnackBar(content: Text(l.requestApproved)));
       }
     } catch (e) {
       errorMessage = e.toString();
       if (context.mounted) {
+        final l = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to approve request: $e')),
+          SnackBar(content: Text('${l.failedToApproveRequest}: $e')),
         );
       }
     }
@@ -212,16 +215,18 @@ class RequestController extends ChangeNotifier {
       await batch.commit();
 
       if (context.mounted) {
+        final l = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Request rejected')));
+        ).showSnackBar(SnackBar(content: Text(l.requestRejected)));
       }
     } catch (e) {
       errorMessage = e.toString();
       if (context.mounted) {
+        final l = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to reject request: $e')));
+        ).showSnackBar(SnackBar(content: Text('${l.failedToRejectRequest}: $e')));
       }
     }
 

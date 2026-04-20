@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projects/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_size.dart';
@@ -26,6 +27,7 @@ class _OrganizationsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<OrganizationsManagementController>();
+    final l = AppLocalizations.of(context)!;
     _showMessages(context, controller);
 
     return Scaffold(
@@ -43,7 +45,7 @@ class _OrganizationsView extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Organizations',
+                      l.organizationsTitle,
                       style: GoogleFonts.manrope(
                         color: AppColors.textTitle,
                         fontSize: AppSizes.sp24,
@@ -69,7 +71,7 @@ class _OrganizationsView extends StatelessWidget {
                               .loadOrganizations();
                         },
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('CREATE ORGANIZATION'),
+                        label: Text(l.createOrganizationAction),
                       ),
                     ),
                   ),
@@ -77,7 +79,7 @@ class _OrganizationsView extends StatelessWidget {
               ),
               SizedBox(height: AppSizes.h8),
               Text(
-                'View, update, and manage organizations securely.',
+                l.viewUpdateManage,
                 style: GoogleFonts.manrope(
                   color: AppColors.textSubtitle,
                   fontSize: AppSizes.sp12,
@@ -365,7 +367,7 @@ class _OrganizationDetailsSheetState extends State<_OrganizationDetailsSheet> {
                               organization,
                             ),
                       icon: const Icon(Icons.edit_outlined),
-                      label: const Text('EDIT'),
+                      label: Text(AppLocalizations.of(context)!.editUppercase),
                     ),
                   ),
                   SizedBox(width: AppSizes.w12),
@@ -378,14 +380,14 @@ class _OrganizationDetailsSheetState extends State<_OrganizationDetailsSheet> {
                               organization,
                             ),
                       icon: const Icon(Icons.delete_outline),
-                      label: const Text('DELETE'),
+                      label: Text(AppLocalizations.of(context)!.deleteUppercase),
                     ),
                   ),
                 ],
               ),
               SizedBox(height: AppSizes.ph16),
               Text(
-                'Employees',
+                AppLocalizations.of(context)!.employeesLabel,
                 style: GoogleFonts.manrope(
                   color: AppColors.textTitle,
                   fontSize: AppSizes.sp16,
@@ -650,7 +652,7 @@ class _EmployeeDetailsDialogState extends State<_EmployeeDetailsDialog> {
 
     if (latestEmployee == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to load employee details.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.unableToLoadEmployee)),
       );
       return;
     }
@@ -1125,6 +1127,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1136,7 +1139,7 @@ class _EmptyState extends StatelessWidget {
           ),
           SizedBox(height: AppSizes.ph12),
           Text(
-            'No organizations found',
+            l.noOrganizationsFound,
             style: GoogleFonts.manrope(
               color: AppColors.textTitle,
               fontSize: AppSizes.sp16,
@@ -1145,7 +1148,7 @@ class _EmptyState extends StatelessWidget {
           ),
           SizedBox(height: AppSizes.h6),
           Text(
-            'Create your first organization to get started.',
+            l.createFirstOrganization,
             style: GoogleFonts.manrope(
               color: AppColors.textSubtitle,
               fontSize: AppSizes.sp12,
@@ -1154,7 +1157,7 @@ class _EmptyState extends StatelessWidget {
           SizedBox(height: AppSizes.ph16),
           ElevatedButton(
             onPressed: onCreate,
-            child: const Text('CREATE ORGANIZATION'),
+            child: Text(l.createOrganizationAction),
           ),
         ],
       ),
@@ -1170,6 +1173,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1177,7 +1181,7 @@ class _ErrorState extends StatelessWidget {
           Icon(Icons.error_outline, size: AppSizes.h40, color: AppColors.error),
           SizedBox(height: AppSizes.h8),
           Text(
-            'Unable to load organizations',
+            l.unableToLoadOrganizations,
             style: GoogleFonts.manrope(
               color: AppColors.textTitle,
               fontWeight: FontWeight.w700,
@@ -1196,7 +1200,7 @@ class _ErrorState extends StatelessWidget {
             ),
           ),
           SizedBox(height: AppSizes.ph16),
-          OutlinedButton(onPressed: onRetry, child: const Text('RETRY')),
+          OutlinedButton(onPressed: onRetry, child: Text(l.retryButton)),
         ],
       ),
     );

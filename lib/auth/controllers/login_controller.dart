@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:projects/l10n/app_localizations.dart';
 import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../core/services/session_manager.dart';
@@ -23,6 +24,8 @@ class LoginController extends ChangeNotifier {
 
   Future<void> login(BuildContext context) async {
     if (!formKey.currentState!.validate()) return;
+
+    final l = AppLocalizations.of(context)!;
 
     isLoading = true;
     errorMessage = null;
@@ -77,22 +80,21 @@ class LoginController extends ChangeNotifier {
       if (user.role == 'employee') {
         if (status == 'pending') {
           await FirebaseService.instance.auth.signOut();
-          errorMessage =
-              'Your account is pending approval. Please wait for admin confirmation.';
+          errorMessage = l.accountPendingApproval;
           isLoading = false;
           notifyListeners();
           return;
         }
         if (status == 'rejected') {
           await FirebaseService.instance.auth.signOut();
-          errorMessage = 'Your access request has been rejected.';
+          errorMessage = l.accessRequestRejected;
           isLoading = false;
           notifyListeners();
           return;
         }
       } else if (status != 'active') {
         await FirebaseService.instance.auth.signOut();
-        errorMessage = 'This account is $status. Please contact support.';
+        errorMessage = l.accountIsStatus(status);
         isLoading = false;
         notifyListeners();
         return;
@@ -148,14 +150,14 @@ class LoginController extends ChangeNotifier {
           if (orgId.isNotEmpty && employee.organizationId != orgId) {
             await SessionManager.instance.logout(
               context,
-              reason: 'Organization mismatch detected. Please sign in again.',
+              reason: l.organizationMismatchSignIn,
             );
             return;
           }
           destination = EmployeeMainScreen(employee: employee);
           break;
         default:
-          errorMessage = 'Unknown role: ${user.role}';
+          errorMessage = l.unknownRoleError(user.role);
           isLoading = false;
           notifyListeners();
           return;
@@ -168,7 +170,7 @@ class LoginController extends ChangeNotifier {
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
-      errorMessage = _mapAuthError(e.code);
+      errorMessage = _mapAuthError(e.code, l);
     } catch (e) {
       errorMessage = e.toString();
     }
@@ -240,22 +242,22 @@ class LoginController extends ChangeNotifier {
     return value.trim().replaceAll(' ', '_').toLowerCase();
   }
 
-  String _mapAuthError(String code) {
+  String _mapAuthError(String code, AppLocalizations l) {
     switch (code) {
       case 'user-not-found':
-        return 'No account found with this email';
+        return l.authErrorUserNotFound;
       case 'wrong-password':
-        return 'Incorrect password';
+        return l.authErrorWrongPassword;
       case 'invalid-email':
-        return 'Invalid email address';
+        return l.authErrorInvalidEmail;
       case 'user-disabled':
-        return 'This account has been disabled';
+        return l.authErrorUserDisabled;
       case 'invalid-credential':
-        return 'Invalid email or password';
+        return l.authErrorInvalidCredential;
       case 'too-many-requests':
-        return 'Too many attempts. Try again later';
+        return l.authErrorTooManyRequests;
       default:
-        return 'Login failed. Please try again';
+        return l.authErrorDefault;
     }
   }
 

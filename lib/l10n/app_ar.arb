@@ -296,5 +296,65 @@
         "type": "int"
       }
     }
-  }
+  },
+
+  "accountPendingApproval": "حسابك في انتظار الموافقة. يرجى الانتظار حتى يتم تأكيده من المشرف.",
+  "accessRequestRejected": "تم رفض طلب الوصول الخاص بك.",
+  "accountIsStatus": "هذا الحساب {status}. يرجى التواصل مع الدعم.",
+  "@accountIsStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "organizationMismatchSignIn": "تم اكتشاف عدم تطابق في المنظمة. يرجى تسجيل الدخول مجدداً.",
+  "unknownRoleError": "دور غير معروف: {role}",
+  "@unknownRoleError": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "authErrorUserNotFound": "لم يتم العثور على حساب بهذا البريد الإلكتروني",
+  "authErrorWrongPassword": "كلمة المرور غير صحيحة",
+  "authErrorInvalidEmail": "عنوان البريد الإلكتروني غير صالح",
+  "authErrorUserDisabled": "تم تعطيل هذا الحساب",
+  "authErrorInvalidCredential": "بريد إلكتروني أو كلمة مرور غير صحيحة",
+  "authErrorTooManyRequests": "محاولات كثيرة جداً. حاول مرة أخرى لاحقاً",
+  "authErrorDefault": "فشل تسجيل الدخول. حاول مرة أخرى",
+  "pleaseSelectOrganization": "يرجى اختيار المنظمة",
+  "pleaseSelectDepartment": "يرجى اختيار القسم",
+  "requestSubmittedSuccess": "تم إرسال الطلب! في انتظار موافقة المشرف.",
+  "emailAlreadyRegistered": "هذا البريد الإلكتروني مسجل بالفعل.",
+  "userNotFound": "لم يتم العثور على المستخدم",
+  "userDataNotFound": "لم يتم العثور على بيانات المستخدم",
+  "unknownRoleSimple": "دور غير معروف",
+  "failedToUpdatePassword": "فشل تحديث كلمة المرور",
+  "failedToSignOut": "فشل تسجيل الخروج. تحقق من اتصالك وحاول مرة أخرى.",
+  "sessionExpired": "انتهت الجلسة. يرجى تسجيل الدخول مجدداً.",
+  "accountDataMissing": "بيانات الحساب مفقودة. يرجى تسجيل الدخول.",
+  "unauthorizedAccess": "وصول غير مصرح به.",
+  "accountStatusMessage": "الحساب {status}.",
+  "@accountStatusMessage": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "organizationMismatchDetected": "تم اكتشاف عدم تطابق في المنظمة.",
+  "sessionEndedInactivity": "انتهت الجلسة بسبب عدم النشاط.",
+  "requestApproved": "تمت الموافقة على الطلب",
+  "requestRejected": "تم رفض الطلب",
+  "failedToApproveRequest": "فشل قبول الطلب",
+  "failedToRejectRequest": "فشل رفض الطلب",
+  "adminDataNotFound": "لم يتم العثور على بيانات المشرف",
+  "organizationNotFoundForAdmin": "لم يتم العثور على منظمة لحساب المشرف",
+  "deptIT": "قسم تقنية المعلومات",
+  "deptHR": "قسم الموارد البشرية",
+  "deptOperations": "العمليات",
+  "deptSecurity": "الأمن",
+  "deptOther": "أخرى"
 }

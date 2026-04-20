@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:projects/l10n/app_localizations.dart';
 import '../core/theme/app_color.dart';
 import '../core/constants/app_size.dart';
 import '../core/Widgets/text_field_for_login.dart';

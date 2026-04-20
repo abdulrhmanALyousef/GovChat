@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projects/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -42,12 +43,13 @@ class _EmployeesViewState extends State<_EmployeesView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<EmployeesController>();
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         title: Text(
-          'Employees',
+          l.employeesTitle,
           style: GoogleFonts.manrope(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w700,
@@ -539,7 +541,7 @@ class _EmployeeDetailsSheetState extends State<_EmployeeDetailsSheet> {
       final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
       messenger.showSnackBar(
-        const SnackBar(content: Text('Employee deactivated successfully')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.employeeDeactivatedSuccess)),
       );
     } catch (e) {
       if (!mounted) return;
@@ -875,7 +877,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
       final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context, 'saved');
       messenger.showSnackBar(
-        const SnackBar(content: Text('Employee updated successfully')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.employeeUpdatedSuccess)),
       );
     } catch (e) {
       if (!mounted) return;
