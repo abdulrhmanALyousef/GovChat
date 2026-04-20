@@ -1543,6 +1543,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count}d ago'**
   String timeDaysAgo(int count);
+
+  /// No description provided for @accountPendingApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is pending approval. Please wait for admin confirmation.'**
+  String get accountPendingApproval;
+
+  /// No description provided for @accessRequestRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Your access request has been rejected.'**
+  String get accessRequestRejected;
+
+  /// No description provided for @accountIsStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is {status}. Please contact support.'**
+  String accountIsStatus(String status);
+
+  /// No description provided for @organizationMismatchSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization mismatch detected. Please sign in again.'**
+  String get organizationMismatchSignIn;
+
+  /// No description provided for @unknownRoleError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown role: {role}'**
+  String unknownRoleError(String role);
+
+  /// No description provided for @authErrorUserNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No account found with this email'**
+  String get authErrorUserNotFound;
+
+  /// No description provided for @authErrorWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password'**
+  String get authErrorWrongPassword;
+
+  /// No description provided for @authErrorInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email address'**
+  String get authErrorInvalidEmail;
+
+  /// No description provided for @authErrorUserDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'This account has been disabled'**
+  String get authErrorUserDisabled;
+
+  /// No description provided for @authErrorInvalidCredential.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email or password'**
+  String get authErrorInvalidCredential;
+
+  /// No description provided for @authErrorTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again later'**
+  String get authErrorTooManyRequests;
+
+  /// No description provided for @authErrorDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Login failed. Please try again'**
+  String get authErrorDefault;
+
+  /// No description provided for @pleaseSelectOrganization.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an organization'**
+  String get pleaseSelectOrganization;
+
+  /// No description provided for @pleaseSelectDepartment.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a department'**
+  String get pleaseSelectDepartment;
+
+  /// No description provided for @requestSubmittedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Request submitted! Waiting for admin approval.'**
+  String get requestSubmittedSuccess;
+
+  /// No description provided for @emailAlreadyRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already registered.'**
+  String get emailAlreadyRegistered;
+
+  /// No description provided for @userNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'User not found'**
+  String get userNotFound;
+
+  /// No description provided for @userDataNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'User data not found'**
+  String get userDataNotFound;
+
+  /// No description provided for @unknownRoleSimple.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown role'**
+  String get unknownRoleSimple;
+
+  /// No description provided for @failedToUpdatePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update password'**
+  String get failedToUpdatePassword;
+
+  /// No description provided for @failedToSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to sign out. Check your connection and try again.'**
+  String get failedToSignOut;
+
+  /// No description provided for @sessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Session expired. Please sign in again.'**
+  String get sessionExpired;
+
+  /// No description provided for @accountDataMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Account data missing. Please sign in.'**
+  String get accountDataMissing;
+
+  /// No description provided for @unauthorizedAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Unauthorized access.'**
+  String get unauthorizedAccess;
+
+  /// No description provided for @accountStatusMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Account is {status}.'**
+  String accountStatusMessage(String status);
+
+  /// No description provided for @organizationMismatchDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization mismatch detected.'**
+  String get organizationMismatchDetected;
+
+  /// No description provided for @sessionEndedInactivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Session ended due to inactivity.'**
+  String get sessionEndedInactivity;
+
+  /// No description provided for @requestApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Request approved'**
+  String get requestApproved;
+
+  /// No description provided for @requestRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Request rejected'**
+  String get requestRejected;
+
+  /// No description provided for @failedToApproveRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to approve request'**
+  String get failedToApproveRequest;
+
+  /// No description provided for @failedToRejectRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to reject request'**
+  String get failedToRejectRequest;
+
+  /// No description provided for @adminDataNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin data not found'**
+  String get adminDataNotFound;
+
+  /// No description provided for @organizationNotFoundForAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization not found for this admin account'**
+  String get organizationNotFoundForAdmin;
+
+  /// No description provided for @deptIT.
+  ///
+  /// In en, this message translates to:
+  /// **'IT Department'**
+  String get deptIT;
+
+  /// No description provided for @deptHR.
+  ///
+  /// In en, this message translates to:
+  /// **'HR Department'**
+  String get deptHR;
+
+  /// No description provided for @deptOperations.
+  ///
+  /// In en, this message translates to:
+  /// **'Operations'**
+  String get deptOperations;
+
+  /// No description provided for @deptSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get deptSecurity;
+
+  /// No description provided for @deptOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get deptOther;
 }
 
 class _AppLocalizationsDelegate

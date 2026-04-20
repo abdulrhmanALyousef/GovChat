@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:projects/l10n/app_localizations.dart';
 
 import '../../auth/login_screen.dart';
 import '../datasource/local_data/preferences_manager.dart';
@@ -13,12 +14,13 @@ class SessionManager {
   final PreferencesManager _preferences = PreferencesManager();
 
   Future<void> logout(BuildContext context, {String? reason}) async {
+    final l = AppLocalizations.of(context);
     String? error;
 
     try {
       await FirebaseService.instance.auth.signOut();
     } catch (_) {
-      error = 'Failed to sign out. Check your connection and try again.';
+      error = l?.failedToSignOut ?? 'Failed to sign out. Check your connection and try again.';
     }
 
     await _preferences.clear();
@@ -44,10 +46,11 @@ class SessionManager {
     required List<String> allowedRoles,
     String? expectedOrganizationId,
   }) async {
+    final l = AppLocalizations.of(context);
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       if (!context.mounted) return false;
-      await logout(context, reason: 'Session expired. Please sign in again.');
+      await logout(context, reason: l?.sessionExpired ?? 'Session expired. Please sign in again.');
       return false;
     }
 
@@ -61,21 +64,21 @@ class SessionManager {
     final data = doc.data();
     if (data == null) {
       if (!context.mounted) return false;
-      await logout(context, reason: 'Account data missing. Please sign in.');
+      await logout(context, reason: l?.accountDataMissing ?? 'Account data missing. Please sign in.');
       return false;
     }
 
     final role = (data['role'] ?? '') as String;
     if (!allowedRoles.contains(role)) {
       if (!context.mounted) return false;
-      await logout(context, reason: 'Unauthorized access.');
+      await logout(context, reason: l?.unauthorizedAccess ?? 'Unauthorized access.');
       return false;
     }
 
     final status = (data['status'] ?? 'active') as String;
     if (status != 'active') {
       if (!context.mounted) return false;
-      await logout(context, reason: 'Account is $status.');
+      await logout(context, reason: l?.accountStatusMessage(status) ?? 'Account is $status.');
       return false;
     }
 
@@ -83,7 +86,7 @@ class SessionManager {
       final orgId = (data['organizationId'] ?? '') as String;
       if (orgId != expectedOrganizationId) {
         if (!context.mounted) return false;
-        await logout(context, reason: 'Organization mismatch detected.');
+        await logout(context, reason: l?.organizationMismatchDetected ?? 'Organization mismatch detected.');
         return false;
       }
     }

@@ -11,7 +11,7 @@ import 'core/services/session_manager.dart';
 import 'core/theme/theme_data.dart';
 import 'firebase_options.dart';
 import 'auth/login_screen.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:projects/l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -86,9 +86,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     final context = _navigatorKey.currentContext;
     if (context != null && mounted) {
+      final l = AppLocalizations.of(context);
       await SessionManager.instance.logout(
         context,
-        reason: 'Session ended due to inactivity.',
+        reason: l?.sessionEndedInactivity ?? 'Session ended due to inactivity.',
       );
     }
 

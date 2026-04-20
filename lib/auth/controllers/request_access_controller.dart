@@ -1,5 +1,6 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:projects/l10n/app_localizations.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../core/theme/app_color.dart';
 import '../../models/organization_model.dart';
@@ -75,14 +76,16 @@ class RequestAccessController extends ChangeNotifier {
   Future<void> submitRequest(BuildContext context) async {
     if (!formKey.currentState!.validate()) return;
 
+    final l = AppLocalizations.of(context)!;
+
     if (selectedOrganizationId == null) {
-      errorMessage = 'Please select an organization';
+      errorMessage = l.pleaseSelectOrganization;
       notifyListeners();
       return;
     }
 
     if (selectedDepartment == null) {
-      errorMessage = 'Please select a department';
+      errorMessage = l.pleaseSelectDepartment;
       notifyListeners();
       return;
     }
@@ -112,8 +115,8 @@ class RequestAccessController extends ChangeNotifier {
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Request submitted! Waiting for admin approval.'),
+        SnackBar(
+          content: Text(l.requestSubmittedSuccess),
           backgroundColor: AppColors.primaryColor,
         ),
       );
@@ -125,9 +128,9 @@ class RequestAccessController extends ChangeNotifier {
       );
     } on FirebaseFunctionsException catch (e) {
       if (e.code == 'already-exists') {
-        errorMessage = 'This email is already registered.';
+        errorMessage = l.emailAlreadyRegistered;
       } else {
-        errorMessage = e.message ?? 'Something went wrong.';
+        errorMessage = e.message ?? l.somethingWentWrong;
       }
     } catch (e) {
       errorMessage = e.toString();

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:projects/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -26,12 +26,13 @@ class _RequestsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<RequestController>();
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         title: Text(
-          'Access Requests',
+          l.accessRequestsTitle,
           style: GoogleFonts.manrope(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w700,
@@ -102,6 +103,8 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
     return Container(
       padding: EdgeInsets.all(AppSizes.ph16),
       decoration: BoxDecoration(
@@ -138,7 +141,7 @@ class _RequestCard extends StatelessWidget {
                     Text(
                       request.department.isNotEmpty
                           ? request.department
-                          : 'No department specified',
+                          : l.noDepartmentSpecified,
                       style: GoogleFonts.manrope(
                         color: AppColors.textSubtitle,
                         fontSize: AppSizes.sp12,
@@ -169,7 +172,7 @@ class _RequestCard extends StatelessWidget {
                     ),
                     SizedBox(width: AppSizes.w6),
                     Text(
-                      'PENDING',
+                      l.pendingStatus,
                       style: GoogleFonts.manrope(
                         color: AppColors.primaryColor,
                         fontSize: AppSizes.sp12,
@@ -190,7 +193,7 @@ class _RequestCard extends StatelessWidget {
             label: request.organizationName,
           ),
           SizedBox(height: AppSizes.h8),
-          _InfoRow(icon: Icons.event, label: _formatDate(request.createdAt)),
+          _InfoRow(icon: Icons.event, label: _formatDate(context, request.createdAt)),
           SizedBox(height: AppSizes.ph16),
           Row(
             children: [
@@ -215,7 +218,7 @@ class _RequestCard extends StatelessWidget {
                             ),
                           )
                         : Text(
-                            'Reject',
+                            l.rejectButton,
                             style: GoogleFonts.manrope(
                               color: AppColors.textPrimary,
                               fontWeight: FontWeight.w700,
@@ -263,7 +266,7 @@ class _RequestCard extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Accept',
+                                  l.acceptButton,
                                   style: GoogleFonts.manrope(
                                     color: AppColors.buttonText,
                                     fontWeight: FontWeight.w800,
@@ -288,8 +291,8 @@ class _RequestCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'Awaiting timestamp';
+  String _formatDate(BuildContext context, DateTime? date) {
+    if (date == null) return AppLocalizations.of(context)!.awaitingTimestamp;
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
     return '$day/$month/${date.year}';
@@ -335,6 +338,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -353,7 +357,7 @@ class _EmptyState extends StatelessWidget {
           ),
           SizedBox(height: AppSizes.ph16),
           Text(
-            'No pending requests',
+            l.noPendingRequests,
             style: GoogleFonts.manrope(
               color: AppColors.textTitle,
               fontSize: AppSizes.sp16,
@@ -362,7 +366,7 @@ class _EmptyState extends StatelessWidget {
           ),
           SizedBox(height: AppSizes.h8),
           Text(
-            'New access requests will appear here.',
+            l.newAccessRequestsWillAppear,
             style: GoogleFonts.manrope(
               color: AppColors.textSubtitle,
               fontSize: AppSizes.sp12,
@@ -381,6 +385,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -388,7 +393,7 @@ class _ErrorState extends StatelessWidget {
           Icon(Icons.error_outline, size: AppSizes.h40, color: AppColors.error),
           SizedBox(height: AppSizes.ph12),
           Text(
-            'Something went wrong',
+            l.somethingWentWrong,
             style: GoogleFonts.manrope(
               color: AppColors.textTitle,
               fontSize: AppSizes.sp16,

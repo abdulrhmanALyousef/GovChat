@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:projects/l10n/app_localizations.dart';
 import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../models/admin_model.dart';
@@ -32,6 +33,8 @@ class ChangePasswordController extends ChangeNotifier {
   Future<void> updatePassword(BuildContext context) async {
     if (!formKey.currentState!.validate()) return;
 
+    final l = AppLocalizations.of(context)!;
+
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -39,7 +42,7 @@ class ChangePasswordController extends ChangeNotifier {
     try {
       final user = FirebaseService.instance.auth.currentUser;
       if (user == null) {
-        errorMessage = 'User not found';
+        errorMessage = l.userNotFound;
         isLoading = false;
         notifyListeners();
         return;
@@ -67,7 +70,7 @@ class ChangePasswordController extends ChangeNotifier {
       if (!context.mounted) return;
 
       if (!doc.exists) {
-        errorMessage = 'User data not found';
+        errorMessage = l.userDataNotFound;
         isLoading = false;
         notifyListeners();
         return;
@@ -84,7 +87,7 @@ class ChangePasswordController extends ChangeNotifier {
           destination = const MainScreen();
           break;
         default:
-          errorMessage = 'Unknown role';
+          errorMessage = l.unknownRoleSimple;
           isLoading = false;
           notifyListeners();
           return;
@@ -96,7 +99,7 @@ class ChangePasswordController extends ChangeNotifier {
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
-      errorMessage = e.message ?? 'Failed to update password';
+      errorMessage = e.message ?? l.failedToUpdatePassword;
     } catch (e) {
       errorMessage = e.toString();
     }

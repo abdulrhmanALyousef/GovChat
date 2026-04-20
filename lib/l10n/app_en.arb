@@ -296,5 +296,65 @@
         "type": "int"
       }
     }
-  }
+  },
+
+  "accountPendingApproval": "Your account is pending approval. Please wait for admin confirmation.",
+  "accessRequestRejected": "Your access request has been rejected.",
+  "accountIsStatus": "This account is {status}. Please contact support.",
+  "@accountIsStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "organizationMismatchSignIn": "Organization mismatch detected. Please sign in again.",
+  "unknownRoleError": "Unknown role: {role}",
+  "@unknownRoleError": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "authErrorUserNotFound": "No account found with this email",
+  "authErrorWrongPassword": "Incorrect password",
+  "authErrorInvalidEmail": "Invalid email address",
+  "authErrorUserDisabled": "This account has been disabled",
+  "authErrorInvalidCredential": "Invalid email or password",
+  "authErrorTooManyRequests": "Too many attempts. Try again later",
+  "authErrorDefault": "Login failed. Please try again",
+  "pleaseSelectOrganization": "Please select an organization",
+  "pleaseSelectDepartment": "Please select a department",
+  "requestSubmittedSuccess": "Request submitted! Waiting for admin approval.",
+  "emailAlreadyRegistered": "This email is already registered.",
+  "userNotFound": "User not found",
+  "userDataNotFound": "User data not found",
+  "unknownRoleSimple": "Unknown role",
+  "failedToUpdatePassword": "Failed to update password",
+  "failedToSignOut": "Failed to sign out. Check your connection and try again.",
+  "sessionExpired": "Session expired. Please sign in again.",
+  "accountDataMissing": "Account data missing. Please sign in.",
+  "unauthorizedAccess": "Unauthorized access.",
+  "accountStatusMessage": "Account is {status}.",
+  "@accountStatusMessage": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "organizationMismatchDetected": "Organization mismatch detected.",
+  "sessionEndedInactivity": "Session ended due to inactivity.",
+  "requestApproved": "Request approved",
+  "requestRejected": "Request rejected",
+  "failedToApproveRequest": "Failed to approve request",
+  "failedToRejectRequest": "Failed to reject request",
+  "adminDataNotFound": "Admin data not found",
+  "organizationNotFoundForAdmin": "Organization not found for this admin account",
+  "deptIT": "IT Department",
+  "deptHR": "HR Department",
+  "deptOperations": "Operations",
+  "deptSecurity": "Security",
+  "deptOther": "Other"
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:projects/l10n/app_localizations.dart';
 import '../core/theme/app_color.dart';
 import '../core/constants/app_size.dart';
 import '../core/Widgets/text_field_for_login.dart';
@@ -273,7 +273,7 @@ class _RequestAccessView extends StatelessWidget {
                             .map(
                               (dept) => DropdownMenuItem<String>(
                                 value: dept,
-                                child: Text(dept),
+                                child: Text(_localizedDept(dept, l)),
                               ),
                             )
                             .toList(),
@@ -478,6 +478,23 @@ class _RequestAccessView extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _localizedDept(String dept, AppLocalizations l) {
+    switch (dept) {
+      case 'IT Department':
+        return l.deptIT;
+      case 'HR Department':
+        return l.deptHR;
+      case 'Operations':
+        return l.deptOperations;
+      case 'Security':
+        return l.deptSecurity;
+      case 'Other':
+        return l.deptOther;
+      default:
+        return dept;
+    }
   }
 
   Widget _buildLabel(String text) {
