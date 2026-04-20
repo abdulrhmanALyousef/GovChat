@@ -176,7 +176,7 @@ class _SearchBar extends StatelessWidget {
             fontSize: AppSizes.sp14,
           ),
           decoration: InputDecoration(
-            hintText: 'Search by name, ID or email',
+            hintText: AppLocalizations.of(context)!.searchByNameIdEmail,
             hintStyle: GoogleFonts.manrope(
               color: AppColors.hintText,
               fontSize: AppSizes.sp13,
@@ -251,7 +251,7 @@ class _DepartmentFilter extends StatelessWidget {
         physics: const BouncingScrollPhysics(),
         children: [
           _Chip(
-            label: 'All',
+            label: AppLocalizations.of(context)!.allFilter,
             isSelected: selected == null,
             onTap: () => onSelect(null),
           ),
@@ -326,12 +326,13 @@ class _SearchEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final hasQuery = query.isNotEmpty;
     final hasDept = department != null;
 
     final String subtitle;
     if (hasQuery && hasDept) {
-      subtitle = '"$query" in $department';
+      subtitle = '"$query" — $department';
     } else if (hasQuery) {
       subtitle = '"$query"';
     } else {
@@ -356,7 +357,7 @@ class _SearchEmptyState extends StatelessWidget {
           ),
           SizedBox(height: AppSizes.ph16),
           Text(
-            'No results found',
+            l.noResultsFound,
             style: GoogleFonts.manrope(
               color: AppColors.textTitle,
               fontSize: AppSizes.sp16,
@@ -365,7 +366,7 @@ class _SearchEmptyState extends StatelessWidget {
           ),
           SizedBox(height: AppSizes.h8),
           Text(
-            'No employees match $subtitle',
+            l.noEmployeesMatch(subtitle),
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
               color: AppColors.textSubtitle,
@@ -388,6 +389,7 @@ class _EmployeeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -417,7 +419,7 @@ class _EmployeeCard extends StatelessWidget {
                       Text(
                         employee.displayId.isNotEmpty
                             ? employee.displayId
-                            : 'EMP-ID MISSING',
+                            : l.empIdMissing,
                         style: GoogleFonts.manrope(
                           color: AppColors.textTitle,
                           fontSize: AppSizes.sp18,
@@ -457,7 +459,7 @@ class _EmployeeCard extends StatelessWidget {
                       ),
                       SizedBox(width: AppSizes.w6),
                       Text(
-                        'ACTIVE',
+                        l.activeStatus,
                         style: GoogleFonts.manrope(
                           color: AppColors.primaryColor,
                           fontSize: AppSizes.sp12,
@@ -556,6 +558,7 @@ class _EmployeeDetailsSheetState extends State<_EmployeeDetailsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final e = widget.employee;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
@@ -596,7 +599,7 @@ class _EmployeeDetailsSheetState extends State<_EmployeeDetailsSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      e.displayId.isNotEmpty ? e.displayId : 'EMP-ID MISSING',
+                      e.displayId.isNotEmpty ? e.displayId : l.empIdMissing,
                       style: GoogleFonts.manrope(
                         color: AppColors.textTitle,
                         fontSize: AppSizes.sp20,
@@ -627,7 +630,7 @@ class _EmployeeDetailsSheetState extends State<_EmployeeDetailsSheet> {
                   ),
                 ),
                 child: Text(
-                  'ACTIVE',
+                  l.activeStatus,
                   style: GoogleFonts.manrope(
                     color: AppColors.primaryColor,
                     fontSize: AppSizes.sp11,
@@ -641,39 +644,39 @@ class _EmployeeDetailsSheetState extends State<_EmployeeDetailsSheet> {
           SizedBox(height: AppSizes.ph20),
 
           // Section: Employee Information
-          _sectionLabel('EMPLOYEE INFORMATION'),
+          _sectionLabel(l.employeeInformationSection),
           SizedBox(height: AppSizes.h12),
-          _DetailRow(icon: Icons.person_outline, label: 'Name', value: e.name),
+          _DetailRow(icon: Icons.person_outline, label: l.nameField, value: e.name),
           _DetailRow(
             icon: Icons.email_outlined,
-            label: 'Email',
+            label: l.emailField,
             value: e.email,
           ),
           if (e.nationalId.isNotEmpty)
             _DetailRow(
               icon: Icons.badge_outlined,
-              label: 'National ID',
+              label: l.nationalIdField,
               value: e.nationalId,
             ),
           SizedBox(height: AppSizes.ph16),
 
           // Section: Organization Details
-          _sectionLabel('ORGANIZATION DETAILS'),
+          _sectionLabel(l.organizationDetailsSection),
           SizedBox(height: AppSizes.h12),
           _DetailRow(
             icon: Icons.apartment_outlined,
-            label: 'Organization',
+            label: l.organizationField,
             value: e.organizationName,
           ),
           _DetailRow(
             icon: Icons.account_tree_outlined,
-            label: 'Department',
+            label: l.departmentField,
             value: e.department.isNotEmpty ? e.department : '—',
           ),
           if (e.createdAt != null)
             _DetailRow(
               icon: Icons.event_outlined,
-              label: 'Member since',
+              label: l.memberSinceField,
               value: _formatDate(e.createdAt!),
             ),
           SizedBox(height: AppSizes.ph24),
@@ -710,7 +713,7 @@ class _EmployeeDetailsSheetState extends State<_EmployeeDetailsSheet> {
                             size: AppSizes.sp16,
                           ),
                     label: Text(
-                      'Remove',
+                      l.removeButton,
                       style: GoogleFonts.manrope(
                         color: AppColors.error,
                         fontWeight: FontWeight.w700,
@@ -748,7 +751,7 @@ class _EmployeeDetailsSheetState extends State<_EmployeeDetailsSheet> {
                         size: AppSizes.sp16,
                       ),
                       label: Text(
-                        'Edit',
+                        l.editMenuItem,
                         style: GoogleFonts.manrope(
                           color: AppColors.buttonText,
                           fontWeight: FontWeight.w800,
@@ -808,7 +811,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
 
   bool _isLoadingFresh = true;
   bool _isSaving = false;
-  String? _fetchWarning;
+  bool _showCachedWarning = false;
   String? _errorMessage;
 
   static const _departments = [
@@ -850,7 +853,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
       _nationalIdCtrl.text = data['nationalId'] ?? _nationalIdCtrl.text;
     } catch (_) {
       if (!mounted) return;
-      _fetchWarning = 'Showing cached data — could not sync latest values.';
+      _showCachedWarning = true;
     } finally {
       if (mounted) setState(() => _isLoadingFresh = false);
     }
@@ -916,6 +919,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
   }
 
   Widget _buildLoadingBody() {
+    final l = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -924,7 +928,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
         const CircularProgressIndicator(color: AppColors.primaryColor),
         SizedBox(height: AppSizes.ph20),
         Text(
-          'Loading latest data…',
+          l.loadingLatestData,
           style: GoogleFonts.manrope(
             color: AppColors.textSubtitle,
             fontSize: AppSizes.sp13,
@@ -936,6 +940,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
   }
 
   Widget _buildFormBody() {
+    final l = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       child: Form(
         key: _formKey,
@@ -948,7 +953,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
 
             // Title
             Text(
-              'Edit Employee',
+              l.editEmployeeTitle,
               style: GoogleFonts.manrope(
                 color: AppColors.textTitle,
                 fontSize: AppSizes.sp18,
@@ -968,7 +973,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
             SizedBox(height: AppSizes.ph20),
 
             // Fetch warning
-            if (_fetchWarning != null) ...[
+            if (_showCachedWarning) ...[
               Container(
                 padding: EdgeInsets.all(AppSizes.ph12),
                 decoration: BoxDecoration(
@@ -988,7 +993,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
                     SizedBox(width: AppSizes.w8),
                     Expanded(
                       child: Text(
-                        _fetchWarning!,
+                        l.showingCachedData,
                         style: GoogleFonts.manrope(
                           color: AppColors.primaryColor,
                           fontSize: AppSizes.sp11,
@@ -1002,7 +1007,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
             ],
 
             // Name field
-            _fieldLabel('NAME'),
+            _fieldLabel(l.nameFieldLabel),
             SizedBox(height: AppSizes.h8),
             TextFormField(
               controller: _nameCtrl,
@@ -1010,11 +1015,11 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
                 color: AppColors.textPrimary,
                 fontSize: AppSizes.sp14,
               ),
-              decoration: _inputDecoration('Full name'),
+              decoration: _inputDecoration(l.fullNameHint),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Name is required';
+                if (v == null || v.trim().isEmpty) return l.nameIsRequired;
                 if (RegExp(r'[0-9]').hasMatch(v)) {
-                  return 'Name cannot contain numbers';
+                  return l.nameCannotContainNumbers;
                 }
                 return null;
               },
@@ -1022,7 +1027,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
             SizedBox(height: AppSizes.ph16),
 
             // Department field
-            _fieldLabel('DEPARTMENT'),
+            _fieldLabel(l.departmentFieldLabel),
             SizedBox(height: AppSizes.h8),
             DropdownButtonFormField<String>(
               initialValue: _departments.contains(_deptCtrl.text)
@@ -1033,7 +1038,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
                 color: AppColors.textPrimary,
                 fontSize: AppSizes.sp14,
               ),
-              decoration: _inputDecoration('Select department'),
+              decoration: _inputDecoration(l.selectDepartmentFieldHint),
               icon: const Icon(
                 Icons.keyboard_arrow_down,
                 color: AppColors.textSecondary,
@@ -1042,7 +1047,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
                   .map(
                     (d) => DropdownMenuItem(
                       value: d,
-                      child: Text(d),
+                      child: Text(_localizedDept(d, l)),
                     ),
                   )
                   .toList(),
@@ -1052,12 +1057,12 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
                       if (v != null) _deptCtrl.text = v;
                     },
               validator: (v) =>
-                  v == null || v.isEmpty ? 'Department is required' : null,
+                  v == null || v.isEmpty ? l.departmentIsRequired : null,
             ),
             SizedBox(height: AppSizes.ph16),
 
             // National ID field
-            _fieldLabel('NATIONAL ID'),
+            _fieldLabel(l.nationalIdFieldLabel),
             SizedBox(height: AppSizes.h8),
             TextFormField(
               controller: _nationalIdCtrl,
@@ -1065,9 +1070,9 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
                 color: AppColors.textPrimary,
                 fontSize: AppSizes.sp14,
               ),
-              decoration: _inputDecoration('National ID number'),
+              decoration: _inputDecoration(l.nationalIdNumberHint),
               validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'National ID is required' : null,
+                  v == null || v.trim().isEmpty ? l.nationalIdIsRequired : null,
             ),
             SizedBox(height: AppSizes.ph20),
 
@@ -1110,7 +1115,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
                         ),
                       ),
                       child: Text(
-                        'Cancel',
+                        l.cancelButton,
                         style: GoogleFonts.manrope(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w700,
@@ -1156,7 +1161,7 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
                                 ),
                               )
                             : Text(
-                                'Save',
+                                l.saveButton,
                                 style: GoogleFonts.manrope(
                                   color: AppColors.buttonText,
                                   fontWeight: FontWeight.w800,
@@ -1172,6 +1177,17 @@ class _EditEmployeeSheetState extends State<_EditEmployeeSheet> {
         ),
       ),
     );
+  }
+
+  String _localizedDept(String dept, AppLocalizations l) {
+    switch (dept) {
+      case 'IT Department': return l.deptIT;
+      case 'HR Department': return l.deptHR;
+      case 'Operations': return l.deptOperations;
+      case 'Security': return l.deptSecurity;
+      case 'Other': return l.deptOther;
+      default: return dept;
+    }
   }
 
   Widget _dragHandle() {
@@ -1249,47 +1265,33 @@ class _DeleteConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return AlertDialog(
       backgroundColor: AppColors.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.r16),
       ),
       title: Text(
-        'Remove Employee',
+        l.removeEmployeeTitle,
         style: GoogleFonts.manrope(
           color: AppColors.textTitle,
           fontSize: AppSizes.sp16,
           fontWeight: FontWeight.w800,
         ),
       ),
-      content: RichText(
-        text: TextSpan(
-          style: GoogleFonts.manrope(
-            color: AppColors.textSecondary,
-            fontSize: AppSizes.sp13,
-            height: 1.5,
-          ),
-          children: [
-            const TextSpan(text: 'This will deactivate '),
-            TextSpan(
-              text: employeeName,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const TextSpan(
-              text:
-                  '\'s account. They will immediately lose access to GovChat.',
-            ),
-          ],
+      content: Text(
+        l.removeEmployeeConfirm(employeeName),
+        style: GoogleFonts.manrope(
+          color: AppColors.textSecondary,
+          fontSize: AppSizes.sp13,
+          height: 1.5,
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
           child: Text(
-            'Cancel',
+            l.cancelButton,
             style: GoogleFonts.manrope(
               color: AppColors.textMuted,
               fontWeight: FontWeight.w700,
@@ -1299,7 +1301,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
         TextButton(
           onPressed: () => Navigator.pop(context, true),
           child: Text(
-            'Remove',
+            l.removeButton,
             style: GoogleFonts.manrope(
               color: AppColors.error,
               fontWeight: FontWeight.w700,
@@ -1410,6 +1412,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1428,7 +1431,7 @@ class _EmptyState extends StatelessWidget {
           ),
           SizedBox(height: AppSizes.ph16),
           Text(
-            'No employees yet',
+            l.noEmployeesYet,
             style: GoogleFonts.manrope(
               color: AppColors.textTitle,
               fontSize: AppSizes.sp16,
@@ -1437,7 +1440,7 @@ class _EmptyState extends StatelessWidget {
           ),
           SizedBox(height: AppSizes.h8),
           Text(
-            'Approved employees will appear here.',
+            l.approvedEmployeesWillAppear,
             style: GoogleFonts.manrope(
               color: AppColors.textSubtitle,
               fontSize: AppSizes.sp12,
@@ -1456,6 +1459,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1463,7 +1467,7 @@ class _ErrorState extends StatelessWidget {
           Icon(Icons.error_outline, size: AppSizes.h40, color: AppColors.error),
           SizedBox(height: AppSizes.ph12),
           Text(
-            'Something went wrong',
+            l.somethingWentWrong,
             style: GoogleFonts.manrope(
               color: AppColors.textTitle,
               fontSize: AppSizes.sp16,
