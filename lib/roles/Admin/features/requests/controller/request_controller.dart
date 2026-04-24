@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
+import '../../../../../core/services/logging_service.dart';
 import '../../../../../models/access_request_model.dart';
 import '../../../../../models/admin_model.dart';
 
@@ -160,6 +161,25 @@ class RequestController extends ChangeNotifier {
 
       await batch.commit();
 
+      // Log the approval
+      final adminUser = _firebase.currentUser;
+      if (adminUser != null && (currentAdmin?.organizationId ?? '').isNotEmpty) {
+        LoggingService.instance.log(
+          organizationId: currentAdmin!.organizationId!,
+          actionType: 'access_request_approved',
+          descriptionKey: 'logAccessRequestApproved',
+          performedByUserId: adminUser.uid,
+          performedByRole: 'admin',
+          performedByName: currentAdmin?.email,
+          targetId: request.uid,
+          metadata: {
+            'employeeName': request.displayName,
+            'employeeEmail': request.email,
+            'department': request.department,
+          },
+        );
+      }
+
       await _sendApprovalEmail(request);
 
       debugPrint('Approved request: $requestKey');
@@ -213,6 +233,24 @@ class RequestController extends ChangeNotifier {
       }
 
       await batch.commit();
+
+      // Log the rejection
+      final adminUser = _firebase.currentUser;
+      if (adminUser != null && (currentAdmin?.organizationId ?? '').isNotEmpty) {
+        LoggingService.instance.log(
+          organizationId: currentAdmin!.organizationId!,
+          actionType: 'access_request_rejected',
+          descriptionKey: 'logAccessRequestRejected',
+          performedByUserId: adminUser.uid,
+          performedByRole: 'admin',
+          performedByName: currentAdmin?.email,
+          targetId: request.uid,
+          metadata: {
+            'employeeName': request.displayName,
+            'employeeEmail': request.email,
+          },
+        );
+      }
 
       if (context.mounted) {
         final l = AppLocalizations.of(context)!;

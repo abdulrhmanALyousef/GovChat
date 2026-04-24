@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
+import '../../../../../core/services/logging_service.dart';
 import '../../../../../models/chat_message.dart';
 
 class ChatController extends ChangeNotifier {
@@ -93,13 +94,28 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _messagesCollection().add({
-            'text': text,
-            'senderId': displayId,
-            'organizationId': organizationId,
-            'departmentId': _normalizedDepartmentId(),
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+      final ref = await _messagesCollection().add({
+        'text': text,
+        'senderId': displayId,
+        'organizationId': organizationId,
+        'departmentId': _normalizedDepartmentId(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      LoggingService.instance.log(
+        organizationId: organizationId,
+        actionType: 'message_sent',
+        descriptionKey: 'logMessageSent',
+        performedByUserId: _firebase.currentUser?.uid ?? displayId,
+        performedByRole: 'employee',
+        performedByName: displayId,
+        targetId: ref.id,
+        metadata: {
+          'chatType': _detectChatType(),
+          'departmentId': _normalizedDepartmentId(),
+          'messagePreview': text.length > 50 ? text.substring(0, 50) : text,
+        },
+      );
 
       messageController.clear();
       _scrollToBottom();
@@ -117,10 +133,30 @@ class ChatController extends ChangeNotifier {
     if (message.id == null) return;
     try {
       await _messagesCollection().doc(message.id!).delete();
+      LoggingService.instance.log(
+        organizationId: organizationId,
+        actionType: 'message_deleted',
+        descriptionKey: 'logMessageDeleted',
+        performedByUserId: _firebase.currentUser?.uid ?? displayId,
+        performedByRole: 'employee',
+        performedByName: displayId,
+        targetId: message.id,
+        metadata: {
+          'chatType': _detectChatType(),
+          'departmentId': _normalizedDepartmentId(),
+        },
+      );
     } catch (e) {
       errorMessage = e.toString();
       notifyListeners();
     }
+  }
+
+  String _detectChatType() {
+    if (messagesPath == null || messagesPath!.isEmpty) return 'department';
+    if (messagesPath!.contains('private_chats')) return 'private';
+    if (messagesPath!.contains('org_chats')) return 'organization';
+    return 'department';
   }
 
   // ─── Edit helpers ────────────────────────────────────────────────────────

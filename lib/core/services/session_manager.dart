@@ -5,6 +5,7 @@ import 'package:projects/l10n/app_localizations.dart';
 import '../../auth/login_screen.dart';
 import '../datasource/local_data/preferences_manager.dart';
 import '../datasource/remote_data/firebase_service.dart';
+import 'logging_service.dart';
 
 class SessionManager {
   SessionManager._();
@@ -16,6 +17,25 @@ class SessionManager {
   Future<void> logout(BuildContext context, {String? reason}) async {
     final l = AppLocalizations.of(context);
     String? error;
+
+    // Log logout before clearing session data
+    final user = FirebaseService.instance.currentUser;
+    if (user != null) {
+      final orgId = _preferences.getString('organizationId') ?? '';
+      final role = _preferences.getString('role') ?? '';
+      final isInactivity = reason != null &&
+          (reason.contains('inactivity') || reason.contains('عدم النشاط'));
+      if (orgId.isNotEmpty) {
+        LoggingService.instance.log(
+          organizationId: orgId,
+          actionType: isInactivity ? 'auto_logout_inactivity' : 'logout',
+          descriptionKey: isInactivity ? 'logAutoLogoutInactivity' : 'logLogout',
+          performedByUserId: user.uid,
+          performedByRole: role.isNotEmpty ? role : 'employee',
+          performedByName: user.email,
+        );
+      }
+    }
 
     try {
       await FirebaseService.instance.auth.signOut();
