@@ -888,8 +888,99 @@ class AppLocalizationsAr extends AppLocalizations {
   String get deptOperations => 'العمليات';
 
   @override
-  String get deptSecurity => 'الأمن';
+  String get deptSecurity => 'الأمن السيبراني';
 
   @override
   String get deptOther => 'أخرى';
+
+  @override
+  String get logLoginSuccess => 'تم تسجيل الدخول بنجاح';
+
+  @override
+  String get logLoginFailure => 'فشل محاولة تسجيل الدخول';
+
+  @override
+  String get logLogout => 'تم تسجيل خروج المستخدم';
+
+  @override
+  String get logPasswordChanged => 'تم تغيير كلمة المرور';
+
+  @override
+  String get logFirstLoginPasswordReset =>
+      'إعادة تعيين كلمة المرور عند أول تسجيل دخول';
+
+  @override
+  String get logAccessRequestSubmitted => 'تم تقديم طلب الوصول';
+
+  @override
+  String get logAccessRequestApproved => 'تمت الموافقة على طلب الوصول';
+
+  @override
+  String get logAccessRequestRejected => 'تم رفض طلب الوصول';
+
+  @override
+  String get logEmployeeUpdated => 'تم تحديث بيانات الموظف';
+
+  @override
+  String get logEmployeeDeleted => 'تم تعطيل حساب الموظف';
+
+  @override
+  String get logMessageSent => 'تم إرسال رسالة';
+
+  @override
+  String get logMessageDeleted => 'تم حذف رسالة';
+
+  @override
+  String get logUnauthorizedAccess => 'محاولة وصول غير مصرح به';
+
+  @override
+  String get logAutoLogoutInactivity => 'تسجيل خروج تلقائي بسبب عدم النشاط';
+
+  @override
+  String get logRoleMisuseAttempt => 'تم اكتشاف محاولة إساءة استخدام الصلاحيات';
+
+  @override
+  String get logUnknownAction => 'إجراء غير معروف';
+
+  @override
+  String get logFilterAll => 'الكل';
+
+  @override
+  String get logFilterAuth => 'المصادقة';
+
+  @override
+  String get logFilterEmployee => 'الموظفون';
+
+  @override
+  String get logFilterChat => 'الدردشة';
+
+  @override
+  String get logFilterSecurity => 'الأمان';
+
+  @override
+  String get logDateAll => 'كل الأوقات';
+
+  @override
+  String get logDateToday => 'اليوم';
+
+  @override
+  String get logDateLast7Days => 'آخر 7 أيام';
+
+  @override
+  String get logSearchHint => 'ابحث بالاسم أو الرقم أو الإجراء';
+
+  @override
+  String get logNoLogsFound => 'لا توجد سجلات';
+
+  @override
+  String get logNoLogsYet => 'لا توجد سجلات نشاط بعد';
+
+  @override
+  String get logActivityWillAppear => 'ستظهر هنا أنشطة منظمتك.';
+
+  @override
+  String get logLoadMore => 'تحميل المزيد';
+
+  @override
+  String get logPerformedBy => 'بواسطة';
 }

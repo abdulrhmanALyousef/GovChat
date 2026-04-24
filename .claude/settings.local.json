@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(flutter analyze *)"
+      "Bash(flutter analyze *)",
+      "Bash(xargs wc *)",
+      "Bash(flutter gen-l10n *)",
+      "Bash(dart run *)",
+      "Bash(flutter pub *)",
+      "Bash(flutter build *)"
     ]
   }
 }
