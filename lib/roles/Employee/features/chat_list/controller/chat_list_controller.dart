@@ -168,8 +168,10 @@ class ChatListController extends ChangeNotifier {
             if (snapshot.docs.isEmpty) return;
 
             final data = snapshot.docs.first.data();
+            final isEncrypted = data['isEncrypted'] as bool? ?? false;
+            final rawText = data['text'] as String?;
             _convMap[convId] = existing.copyWith(
-              lastMessage: data['text'] as String?,
+              lastMessage: isEncrypted ? '[Encrypted message]' : rawText,
               lastSenderId: data['senderId'] as String?,
               lastMessageTime: ConversationModel.timestampToDateTime(
                 data['createdAt'],

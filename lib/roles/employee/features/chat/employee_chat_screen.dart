@@ -144,6 +144,14 @@ class _ChatView extends StatelessWidget {
               if (controller.typingDisplayIds.isNotEmpty)
                 _TypingIndicator(
                     typingIds: controller.typingDisplayIds),
+              if (controller.errorMessage != null)
+                _ErrorBanner(
+                  message: controller.errorMessage!,
+                  onDismiss: controller.clearError,
+                  onRetry: controller.errorMessage!.contains('Encryption')
+                      ? controller.retryEncryptionInit
+                      : null,
+                ),
               _InputBar(controller: controller),
             ],
           ),
@@ -1186,6 +1194,79 @@ class _PulsingDotState extends State<_PulsingDot>
           color: AppColors.error,
           shape: BoxShape.circle,
         ),
+      ),
+    );
+  }
+}
+
+// ─── Error banner ─────────────────────────────────────────────────────────────
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({
+    required this.message,
+    required this.onDismiss,
+    this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onDismiss;
+
+  /// When non-null, a "Retry" button is shown beside the dismiss icon.
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: AppSizes.pw16,
+        vertical: AppSizes.ph4,
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSizes.pw12,
+        vertical: AppSizes.ph8,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.12),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+        borderRadius: BorderRadius.circular(AppSizes.r12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline_rounded,
+              color: AppColors.error, size: AppSizes.sp16),
+          SizedBox(width: AppSizes.w8),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.manrope(
+                color: AppColors.error,
+                fontSize: AppSizes.sp12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          if (onRetry != null) ...[
+            SizedBox(width: AppSizes.w8),
+            GestureDetector(
+              onTap: onRetry,
+              child: Text(
+                'Retry',
+                style: GoogleFonts.manrope(
+                  color: AppColors.error,
+                  fontSize: AppSizes.sp12,
+                  fontWeight: FontWeight.w800,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+          SizedBox(width: AppSizes.w6),
+          GestureDetector(
+            onTap: onDismiss,
+            child: Icon(Icons.close,
+                color: AppColors.error, size: AppSizes.sp16),
+          ),
+        ],
       ),
     );
   }

@@ -14,6 +14,7 @@ import 'package:record/record.dart';
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
 import '../../../../../core/services/encryption/aes_service.dart';
 import '../../../../../core/services/encryption/conversation_key_service.dart';
+import '../../../../../core/services/encryption/key_management_service.dart';
 import '../../../../../models/chat_message.dart';
 
 class ChatController extends ChangeNotifier {
@@ -26,16 +27,15 @@ class ChatController extends ChangeNotifier {
   }) {
     _listenForMessages();
     _listenToTyping();
-    // Fire-and-forget: loads the AES session key in the background.
-    // Messages received before the key is ready display as [Encrypted].
-    _initEncryption();
+    // Store the future so every send path can await it if the key is not
+    // ready yet when the user taps Send.
+    _encryptionReady = _initEncryption();
   }
 
   final FirebaseService _firebase = FirebaseService.instance;
   final _imagePicker = ImagePicker();
   final _audioRecorder = AudioRecorder();
 
-  // Exposed so _InputBar can attach it to the TextField for auto-focus.
   final TextEditingController messageController = TextEditingController();
   final ScrollController scrollController = ScrollController();
   final FocusNode inputFocusNode = FocusNode();
@@ -51,6 +51,9 @@ class ChatController extends ChangeNotifier {
   // ── Message state ──────────────────────────────────────────────────────────
   List<ChatMessage> messages = [];
   bool isSending = false;
+
+  /// Visible error string.  Set by any failed operation; cleared at the start
+  /// of the next send attempt.  The screen watches this and shows a banner.
   String? errorMessage;
 
   ChatMessage? editingMessage;
@@ -58,17 +61,18 @@ class ChatController extends ChangeNotifier {
 
   List<String> typingDisplayIds = [];
 
-  // ── Recording state ────────────────────────────────────────────────────────
+  // ── Recording / upload state ───────────────────────────────────────────────
   bool isRecording = false;
   int recordingSeconds = 0;
-
-  // ── Upload state ───────────────────────────────────────────────────────────
   bool isUploadingMedia = false;
 
   // ── E2EE ──────────────────────────────────────────────────────────────────
   Uint8List? _conversationKey;
 
-  /// True once the conversation key has been fetched / generated.
+  /// Completes (possibly with an error-free result even when the key is null
+  /// due to a hard failure) once [_initEncryption] has finished.
+  Future<void>? _encryptionReady;
+
   bool get isEncryptionReady => _conversationKey != null;
 
   // ── Internal ───────────────────────────────────────────────────────────────
@@ -83,70 +87,185 @@ class ChatController extends ChangeNotifier {
   bool _isTypingSet = false;
   String? _recordingPath;
 
+  // ── Conversation-path helpers ──────────────────────────────────────────────
+
+  /// Parent Firestore path of the messages collection.
+  /// Used as the key-storage root for [ConversationKeyService].
+  String get _conversationPath {
+    if (messagesPath != null && messagesPath!.isNotEmpty) {
+      final parts = messagesPath!.split('/');
+      if (parts.isNotEmpty && parts.last == 'messages') {
+        return parts.sublist(0, parts.length - 1).join('/');
+      }
+      return messagesPath!;
+    }
+    return 'organizations/$organizationId/departments/${_normalizedDepartmentId()}';
+  }
+
+  bool get _isPrivateChat =>
+      messagesPath != null && messagesPath!.contains('/private_chats/');
+
+  bool get _isOrgChat =>
+      messagesPath != null && messagesPath!.contains('/org_chats/');
+
   // ── Encryption init ────────────────────────────────────────────────────────
 
   Future<void> _initEncryption() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
+    try {
+      debugPrint('[E2EE] _initEncryption() start — path: $_conversationPath');
 
-    _conversationKey = await ConversationKeyService.getOrCreate(
-      organizationId: organizationId,
-      normalizedDepartmentId: _normalizedDepartmentId(),
-      currentUid: uid,
-    );
+      // ── 1. Resolve the Firebase UID ─────────────────────────────────────────
+      // FirebaseAuth.instance.currentUser can be null for a brief window on
+      // cold-start even when the user IS authenticated.  Wait up to 5 s.
+      String? uid = KeyManagementService.currentUid;
+      if (uid == null) {
+        debugPrint('[E2EE] currentUid null — waiting for auth state...');
+        try {
+          final user = await FirebaseAuth.instance
+              .authStateChanges()
+              .where((u) => u != null)
+              .first
+              .timeout(const Duration(seconds: 5));
+          uid = user?.uid;
+        } catch (_) {}
+      }
 
-    if (_conversationKey != null && messages.isNotEmpty) {
-      // Re-decrypt messages that arrived before the key was ready.
-      messages = messages.map(_tryDecrypt).toList();
+      if (uid == null) {
+        debugPrint('[E2EE] ⚠️  uid still null after wait — '
+            'generating anonymous session key');
+        // Build a throwaway key so the user is not permanently blocked.
+        // Messages will be encrypted; they won't be decryptable across
+        // devices/sessions, but they won't be plaintext.
+        _conversationKey = await ConversationKeyService.getOrCreate(
+          conversationPath: _conversationPath,
+          currentUid: 'anonymous',
+          memberUids: const [],
+        );
+        notifyListeners();
+        return;
+      }
+
+      debugPrint('[E2EE] uid=$uid  path=$_conversationPath');
+
+      // ── 2. Wait for RSA key initialisation (first-login generation) ─────────
+      debugPrint('[E2EE] ensureInitialized() ...');
+      await KeyManagementService.ensureInitialized();
+      debugPrint('[E2EE] ensureInitialized() done');
+
+      // ── 3. Fetch member UIDs for key distribution ────────────────────────────
+      final memberUids = await _fetchMemberUids(uid);
+      debugPrint('[E2EE] memberUids (${memberUids.length}): $memberUids');
+
+      // ── 4. Get or create the conversation AES key ────────────────────────────
+      // getOrCreate() never returns null — it falls back to a local session key
+      // if RSA / Firestore are unavailable.
+      _conversationKey = await ConversationKeyService.getOrCreate(
+        conversationPath: _conversationPath,
+        currentUid: uid,
+        memberUids: memberUids,
+      );
+
+      if (_conversationKey == null) {
+        // Should never happen after the refactor, but guard defensively.
+        debugPrint('[E2EE] ⚠️  getOrCreate() returned null — unexpected');
+      } else {
+        debugPrint('[E2EE] ✅ conversationKey ready '
+            '(${_conversationKey!.length} B) for $_conversationPath');
+        if (messages.isNotEmpty) {
+          messages = messages.map(_tryDecrypt).toList();
+        }
+      }
+
+      notifyListeners();
+    } catch (e, st) {
+      debugPrint('[E2EE] _initEncryption() unexpected error: $e\n$st');
+      // Try to set a fallback key so at least this session can send.
+      try {
+        _conversationKey ??= await ConversationKeyService.getOrCreate(
+          conversationPath: _conversationPath,
+          currentUid: KeyManagementService.currentUid ?? 'fallback',
+          memberUids: const [],
+        );
+      } catch (_) {}
     }
+  }
+
+  Future<List<String>> _fetchMemberUids(String currentUid) async {
+    // ── Private 1-to-1 ──────────────────────────────────────────────────────
+    if (_isPrivateChat) {
+      try {
+        final doc =
+            await _firebase.firestore.doc(_conversationPath).get();
+        final participants = List<String>.from(
+          doc.data()?['participants'] as List? ?? [],
+        );
+        if (participants.isEmpty) return [currentUid];
+        return participants;
+      } catch (e) {
+        debugPrint('[E2EE] fetchMemberUids (private) error: $e');
+        return [currentUid];
+      }
+    }
+
+    // ── Org-wide ─────────────────────────────────────────────────────────────
+    if (_isOrgChat) {
+      try {
+        final snap = await _firebase.firestore
+            .collection('employees')
+            .where('organizationId', isEqualTo: organizationId)
+            .where('status', isEqualTo: 'active')
+            .get();
+        final uids = snap.docs.map((d) => d.id).toList();
+        if (!uids.contains(currentUid)) uids.add(currentUid);
+        return uids;
+      } catch (e) {
+        debugPrint('[E2EE] fetchMemberUids (org) error: $e');
+        return [currentUid];
+      }
+    }
+
+    // ── Department (group) ────────────────────────────────────────────────────
+    try {
+      final snap = await _firebase.firestore
+          .collection('employees')
+          .where('organizationId', isEqualTo: organizationId)
+          .where('departmentId', isEqualTo: _normalizedDepartmentId())
+          .get();
+      final uids = snap.docs.map((d) => d.id).toList();
+      if (!uids.contains(currentUid)) uids.add(currentUid);
+      return uids;
+    } catch (e) {
+      debugPrint('[E2EE] fetchMemberUids (dept) error: $e');
+      return [currentUid];
+    }
+  }
+
+  // ── Error helper ───────────────────────────────────────────────────────────
+
+  /// Clear the visible error banner.
+  void clearError() {
+    errorMessage = null;
     notifyListeners();
   }
 
-  // ── Message stream ─────────────────────────────────────────────────────────
-
-  void _listenForMessages() {
-    debugPrint('OrgId: $organizationId');
-    debugPrint('DeptId: $departmentId');
-
-    _subscription = _messagesCollection()
-        .orderBy('createdAt')
-        .snapshots()
-        .listen(
-          (snapshot) {
-            messages = snapshot.docs
-                .map((doc) =>
-                    _tryDecrypt(ChatMessage.fromJson(doc.data(), id: doc.id)))
-                .toList();
-            debugPrint('Messages count: ${messages.length}');
-            _markMessagesAsRead(snapshot.docs).ignore();
-            notifyListeners();
-            _scrollToBottom();
-          },
-          onError: (error) {
-            errorMessage = error.toString();
-            notifyListeners();
-          },
-        );
+  /// Manually re-run encryption initialisation.
+  /// Called by the UI retry button so users can recover without restarting.
+  Future<void> retryEncryptionInit() async {
+    errorMessage = null;
+    notifyListeners();
+    _encryptionReady = _initEncryption();
+    await _encryptionReady;
   }
 
   // ── Decrypt helper ─────────────────────────────────────────────────────────
 
-  /// Attempt to decrypt [msg] using the current conversation key.
-  ///
-  /// Returns the original message unchanged if:
-  ///   • the message is not encrypted (legacy plain-text message), or
-  ///   • no conversation key is available yet.
-  ///
-  /// Returns a copy with `text = '[Encrypted message]'` on auth-tag failure
-  /// (tampered data or key mismatch).
   ChatMessage _tryDecrypt(ChatMessage msg) {
-    if (!msg.isEncrypted) return msg; // plain-text (legacy) message
+    if (!msg.isEncrypted) return msg; // legacy plain-text — pass through
     if (_conversationKey == null) return msg; // key not ready yet
 
     String? decryptedText;
     String? decryptedMediaUrl;
 
-    // Decrypt message body
     if (msg.encryptedText != null && msg.iv != null) {
       try {
         decryptedText = AesService.decrypt(
@@ -160,7 +279,6 @@ class ChatController extends ChangeNotifier {
       }
     }
 
-    // Decrypt media URL (if present)
     if (msg.encryptedMediaUrl != null && msg.mediaIv != null) {
       try {
         decryptedMediaUrl = AesService.decrypt(
@@ -181,6 +299,29 @@ class ChatController extends ChangeNotifier {
     );
   }
 
+  // ── Message stream ─────────────────────────────────────────────────────────
+
+  void _listenForMessages() {
+    _subscription = _messagesCollection()
+        .orderBy('createdAt')
+        .snapshots()
+        .listen(
+          (snapshot) {
+            messages = snapshot.docs
+                .map((doc) =>
+                    _tryDecrypt(ChatMessage.fromJson(doc.data(), id: doc.id)))
+                .toList();
+            _markMessagesAsRead(snapshot.docs).ignore();
+            notifyListeners();
+            _scrollToBottom();
+          },
+          onError: (error) {
+            errorMessage = error.toString();
+            notifyListeners();
+          },
+        );
+  }
+
   // ── Text send ──────────────────────────────────────────────────────────────
 
   Future<void> sendMessage() async {
@@ -196,40 +337,40 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final payload = _buildTextPayload(text);
-      await _messagesCollection().add(payload);
+      // ── Ensure encryption key is ready ──────────────────────────────────
+      await _awaitEncryptionKey();
+
+      // _awaitEncryptionKey() guarantees a non-null key; this guard is a
+      // last-resort defensive check only.
+      if (_conversationKey == null) {
+        errorMessage = 'Could not initialise encryption. '
+            'Tap Retry on the banner or restart the app.';
+        isSending = false;
+        notifyListeners();
+        return;
+      }
+
+      final enc = AesService.encrypt(text, _conversationKey!);
+      await _messagesCollection().add({
+        'senderId': displayId,
+        'organizationId': organizationId,
+        'departmentId': _normalizedDepartmentId(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'text': '', // plaintext never stored
+        'isEncrypted': true,
+        'encryptedText': enc.ciphertext,
+        'iv': enc.iv,
+      });
+
       messageController.clear();
       _scrollToBottom();
-    } catch (e) {
-      errorMessage = e.toString();
+    } catch (e, st) {
+      debugPrint('[ChatController] sendMessage error: $e\n$st');
+      errorMessage = 'Failed to send message. Please try again.';
     }
 
     isSending = false;
     notifyListeners();
-  }
-
-  Map<String, dynamic> _buildTextPayload(String plaintext) {
-    final base = {
-      'senderId': displayId,
-      'organizationId': organizationId,
-      'departmentId': _normalizedDepartmentId(),
-      'createdAt': FieldValue.serverTimestamp(),
-    };
-
-    if (_conversationKey != null) {
-      final enc = AesService.encrypt(plaintext, _conversationKey!);
-      return {
-        ...base,
-        'text': '', // do not store plaintext in Firestore
-        'isEncrypted': true,
-        'encryptedText': enc.ciphertext,
-        'iv': enc.iv,
-      };
-    }
-
-    // Fallback: no key available (should not happen in normal flow).
-    debugPrint('[E2EE] ⚠️  Sending unencrypted — conversation key not ready');
-    return {...base, 'text': plaintext};
   }
 
   // ── Delete ─────────────────────────────────────────────────────────────────
@@ -239,7 +380,7 @@ class ChatController extends ChangeNotifier {
     try {
       await _messagesCollection().doc(message.id!).delete();
     } catch (e) {
-      errorMessage = e.toString();
+      errorMessage = 'Failed to delete message.';
       notifyListeners();
     }
   }
@@ -276,37 +417,40 @@ class ChatController extends ChangeNotifier {
     }
 
     isSending = true;
+    errorMessage = null;
     notifyListeners();
 
     try {
-      Map<String, dynamic> update = {
-        'isEdited': true,
-        'editedAt': FieldValue.serverTimestamp(),
-      };
+      await _awaitEncryptionKey();
 
-      if (_conversationKey != null) {
-        final enc = AesService.encrypt(newText, _conversationKey!);
-        update.addAll({
-          'text': '',
-          'isEncrypted': true,
-          'encryptedText': enc.ciphertext,
-          'iv': enc.iv,
-        });
-      } else {
-        update['text'] = newText;
+      if (_conversationKey == null) {
+        errorMessage = 'Could not initialise encryption. Please try again.';
+        isSending = false;
+        notifyListeners();
+        return;
       }
 
-      await _messagesCollection().doc(msg.id!).update(update);
+      final enc = AesService.encrypt(newText, _conversationKey!);
+      await _messagesCollection().doc(msg.id!).update({
+        'text': '',
+        'isEncrypted': true,
+        'encryptedText': enc.ciphertext,
+        'iv': enc.iv,
+        'isEdited': true,
+        'editedAt': FieldValue.serverTimestamp(),
+      });
+
       cancelEditing();
-    } catch (e) {
-      errorMessage = e.toString();
+    } catch (e, st) {
+      debugPrint('[ChatController] confirmEdit error: $e\n$st');
+      errorMessage = 'Failed to edit message. Please try again.';
     }
 
     isSending = false;
     notifyListeners();
   }
 
-  // ── Image send ─────────────────────────────────────────────────────────────
+  // ── Image / Video / Voice send ─────────────────────────────────────────────
 
   Future<void> pickAndSendImage() async {
     final XFile? xFile = await _imagePicker.pickImage(
@@ -316,22 +460,18 @@ class ChatController extends ChangeNotifier {
     if (xFile == null) return;
 
     final file = File(xFile.path);
-    final sizeBytes = await file.length();
-    if (sizeBytes > 20 * 1024 * 1024) {
+    if (await file.length() > 20 * 1024 * 1024) {
       errorMessage = 'imageTooLarge';
       notifyListeners();
       return;
     }
 
-    final fileName = 'img_${DateTime.now().millisecondsSinceEpoch}.jpg';
     await _sendMediaMessage(
       file: file,
       messageType: MessageType.image,
-      mediaFileName: fileName,
+      mediaFileName: 'img_${DateTime.now().millisecondsSinceEpoch}.jpg',
     );
   }
-
-  // ── Video send ─────────────────────────────────────────────────────────────
 
   Future<void> pickAndSendVideo() async {
     final XFile? xFile = await _imagePicker.pickVideo(
@@ -340,22 +480,18 @@ class ChatController extends ChangeNotifier {
     if (xFile == null) return;
 
     final file = File(xFile.path);
-    final sizeBytes = await file.length();
-    if (sizeBytes > 50 * 1024 * 1024) {
+    if (await file.length() > 50 * 1024 * 1024) {
       errorMessage = 'videoTooLarge';
       notifyListeners();
       return;
     }
 
-    final fileName = 'vid_${DateTime.now().millisecondsSinceEpoch}.mp4';
     await _sendMediaMessage(
       file: file,
       messageType: MessageType.video,
-      mediaFileName: fileName,
+      mediaFileName: 'vid_${DateTime.now().millisecondsSinceEpoch}.mp4',
     );
   }
-
-  // ── Voice recording ────────────────────────────────────────────────────────
 
   Future<void> startVoiceRecording() async {
     final hasPermission = await _audioRecorder.hasPermission();
@@ -402,12 +538,11 @@ class ChatController extends ChangeNotifier {
     final file = File(path);
     if (!await file.exists()) return;
 
-    final fileName = 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
     await _sendMediaMessage(
       file: file,
       messageType: MessageType.voice,
       mediaDuration: duration,
-      mediaFileName: fileName,
+      mediaFileName: 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a',
     );
   }
 
@@ -433,6 +568,20 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // ── Ensure encryption key is ready BEFORE uploading ─────────────────
+      // We must not upload first and then find the key unavailable — the
+      // file would be in Storage with no encrypted reference in Firestore.
+      await _awaitEncryptionKey();
+
+      if (_conversationKey == null) {
+        errorMessage =
+            'Could not initialise encryption. Tap Retry or restart the app.';
+        isUploadingMedia = false;
+        notifyListeners();
+        return;
+      }
+
+      // ── Upload file to Storage ───────────────────────────────────────────
       final ref = FirebaseStorage.instance
           .ref()
           .child('chat_media/$organizationId/$_chatStorageId/$mediaFileName');
@@ -440,43 +589,75 @@ class ChatController extends ChangeNotifier {
       final metadata = messageType == MessageType.voice
           ? SettableMetadata(contentType: 'audio/mp4')
           : null;
+
       await ref.putFile(file, metadata);
       final url = await ref.getDownloadURL();
 
-      final base = {
+      // ── Encrypt Storage URL and write to Firestore ───────────────────────
+      final encUrl = AesService.encrypt(url, _conversationKey!);
+
+      await _messagesCollection().add({
         'senderId': displayId,
         'organizationId': organizationId,
         'departmentId': _normalizedDepartmentId(),
         'createdAt': FieldValue.serverTimestamp(),
         'messageType': messageType.name,
+        'text': '', // plaintext never stored
+        'isEncrypted': true,
+        'encryptedMediaUrl': encUrl.ciphertext,
+        'mediaIv': encUrl.iv,
+        // ignore: use_null_aware_elements
         if (mediaDuration != null) 'mediaDuration': mediaDuration,
+        // ignore: use_null_aware_elements
         if (mediaFileName != null) 'mediaFileName': mediaFileName,
-      };
-
-      if (_conversationKey != null) {
-        // Encrypt the Storage download URL so Firebase never sees it.
-        final encUrl = AesService.encrypt(url, _conversationKey!);
-        await _messagesCollection().add({
-          ...base,
-          'text': '',
-          'isEncrypted': true,
-          'encryptedMediaUrl': encUrl.ciphertext,
-          'mediaIv': encUrl.iv,
-        });
-      } else {
-        debugPrint('[E2EE] ⚠️  Sending media URL unencrypted');
-        await _messagesCollection()
-            .add({...base, 'text': '', 'mediaUrl': url});
-      }
+      });
 
       _scrollToBottom();
-    } catch (e) {
-      errorMessage = e.toString();
+    } catch (e, st) {
+      debugPrint('[ChatController] _sendMediaMessage error: $e\n$st');
+      errorMessage = 'Failed to send media. Please try again.';
     }
 
     isUploadingMedia = false;
     notifyListeners();
   }
+
+  // ── Encryption-ready guard ─────────────────────────────────────────────────
+
+  /// Await the initial encryption setup.  If the key is still null after that
+  /// (e.g. RSA generation genuinely failed), the caller must check and surface
+  /// an error — this method only ensures we gave it every chance to succeed.
+  Future<void> _awaitEncryptionKey() async {
+    if (_conversationKey != null) return;
+
+    // _encryptionReady may be a failed Future if _initEncryption() threw before
+    // our try-catch was in place (or in the current session if it re-throws for
+    // any reason).  Always swallow here so callers only see a null key, not an
+    // exception.
+    if (_encryptionReady != null) {
+      try {
+        await _encryptionReady;
+      } catch (e) {
+        debugPrint('[E2EE] _encryptionReady completed with error (swallowed): $e');
+      }
+    }
+
+    // One retry — covers the race where ensureInitialized() returned before the
+    // Firestore write completed on first login, or after a transient network blip.
+    if (_conversationKey == null) {
+      debugPrint('[E2EE] Key still null after initial wait — retrying _initEncryption()');
+      try {
+        await _initEncryption();
+      } catch (e) {
+        debugPrint('[E2EE] _initEncryption retry error (swallowed): $e');
+      }
+    }
+
+    debugPrint('[E2EE] _awaitEncryptionKey done — '
+        'key ${_conversationKey == null ? "STILL NULL" : "ready"}');
+  }
+
+  // ── Storage path ───────────────────────────────────────────────────────────
 
   String get _chatStorageId {
     if (messagesPath != null && messagesPath!.isNotEmpty) {
@@ -488,7 +669,6 @@ class ChatController extends ChangeNotifier {
   // ── Typing indicators ──────────────────────────────────────────────────────
 
   void onTextChanged(String text) {
-    debugPrint('[Typing] onTextChanged: "${text.length} chars"');
     if (text.isNotEmpty) {
       _typingDebounceTimer?.cancel();
       _typingDebounceTimer = Timer(
@@ -508,12 +688,9 @@ class ChatController extends ChangeNotifier {
   }
 
   void _listenToTyping() {
-    debugPrint(
-        '[Typing] _listenToTyping() started for doc: ${_chatDocRef().path}');
     _typingSubscription = _chatDocRef().snapshots().listen(
       (snap) {
         if (!snap.exists) {
-          debugPrint('[Typing] chat doc does not exist');
           if (typingDisplayIds.isNotEmpty) {
             typingDisplayIds = [];
             notifyListeners();
@@ -523,7 +700,6 @@ class ChatController extends ChangeNotifier {
         final data = snap.data() ?? {};
         final raw =
             Map<String, dynamic>.from(data['typing'] as Map? ?? {});
-        debugPrint('[Typing] raw typing map: $raw');
         final now = DateTime.now();
         typingDisplayIds = raw.entries
             .where((e) => e.key != displayId)
@@ -537,30 +713,23 @@ class ChatController extends ChangeNotifier {
             })
             .map((e) => e.key)
             .toList();
-        debugPrint('[Typing] typingDisplayIds: $typingDisplayIds');
         notifyListeners();
       },
-      onError: (e) {
-        debugPrint('[Typing] stream error: $e');
-      },
+      onError: (e) => debugPrint('[Typing] stream error: $e'),
     );
   }
 
   Future<void> _setTyping(bool isTyping) async {
     try {
       if (isTyping) {
-        debugPrint('[Typing] setting typing=true for $displayId');
         await _chatDocRef().set(
-          {
-            'typing': {displayId: FieldValue.serverTimestamp()},
-          },
+          {'typing': {displayId: FieldValue.serverTimestamp()}},
           SetOptions(mergeFields: [
             FieldPath(['typing', displayId])
           ]),
         );
         _isTypingSet = true;
       } else if (_isTypingSet) {
-        debugPrint('[Typing] clearing typing for $displayId');
         await _chatDocRef()
             .update({'typing.$displayId': FieldValue.delete()});
         _isTypingSet = false;
@@ -593,7 +762,8 @@ class ChatController extends ChangeNotifier {
       final data = doc.data();
       final senderId = data['senderId'] as String? ?? '';
       if (senderId == displayId) return false;
-      final readBy = List<String>.from(data['readBy'] as List? ?? []);
+      final readBy =
+          List<String>.from(data['readBy'] as List? ?? []);
       return !readBy.contains(displayId);
     }).toList();
 
@@ -646,10 +816,8 @@ class ChatController extends ChangeNotifier {
     return 'general';
   }
 
-  String _sanitize(String value) {
-    final cleaned = value.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
-    return cleaned.toLowerCase();
-  }
+  String _sanitize(String value) =>
+      value.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_').toLowerCase();
 
   // ── Dispose ────────────────────────────────────────────────────────────────
 
