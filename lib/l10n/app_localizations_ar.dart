@@ -892,4 +892,52 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deptOther => 'أخرى';
+
+  @override
+  String get voiceMessage => 'رسالة صوتية';
+
+  @override
+  String get imageMessage => 'صورة';
+
+  @override
+  String get videoMessage => 'فيديو';
+
+  @override
+  String get recording => 'جاري التسجيل...';
+
+  @override
+  String get cancelRecording => 'إلغاء';
+
+  @override
+  String get attachMedia => 'إرفاق';
+
+  @override
+  String get mediaAttachmentTitle => 'إضافة للرسالة';
+
+  @override
+  String get sendImageOption => 'صورة';
+
+  @override
+  String get sendVideoOption => 'فيديو';
+
+  @override
+  String get uploadingMedia => 'جاري الرفع...';
+
+  @override
+  String get failedToUploadMedia => 'فشل رفع الملف. الرجاء المحاولة مرة أخرى.';
+
+  @override
+  String get tapToView => 'اضغط للعرض';
+
+  @override
+  String get videoTooLarge => 'الفيديو كبير جداً (الحد الأقصى 50 ميغابايت)';
+
+  @override
+  String get imageTooLarge => 'الصورة كبيرة جداً (الحد الأقصى 20 ميغابايت)';
+
+  @override
+  String get microphonePermissionDenied => 'تم رفض إذن الميكروفون';
+
+  @override
+  String get sendVoiceOption => 'صوت';
 }

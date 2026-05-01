@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>GovChat needs microphone access to send voice messages.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>GovChat needs photo library access to share images and videos.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>GovChat needs camera access to take photos and videos.</string>
 </dict>
 </plist>

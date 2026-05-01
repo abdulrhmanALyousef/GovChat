@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
+import '../../core/services/encryption/key_management_service.dart';
 import '../../core/services/session_manager.dart';
 import '../../models/admin_model.dart';
 import '../../models/employee_model.dart';
@@ -100,7 +101,12 @@ class LoginController extends ChangeNotifier {
         return;
       }
 
-      // 4. Save user data in SharedPreferences
+      // 4. Initialize E2EE keys (generates RSA pair on first login,
+      //    restores public key to Firestore if device was changed).
+      //    Non-blocking: runs in background, does not delay login navigation.
+      KeyManagementService.initializeUserKeys(uid).ignore();
+
+      // 5. Save user data in SharedPreferences
       final prefs = PreferencesManager();
       await prefs.setString('uid', user.uid);
       await prefs.setString('email', user.email);
