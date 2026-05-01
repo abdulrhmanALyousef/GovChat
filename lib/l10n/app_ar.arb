@@ -356,5 +356,21 @@
   "deptHR": "قسم الموارد البشرية",
   "deptOperations": "العمليات",
   "deptSecurity": "الأمن",
-  "deptOther": "أخرى"
+  "deptOther": "أخرى",
+  "voiceMessage": "رسالة صوتية",
+  "imageMessage": "صورة",
+  "videoMessage": "فيديو",
+  "recording": "جاري التسجيل...",
+  "cancelRecording": "إلغاء",
+  "attachMedia": "إرفاق",
+  "mediaAttachmentTitle": "إضافة للرسالة",
+  "sendImageOption": "صورة",
+  "sendVideoOption": "فيديو",
+  "uploadingMedia": "جاري الرفع...",
+  "failedToUploadMedia": "فشل رفع الملف. الرجاء المحاولة مرة أخرى.",
+  "tapToView": "اضغط للعرض",
+  "videoTooLarge": "الفيديو كبير جداً (الحد الأقصى 50 ميغابايت)",
+  "imageTooLarge": "الصورة كبيرة جداً (الحد الأقصى 20 ميغابايت)",
+  "microphonePermissionDenied": "تم رفض إذن الميكروفون",
+  "sendVoiceOption": "صوت"
 }

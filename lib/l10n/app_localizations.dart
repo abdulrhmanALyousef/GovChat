@@ -1771,6 +1771,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other'**
   String get deptOther;
+
+  /// No description provided for @voiceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice message'**
+  String get voiceMessage;
+
+  /// No description provided for @imageMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get imageMessage;
+
+  /// No description provided for @videoMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get videoMessage;
+
+  /// No description provided for @recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording...'**
+  String get recording;
+
+  /// No description provided for @cancelRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelRecording;
+
+  /// No description provided for @attachMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach'**
+  String get attachMedia;
+
+  /// No description provided for @mediaAttachmentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to message'**
+  String get mediaAttachmentTitle;
+
+  /// No description provided for @sendImageOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get sendImageOption;
+
+  /// No description provided for @sendVideoOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get sendVideoOption;
+
+  /// No description provided for @uploadingMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading...'**
+  String get uploadingMedia;
+
+  /// No description provided for @failedToUploadMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to upload media. Please try again.'**
+  String get failedToUploadMedia;
+
+  /// No description provided for @tapToView.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view'**
+  String get tapToView;
+
+  /// No description provided for @videoTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Video too large (max 50 MB)'**
+  String get videoTooLarge;
+
+  /// No description provided for @imageTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Image too large (max 20 MB)'**
+  String get imageTooLarge;
+
+  /// No description provided for @microphonePermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone permission denied'**
+  String get microphonePermissionDenied;
+
+  /// No description provided for @sendVoiceOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get sendVoiceOption;
 }
 
 class _AppLocalizationsDelegate

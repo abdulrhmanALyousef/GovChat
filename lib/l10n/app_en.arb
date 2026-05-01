@@ -356,5 +356,21 @@
   "deptHR": "HR Department",
   "deptOperations": "Operations",
   "deptSecurity": "Security",
-  "deptOther": "Other"
+  "deptOther": "Other",
+  "voiceMessage": "Voice message",
+  "imageMessage": "Image",
+  "videoMessage": "Video",
+  "recording": "Recording...",
+  "cancelRecording": "Cancel",
+  "attachMedia": "Attach",
+  "mediaAttachmentTitle": "Add to message",
+  "sendImageOption": "Image",
+  "sendVideoOption": "Video",
+  "uploadingMedia": "Uploading...",
+  "failedToUploadMedia": "Failed to upload media. Please try again.",
+  "tapToView": "Tap to view",
+  "videoTooLarge": "Video too large (max 50 MB)",
+  "imageTooLarge": "Image too large (max 20 MB)",
+  "microphonePermissionDenied": "Microphone permission denied",
+  "sendVoiceOption": "Voice"
 }

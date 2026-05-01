@@ -894,4 +894,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deptOther => 'Other';
+
+  @override
+  String get voiceMessage => 'Voice message';
+
+  @override
+  String get imageMessage => 'Image';
+
+  @override
+  String get videoMessage => 'Video';
+
+  @override
+  String get recording => 'Recording...';
+
+  @override
+  String get cancelRecording => 'Cancel';
+
+  @override
+  String get attachMedia => 'Attach';
+
+  @override
+  String get mediaAttachmentTitle => 'Add to message';
+
+  @override
+  String get sendImageOption => 'Image';
+
+  @override
+  String get sendVideoOption => 'Video';
+
+  @override
+  String get uploadingMedia => 'Uploading...';
+
+  @override
+  String get failedToUploadMedia => 'Failed to upload media. Please try again.';
+
+  @override
+  String get tapToView => 'Tap to view';
+
+  @override
+  String get videoTooLarge => 'Video too large (max 50 MB)';
+
+  @override
+  String get imageTooLarge => 'Image too large (max 20 MB)';
+
+  @override
+  String get microphonePermissionDenied => 'Microphone permission denied';
+
+  @override
+  String get sendVoiceOption => 'Voice';
 }
