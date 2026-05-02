@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
+import '../../../../../core/services/activity_log_service.dart';
 
 class OrganizationsController extends ChangeNotifier {
   final TextEditingController organizationNameController =
@@ -116,6 +117,27 @@ class OrganizationsController extends ChangeNotifier {
       successMessage =
           result['message'] ??
           'Admin account created. Temporary password sent to $email';
+
+      // Log org creation + admin creation (fire-and-forget)
+      final actor = firebase.currentUser;
+      if (actor != null) {
+        ActivityLogService.instance.log(
+          action: ActivityLogService.actionOrgCreated,
+          actorId: actor.uid,
+          actorEmail: actor.email ?? '',
+          actorRole: 'primary_admin',
+          organizationName: orgName,
+          targetEmail: email,
+        );
+        ActivityLogService.instance.log(
+          action: ActivityLogService.actionAdminCreated,
+          actorId: actor.uid,
+          actorEmail: actor.email ?? '',
+          actorRole: 'primary_admin',
+          organizationName: orgName,
+          targetEmail: email,
+        );
+      }
 
       // Clear form
       _clearForm();
