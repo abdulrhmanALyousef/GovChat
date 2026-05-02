@@ -4,6 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
+import '../../../../../core/services/encryption/e2ee_crypto.dart';
+import '../../../../../core/services/encryption/e2ee_key_store.dart';
+import '../../../../../core/services/encryption/e2ee_manager.dart';
 import '../../../../../models/conversation_model.dart';
 import '../../../../../models/employee_model.dart';
 
@@ -153,7 +156,6 @@ class ChatListController extends ChangeNotifier {
   // ─── Last-message subscriptions ──────────────────────────────────────────
 
   void _subscribeToLastMessage(String convId, String messagesPath) {
-    // Cancel any existing subscription for this conversation before (re)subscribing.
     _lastMessageSubs[convId]?.cancel();
 
     _lastMessageSubs[convId] = FirebaseService.instance.firestore
@@ -162,7 +164,7 @@ class ChatListController extends ChangeNotifier {
         .limit(1)
         .snapshots()
         .listen(
-          (snapshot) {
+          (snapshot) async {
             final existing = _convMap[convId];
             if (existing == null) return;
             if (snapshot.docs.isEmpty) return;
@@ -170,8 +172,14 @@ class ChatListController extends ChangeNotifier {
             final data = snapshot.docs.first.data();
             final isEncrypted = data['isEncrypted'] as bool? ?? false;
             final rawText = data['text'] as String?;
+
+            String? displayText;
+            if (isEncrypted) {
+              displayText = await _decryptLastMessage(data, existing);
+            }
+
             _convMap[convId] = existing.copyWith(
-              lastMessage: isEncrypted ? '[Encrypted message]' : rawText,
+              lastMessage: displayText ?? (isEncrypted ? '[Encrypted message]' : rawText),
               lastSenderId: data['senderId'] as String?,
               lastMessageTime: ConversationModel.timestampToDateTime(
                 data['createdAt'],
@@ -182,6 +190,54 @@ class ChatListController extends ChangeNotifier {
           },
           onError: (_) {},
         );
+  }
+
+  /// Try to decrypt the last message preview.
+  /// Returns null if decryption fails (caller falls back to placeholder).
+  Future<String?> _decryptLastMessage(
+    Map<String, dynamic> data,
+    ConversationModel conv,
+  ) async {
+    final encryptedText = data['encryptedText'] as String?;
+    final iv = data['iv'] as String?;
+    if (encryptedText == null || iv == null) return null;
+
+    try {
+      // Derive the conversation path from the messages path.
+      final convPath = conv.messagesCollectionPath.replaceAll('/messages', '');
+
+      // Try loading from secure storage first (fast path).
+      var key = await E2eeKeyStore.getConversationKey(convPath);
+
+      // If not cached, derive/fetch the key.
+      if (key == null) {
+        final uid = E2eeManager.currentUid;
+        if (uid == null) return null;
+
+        key = await E2eeManager.getConversationKey(
+          conversationPath: convPath,
+          currentUid: uid,
+          memberUids: const [],
+          isPrivateChat: conv.type == 'private',
+        );
+      }
+
+      if (key == null) return null;
+
+      final decrypted = await E2eeManager.decryptMessage(
+        EncryptedPayload(ciphertext: encryptedText, nonce: iv),
+        key,
+      );
+
+      // Truncate for preview.
+      if (decrypted.length > 80) {
+        return '${decrypted.substring(0, 80)}…';
+      }
+      return decrypted;
+    } catch (e) {
+      debugPrint('[E2EE] last message decrypt failed for ${conv.id}: $e');
+      return null;
+    }
   }
 
   // ─── List ordering ────────────────────────────────────────────────────────
