@@ -53,7 +53,7 @@ dependencies:
   video_player: ^2.9.2
   path_provider: ^2.1.4
   # End-to-End Encryption
-  pointycastle: ^3.9.1
+  cryptography: ^2.0.5
   flutter_secure_storage: ^9.2.2
 
 

@@ -5,7 +5,7 @@ import 'package:projects/l10n/app_localizations.dart';
 import '../../auth/login_screen.dart';
 import '../datasource/local_data/preferences_manager.dart';
 import '../datasource/remote_data/firebase_service.dart';
-import 'encryption/conversation_key_service.dart';
+import 'encryption/e2ee_manager.dart';
 
 class SessionManager {
   SessionManager._();
@@ -25,7 +25,7 @@ class SessionManager {
     }
 
     await _preferences.clear();
-    ConversationKeyService.clearAll(); // Evict in-memory AES key cache
+    E2eeManager.clearCache(); // Evict in-memory key caches
 
     if (!context.mounted) return;
 

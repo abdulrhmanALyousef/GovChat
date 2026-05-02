@@ -3,18 +3,17 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cryptography/cryptography.dart' show SecretBoxAuthenticationError;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pointycastle/export.dart' show InvalidCipherTextException;
 import 'package:record/record.dart';
 
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
-import '../../../../../core/services/encryption/aes_service.dart';
-import '../../../../../core/services/encryption/conversation_key_service.dart';
-import '../../../../../core/services/encryption/key_management_service.dart';
+import '../../../../../core/services/encryption/e2ee_crypto.dart';
+import '../../../../../core/services/encryption/e2ee_manager.dart';
 import '../../../../../models/chat_message.dart';
 
 class ChatController extends ChangeNotifier {
@@ -69,8 +68,7 @@ class ChatController extends ChangeNotifier {
   // ── E2EE ──────────────────────────────────────────────────────────────────
   Uint8List? _conversationKey;
 
-  /// Completes (possibly with an error-free result even when the key is null
-  /// due to a hard failure) once [_initEncryption] has finished.
+  /// Completes once [_initEncryption] has finished.
   Future<void>? _encryptionReady;
 
   bool get isEncryptionReady => _conversationKey != null;
@@ -79,6 +77,8 @@ class ChatController extends ChangeNotifier {
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
       _typingSubscription;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
+      _keyDocSubscription;
 
   Timer? _typingDebounceTimer;
   Timer? _typingClearTimer;
@@ -115,9 +115,7 @@ class ChatController extends ChangeNotifier {
       debugPrint('[E2EE] _initEncryption() start — path: $_conversationPath');
 
       // ── 1. Resolve the Firebase UID ─────────────────────────────────────────
-      // FirebaseAuth.instance.currentUser can be null for a brief window on
-      // cold-start even when the user IS authenticated.  Wait up to 5 s.
-      String? uid = KeyManagementService.currentUid;
+      String? uid = E2eeManager.currentUid;
       if (uid == null) {
         debugPrint('[E2EE] currentUid null — waiting for auth state...');
         try {
@@ -131,62 +129,52 @@ class ChatController extends ChangeNotifier {
       }
 
       if (uid == null) {
-        debugPrint('[E2EE] ⚠️  uid still null after wait — '
-            'generating anonymous session key');
-        // Build a throwaway key so the user is not permanently blocked.
-        // Messages will be encrypted; they won't be decryptable across
-        // devices/sessions, but they won't be plaintext.
-        _conversationKey = await ConversationKeyService.getOrCreate(
-          conversationPath: _conversationPath,
-          currentUid: 'anonymous',
-          memberUids: const [],
-        );
+        debugPrint('[E2EE] uid still null — cannot init encryption');
+        errorMessage = 'Authentication required for encryption.';
         notifyListeners();
         return;
       }
 
       debugPrint('[E2EE] uid=$uid  path=$_conversationPath');
 
-      // ── 2. Wait for RSA key initialisation (first-login generation) ─────────
-      debugPrint('[E2EE] ensureInitialized() ...');
-      await KeyManagementService.ensureInitialized();
-      debugPrint('[E2EE] ensureInitialized() done');
+      // ── 2. Wait for X25519 key initialisation ───────────────────────────────
+      await E2eeManager.ensureInitialized();
 
-      // ── 3. Fetch member UIDs for key distribution ────────────────────────────
+      // ── 3. Fetch member UIDs ────────────────────────────────────────────────
       final memberUids = await _fetchMemberUids(uid);
       debugPrint('[E2EE] memberUids (${memberUids.length}): $memberUids');
 
-      // ── 4. Get or create the conversation AES key ────────────────────────────
-      // getOrCreate() never returns null — it falls back to a local session key
-      // if RSA / Firestore are unavailable.
-      _conversationKey = await ConversationKeyService.getOrCreate(
+      // ── 4. Get the conversation AES key ─────────────────────────────────────
+      _conversationKey = await E2eeManager.getConversationKey(
         conversationPath: _conversationPath,
         currentUid: uid,
         memberUids: memberUids,
+        isPrivateChat: _isPrivateChat,
       );
 
       if (_conversationKey == null) {
-        // Should never happen after the refactor, but guard defensively.
-        debugPrint('[E2EE] ⚠️  getOrCreate() returned null — unexpected');
+        debugPrint('[E2EE] no conversation key for $uid — '
+            'listening for group key distribution');
+        _listenForKeyDoc(uid);
+        errorMessage = 'Waiting for encryption key. '
+            'Ask the conversation starter to re-open this chat, '
+            'then tap Retry.';
       } else {
-        debugPrint('[E2EE] ✅ conversationKey ready '
-            '(${_conversationKey!.length} B) for $_conversationPath');
+        debugPrint('[E2EE] conversation key ready '
+            '(${_conversationKey!.length} B)');
+        if (errorMessage?.contains('Waiting for encryption key') == true) {
+          errorMessage = null;
+        }
         if (messages.isNotEmpty) {
-          messages = messages.map(_tryDecrypt).toList();
+          debugPrint('[E2EE] re-decrypting ${messages.length} buffered '
+              'messages');
+          messages = await Future.wait(messages.map(_tryDecrypt));
         }
       }
 
       notifyListeners();
     } catch (e, st) {
-      debugPrint('[E2EE] _initEncryption() unexpected error: $e\n$st');
-      // Try to set a fallback key so at least this session can send.
-      try {
-        _conversationKey ??= await ConversationKeyService.getOrCreate(
-          conversationPath: _conversationPath,
-          currentUid: KeyManagementService.currentUid ?? 'fallback',
-          memberUids: const [],
-        );
-      } catch (_) {}
+      debugPrint('[E2EE] _initEncryption() error: $e\n$st');
     }
   }
 
@@ -194,11 +182,11 @@ class ChatController extends ChangeNotifier {
     // ── Private 1-to-1 ──────────────────────────────────────────────────────
     if (_isPrivateChat) {
       try {
-        final doc =
-            await _firebase.firestore.doc(_conversationPath).get();
+        final doc = await _firebase.firestore.doc(_conversationPath).get();
         final participants = List<String>.from(
           doc.data()?['participants'] as List? ?? [],
         );
+        debugPrint('[E2EE] private chat participants: $participants');
         if (participants.isEmpty) return [currentUid];
         return participants;
       } catch (e) {
@@ -217,6 +205,7 @@ class ChatController extends ChangeNotifier {
             .get();
         final uids = snap.docs.map((d) => d.id).toList();
         if (!uids.contains(currentUid)) uids.add(currentUid);
+        debugPrint('[E2EE] org members (${uids.length}): $uids');
         return uids;
       } catch (e) {
         debugPrint('[E2EE] fetchMemberUids (org) error: $e');
@@ -225,17 +214,62 @@ class ChatController extends ChangeNotifier {
     }
 
     // ── Department (group) ────────────────────────────────────────────────────
+    // Strategy 1: composite index query (departmentId exact match).
+    // Strategy 2: org-level query + client-side filter (fallback when the
+    //   composite index is missing or the stored departmentId uses different
+    //   casing/formatting than our normalized version).
+    final normalizedId = _normalizedDepartmentId();
+    debugPrint('[E2EE] fetching dept members for deptId=$normalizedId '
+        'org=$organizationId');
+
     try {
       final snap = await _firebase.firestore
           .collection('employees')
           .where('organizationId', isEqualTo: organizationId)
-          .where('departmentId', isEqualTo: _normalizedDepartmentId())
+          .where('departmentId', isEqualTo: normalizedId)
           .get();
-      final uids = snap.docs.map((d) => d.id).toList();
+
+      if (snap.docs.isNotEmpty) {
+        final uids = snap.docs.map((d) => d.id).toList();
+        if (!uids.contains(currentUid)) uids.add(currentUid);
+        debugPrint('[E2EE] dept members via index (${uids.length}): $uids');
+        return uids;
+      }
+
+      // Index query returned zero results — might be a format mismatch.
+      debugPrint('[E2EE] composite query returned 0 results — '
+          'trying org-level fallback');
+    } catch (e) {
+      // FAILED_PRECONDITION → composite index doesn't exist yet.
+      // Any other error → Firestore unavailable.
+      debugPrint('[E2EE] composite dept query error: $e — using fallback');
+    }
+
+    // Fallback: fetch all org employees, filter client-side by department.
+    // This avoids the missing-index problem and handles casing differences.
+    try {
+      final allSnap = await _firebase.firestore
+          .collection('employees')
+          .where('organizationId', isEqualTo: organizationId)
+          .get();
+
+      final uids = allSnap.docs.where((doc) {
+        final data = doc.data();
+        final storedDeptId =
+            _sanitize((data['departmentId'] as String? ?? '').trim());
+        final storedDeptName =
+            _sanitize((data['department'] as String? ?? '').trim());
+        return storedDeptId == normalizedId ||
+            storedDeptName == normalizedId ||
+            storedDeptId == _sanitize(departmentId.trim()) ||
+            storedDeptName == _sanitize(departmentName.trim());
+      }).map((d) => d.id).toList();
+
       if (!uids.contains(currentUid)) uids.add(currentUid);
+      debugPrint('[E2EE] dept members via fallback (${uids.length}): $uids');
       return uids;
     } catch (e) {
-      debugPrint('[E2EE] fetchMemberUids (dept) error: $e');
+      debugPrint('[E2EE] fetchMemberUids (dept fallback) error: $e');
       return [currentUid];
     }
   }
@@ -257,39 +291,63 @@ class ChatController extends ChangeNotifier {
     await _encryptionReady;
   }
 
+  // ── Key doc listener ────────────────────────────────────────────────────────
+
+  /// Listen on the current user's group key doc in Firestore.
+  /// When the key creator distributes, the doc appears and we can
+  /// automatically decrypt without the user tapping Retry.
+  void _listenForKeyDoc(String uid) {
+    _keyDocSubscription?.cancel();
+    _keyDocSubscription = _firebase.firestore
+        .doc('$_conversationPath/groupKey/$uid')
+        .snapshots()
+        .listen((snap) {
+      if (snap.exists && _conversationKey == null) {
+        debugPrint('[E2EE] group key doc appeared for $uid — re-initialising');
+        _keyDocSubscription?.cancel();
+        _keyDocSubscription = null;
+        _encryptionReady = _initEncryption();
+      }
+    });
+  }
+
   // ── Decrypt helper ─────────────────────────────────────────────────────────
 
-  ChatMessage _tryDecrypt(ChatMessage msg) {
-    if (!msg.isEncrypted) return msg; // legacy plain-text — pass through
-    if (_conversationKey == null) return msg; // key not ready yet
+  Future<ChatMessage> _tryDecrypt(ChatMessage msg) async {
+    if (!msg.isEncrypted) return msg;
+
+    if (_conversationKey == null) {
+      debugPrint('[E2EE][decrypt] key NULL — skipping msg ${msg.id}');
+      return msg;
+    }
 
     String? decryptedText;
     String? decryptedMediaUrl;
 
     if (msg.encryptedText != null && msg.iv != null) {
       try {
-        decryptedText = AesService.decrypt(
-          AesEncryptedData(ciphertext: msg.encryptedText!, iv: msg.iv!),
+        decryptedText = await E2eeManager.decryptMessage(
+          EncryptedPayload(ciphertext: msg.encryptedText!, nonce: msg.iv!),
           _conversationKey!,
         );
-      } on InvalidCipherTextException {
-        decryptedText = '[Decryption failed]';
-      } catch (_) {
-        decryptedText = '[Decryption failed]';
+      } on SecretBoxAuthenticationError catch (e) {
+        debugPrint('[E2EE][decrypt] wrong key for msg=${msg.id}: $e');
+        decryptedText = '[Decryption error: wrong key or corrupted data]';
+      } catch (e) {
+        debugPrint('[E2EE][decrypt] error for msg=${msg.id}: $e');
+        decryptedText = '[Decryption error: $e]';
       }
     }
 
     if (msg.encryptedMediaUrl != null && msg.mediaIv != null) {
       try {
-        decryptedMediaUrl = AesService.decrypt(
-          AesEncryptedData(
-              ciphertext: msg.encryptedMediaUrl!, iv: msg.mediaIv!),
+        decryptedMediaUrl = await E2eeManager.decryptMessage(
+          EncryptedPayload(
+              ciphertext: msg.encryptedMediaUrl!, nonce: msg.mediaIv!),
           _conversationKey!,
         );
-      } on InvalidCipherTextException {
-        decryptedMediaUrl = null;
-      } catch (_) {
-        decryptedMediaUrl = null;
+      } catch (e) {
+        debugPrint('[E2EE][decrypt] media decrypt error for msg=${msg.id}: $e');
       }
     }
 
@@ -306,11 +364,17 @@ class ChatController extends ChangeNotifier {
         .orderBy('createdAt')
         .snapshots()
         .listen(
-          (snapshot) {
-            messages = snapshot.docs
-                .map((doc) =>
-                    _tryDecrypt(ChatMessage.fromJson(doc.data(), id: doc.id)))
+          (snapshot) async {
+            final rawMessages = snapshot.docs
+                .map((doc) => ChatMessage.fromJson(doc.data(), id: doc.id))
                 .toList();
+
+            if (_conversationKey != null) {
+              messages = await Future.wait(rawMessages.map(_tryDecrypt));
+            } else {
+              messages = rawMessages;
+            }
+
             _markMessagesAsRead(snapshot.docs).ignore();
             notifyListeners();
             _scrollToBottom();
@@ -350,16 +414,16 @@ class ChatController extends ChangeNotifier {
         return;
       }
 
-      final enc = AesService.encrypt(text, _conversationKey!);
+      final enc = await E2eeManager.encryptMessage(text, _conversationKey!);
       await _messagesCollection().add({
         'senderId': displayId,
         'organizationId': organizationId,
         'departmentId': _normalizedDepartmentId(),
         'createdAt': FieldValue.serverTimestamp(),
-        'text': '', // plaintext never stored
+        'text': '',
         'isEncrypted': true,
         'encryptedText': enc.ciphertext,
-        'iv': enc.iv,
+        'iv': enc.nonce,
       });
 
       messageController.clear();
@@ -430,12 +494,12 @@ class ChatController extends ChangeNotifier {
         return;
       }
 
-      final enc = AesService.encrypt(newText, _conversationKey!);
+      final enc = await E2eeManager.encryptMessage(newText, _conversationKey!);
       await _messagesCollection().doc(msg.id!).update({
         'text': '',
         'isEncrypted': true,
         'encryptedText': enc.ciphertext,
-        'iv': enc.iv,
+        'iv': enc.nonce,
         'isEdited': true,
         'editedAt': FieldValue.serverTimestamp(),
       });
@@ -594,7 +658,8 @@ class ChatController extends ChangeNotifier {
       final url = await ref.getDownloadURL();
 
       // ── Encrypt Storage URL and write to Firestore ───────────────────────
-      final encUrl = AesService.encrypt(url, _conversationKey!);
+      final encUrl =
+          await E2eeManager.encryptMessage(url, _conversationKey!);
 
       await _messagesCollection().add({
         'senderId': displayId,
@@ -602,10 +667,10 @@ class ChatController extends ChangeNotifier {
         'departmentId': _normalizedDepartmentId(),
         'createdAt': FieldValue.serverTimestamp(),
         'messageType': messageType.name,
-        'text': '', // plaintext never stored
+        'text': '',
         'isEncrypted': true,
         'encryptedMediaUrl': encUrl.ciphertext,
-        'mediaIv': encUrl.iv,
+        'mediaIv': encUrl.nonce,
         // ignore: use_null_aware_elements
         if (mediaDuration != null) 'mediaDuration': mediaDuration,
         // ignore: use_null_aware_elements
@@ -828,6 +893,7 @@ class ChatController extends ChangeNotifier {
     _recordingTimer?.cancel();
     _setTyping(false).ignore();
     _typingSubscription?.cancel();
+    _keyDocSubscription?.cancel();
     _audioRecorder.dispose();
     messageController.dispose();
     scrollController.dispose();
