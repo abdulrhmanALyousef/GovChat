@@ -27,7 +27,6 @@ class AuditController extends ChangeNotifier {
   DateTime? dateTo;
   String searchQuery = '';
 
-  // How many filters are currently active
   int get activeFilterCount {
     int count = 0;
     if (selectedOrgId != null) count++;
@@ -110,21 +109,18 @@ class AuditController extends ChangeNotifier {
     _safeNotify();
 
     try {
-      // Build the query — single-field filters that Firestore indexes automatically.
-      // Multiple-field combinations may require composite indexes created in the Firebase console.
       Query query = _firestore.collection('logs');
 
+      // Server-side equality filters — use new field paths first,
+      // one at a time to avoid composite index requirements.
       if (selectedOrgId != null) {
-        query = query.where('organizationId', isEqualTo: selectedOrgId);
+        query = query.where('metadata.organizationId', isEqualTo: selectedOrgId);
       } else if (selectedRole != null) {
-        // Apply role server-side only when no org filter (avoids needing org+role composite index)
-        query = query.where('actorRole', isEqualTo: selectedRole);
+        query = query.where('performedBy.role', isEqualTo: selectedRole);
       } else if (selectedAction != null) {
-        // Apply action server-side only when no other equality filter
-        query = query.where('action', isEqualTo: selectedAction);
+        query = query.where('actionType', isEqualTo: selectedAction);
       }
 
-      // Date range uses inequality on timestamp — Firestore requires orderBy on same field first
       if (dateFrom != null) {
         query = query.where(
           'timestamp',
@@ -132,7 +128,9 @@ class AuditController extends ChangeNotifier {
         );
       }
       if (dateTo != null) {
-        final end = DateTime(dateTo!.year, dateTo!.month, dateTo!.day, 23, 59, 59);
+        final end = DateTime(
+          dateTo!.year, dateTo!.month, dateTo!.day, 23, 59, 59,
+        );
         query = query.where(
           'timestamp',
           isLessThanOrEqualTo: Timestamp.fromDate(end),
@@ -148,24 +146,31 @@ class AuditController extends ChangeNotifier {
       final snap = await query.limit(_pageSize).get();
 
       var newLogs = snap.docs
-          .map((d) => ActivityLogModel.fromJson(d.data() as Map<String, dynamic>, id: d.id))
+          .map((d) => ActivityLogModel.fromJson(
+                d.data() as Map<String, dynamic>,
+                id: d.id,
+              ))
           .toList();
 
-      // Client-side filters for combinations not handled server-side
+      // Client-side filters for combinations not covered server-side
       if (selectedOrgId != null && selectedRole != null) {
-        newLogs = newLogs.where((l) => l.actorRole == selectedRole).toList();
+        newLogs = newLogs
+            .where((l) => l.performedByRole == selectedRole)
+            .toList();
       }
-      if (selectedAction != null && (selectedOrgId != null || selectedRole != null)) {
-        newLogs = newLogs.where((l) => l.action == selectedAction).toList();
+      if (selectedAction != null &&
+          (selectedOrgId != null || selectedRole != null)) {
+        newLogs = newLogs
+            .where((l) => l.actionType == selectedAction)
+            .toList();
       }
 
       // Text search always client-side
       if (searchQuery.isNotEmpty) {
         final q = searchQuery.toLowerCase();
         newLogs = newLogs.where((l) {
-          return l.actorEmail.toLowerCase().contains(q) ||
-              l.actorId.toLowerCase().contains(q) ||
-              (l.description?.toLowerCase().contains(q) ?? false) ||
+          return l.performedByEmail.toLowerCase().contains(q) ||
+              l.performedByUserId.toLowerCase().contains(q) ||
               (l.targetEmail?.toLowerCase().contains(q) ?? false) ||
               (l.organizationName?.toLowerCase().contains(q) ?? false);
         }).toList();
@@ -173,14 +178,13 @@ class AuditController extends ChangeNotifier {
 
       logs.addAll(newLogs);
 
-      if (snap.docs.isNotEmpty) {
-        _lastDoc = snap.docs.last;
-      }
+      if (snap.docs.isNotEmpty) _lastDoc = snap.docs.last;
       hasMore = snap.docs.length == _pageSize;
     } on FirebaseException catch (e) {
       if (e.code == 'failed-precondition') {
-        errorMessage = 'A composite index is required for this combination of filters. '
-            'Please set up the Firestore composite index shown in the console.';
+        errorMessage =
+            'A composite index is required for this filter combination. '
+            'Please create it in the Firebase console.';
       } else {
         errorMessage = e.message ?? e.toString();
       }

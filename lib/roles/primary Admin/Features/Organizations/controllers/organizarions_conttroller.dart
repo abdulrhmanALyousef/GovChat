@@ -122,18 +122,18 @@ class OrganizationsController extends ChangeNotifier {
       final actor = firebase.currentUser;
       if (actor != null) {
         ActivityLogService.instance.log(
-          action: ActivityLogService.actionOrgCreated,
-          actorId: actor.uid,
-          actorEmail: actor.email ?? '',
-          actorRole: 'primary_admin',
+          actionType: ActivityLogService.actionOrgCreated,
+          userId: actor.uid,
+          email: actor.email ?? '',
+          role: 'primary_admin',
           organizationName: orgName,
           targetEmail: email,
         );
         ActivityLogService.instance.log(
-          action: ActivityLogService.actionAdminCreated,
-          actorId: actor.uid,
-          actorEmail: actor.email ?? '',
-          actorRole: 'primary_admin',
+          actionType: ActivityLogService.actionAdminCreated,
+          userId: actor.uid,
+          email: actor.email ?? '',
+          role: 'primary_admin',
           organizationName: orgName,
           targetEmail: email,
         );

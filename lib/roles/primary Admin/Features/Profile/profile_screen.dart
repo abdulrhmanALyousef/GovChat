@@ -200,7 +200,7 @@ class ProfileScreen extends StatelessWidget {
                         child: ElevatedButton.icon(
                           onPressed: () => _confirmLogout(context, l),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
+                            backgroundColor: Colors.red,
                             shadowColor: Colors.transparent,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -549,10 +549,10 @@ class _ChangePasswordCardState extends State<_ChangePasswordCard> {
 
       // Log the password change (fire-and-forget)
       ActivityLogService.instance.log(
-        action: ActivityLogService.actionPasswordChanged,
-        actorId: user.uid,
-        actorEmail: user.email!,
-        actorRole: 'primary_admin',
+        actionType: ActivityLogService.actionPasswordChanged,
+        userId: user.uid,
+        email: user.email!,
+        role: 'primary_admin',
       );
 
       if (!mounted) return;
