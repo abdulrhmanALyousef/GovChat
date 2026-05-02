@@ -1771,6 +1771,384 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other'**
   String get deptOther;
+
+  /// No description provided for @auditSystemLogsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'System Audit Logs'**
+  String get auditSystemLogsTitle;
+
+  /// No description provided for @filtersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get filtersLabel;
+
+  /// No description provided for @clearFiltersButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearFiltersButton;
+
+  /// No description provided for @applyFiltersButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get applyFiltersButton;
+
+  /// No description provided for @allOrganizationsFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'All Organizations'**
+  String get allOrganizationsFilter;
+
+  /// No description provided for @allRolesFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'All Roles'**
+  String get allRolesFilter;
+
+  /// No description provided for @allActionsFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'All Actions'**
+  String get allActionsFilter;
+
+  /// No description provided for @searchLogsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search email, user ID, description…'**
+  String get searchLogsHint;
+
+  /// No description provided for @noLogsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No audit logs found'**
+  String get noLogsFound;
+
+  /// No description provided for @noLogsFoundSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs match your current filters.'**
+  String get noLogsFoundSubtitle;
+
+  /// No description provided for @logActionLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get logActionLogin;
+
+  /// No description provided for @logActionLogout.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logActionLogout;
+
+  /// No description provided for @logActionOrgCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization Created'**
+  String get logActionOrgCreated;
+
+  /// No description provided for @logActionOrgUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization Updated'**
+  String get logActionOrgUpdated;
+
+  /// No description provided for @logActionOrgDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization Deleted'**
+  String get logActionOrgDeleted;
+
+  /// No description provided for @logActionAdminCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin Created'**
+  String get logActionAdminCreated;
+
+  /// No description provided for @logActionEmployeeApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee Approved'**
+  String get logActionEmployeeApproved;
+
+  /// No description provided for @logActionEmployeeRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee Rejected'**
+  String get logActionEmployeeRejected;
+
+  /// No description provided for @logActionEmployeeUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee Updated'**
+  String get logActionEmployeeUpdated;
+
+  /// No description provided for @logActionEmployeeDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee Deleted'**
+  String get logActionEmployeeDeleted;
+
+  /// No description provided for @logActionPasswordChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Password Changed'**
+  String get logActionPasswordChanged;
+
+  /// No description provided for @logActionRequestSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Submitted'**
+  String get logActionRequestSubmitted;
+
+  /// No description provided for @actorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Actor'**
+  String get actorLabel;
+
+  /// No description provided for @roleAdminLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get roleAdminLabel;
+
+  /// No description provided for @roleEmployeeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee'**
+  String get roleEmployeeLabel;
+
+  /// No description provided for @rolePrimaryAdminLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary Admin'**
+  String get rolePrimaryAdminLabel;
+
+  /// No description provided for @dateFromLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get dateFromLabel;
+
+  /// No description provided for @dateToLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get dateToLabel;
+
+  /// No description provided for @dateNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get dateNotSet;
+
+  /// No description provided for @systemOverviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'System Overview'**
+  String get systemOverviewTitle;
+
+  /// No description provided for @totalOrganizationsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizations'**
+  String get totalOrganizationsLabel;
+
+  /// No description provided for @totalAdminsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Admins'**
+  String get totalAdminsLabel;
+
+  /// No description provided for @totalEmployeesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Employees'**
+  String get totalEmployeesLabel;
+
+  /// No description provided for @activeUsersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Users (Last 7 Days)'**
+  String get activeUsersLabel;
+
+  /// No description provided for @recentActivityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Events (Last 7 Days)'**
+  String get recentActivityLabel;
+
+  /// No description provided for @weeklyActivityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity — Last 7 Days'**
+  String get weeklyActivityTitle;
+
+  /// No description provided for @failedToLoadDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load dashboard'**
+  String get failedToLoadDashboard;
+
+  /// No description provided for @noActivityData.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity data'**
+  String get noActivityData;
+
+  /// No description provided for @changePasswordSection.
+  ///
+  /// In en, this message translates to:
+  /// **'CHANGE PASSWORD'**
+  String get changePasswordSection;
+
+  /// No description provided for @changePasswordCardDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your account password for enhanced security.'**
+  String get changePasswordCardDescription;
+
+  /// No description provided for @currentPasswordLabelField.
+  ///
+  /// In en, this message translates to:
+  /// **'CURRENT PASSWORD'**
+  String get currentPasswordLabelField;
+
+  /// No description provided for @currentPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter current password'**
+  String get currentPasswordHint;
+
+  /// No description provided for @newPasswordLabelProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW PASSWORD'**
+  String get newPasswordLabelProfile;
+
+  /// No description provided for @newPasswordHintProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter new password'**
+  String get newPasswordHintProfile;
+
+  /// No description provided for @confirmNewPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'CONFIRM PASSWORD'**
+  String get confirmNewPasswordLabel;
+
+  /// No description provided for @confirmNewPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get confirmNewPasswordHint;
+
+  /// No description provided for @changePasswordAction.
+  ///
+  /// In en, this message translates to:
+  /// **'CHANGE PASSWORD'**
+  String get changePasswordAction;
+
+  /// No description provided for @passwordChangedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed successfully.'**
+  String get passwordChangedSuccessfully;
+
+  /// No description provided for @incorrectCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect current password. Please try again.'**
+  String get incorrectCurrentPassword;
+
+  /// No description provided for @currentPasswordIsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password is required'**
+  String get currentPasswordIsRequired;
+
+  /// No description provided for @unknownUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknownUser;
+
+  /// No description provided for @logDescLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'User logged in'**
+  String get logDescLogin;
+
+  /// No description provided for @logDescLogout.
+  ///
+  /// In en, this message translates to:
+  /// **'User logged out'**
+  String get logDescLogout;
+
+  /// No description provided for @logDescOrgCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization created'**
+  String get logDescOrgCreated;
+
+  /// No description provided for @logDescOrgUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization updated'**
+  String get logDescOrgUpdated;
+
+  /// No description provided for @logDescOrgDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization deleted'**
+  String get logDescOrgDeleted;
+
+  /// No description provided for @logDescAdminCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin account created'**
+  String get logDescAdminCreated;
+
+  /// No description provided for @logDescEmployeeApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee approved'**
+  String get logDescEmployeeApproved;
+
+  /// No description provided for @logDescEmployeeRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee rejected'**
+  String get logDescEmployeeRejected;
+
+  /// No description provided for @logDescEmployeeUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee updated'**
+  String get logDescEmployeeUpdated;
+
+  /// No description provided for @logDescEmployeeDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee deleted'**
+  String get logDescEmployeeDeleted;
+
+  /// No description provided for @logDescPasswordChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed'**
+  String get logDescPasswordChanged;
+
+  /// No description provided for @logDescRequestSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Access request submitted'**
+  String get logDescRequestSubmitted;
 }
 
 class _AppLocalizationsDelegate
