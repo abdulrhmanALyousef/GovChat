@@ -390,8 +390,8 @@ class _LogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actionLabel = _localizeAction(log.action, l);
-    final roleColor = _roleColor(log.actorRole);
+    final actionLabel = _localizeAction(log.actionType, l);
+    final roleColor   = _roleColor(log.performedByRole);
 
     return Container(
       padding: EdgeInsets.all(AppSizes.ph14),
@@ -408,12 +408,12 @@ class _LogCard extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(AppSizes.ph8),
                 decoration: BoxDecoration(
-                  color: _actionColor(log.action).withValues(alpha: 0.12),
+                  color: _actionColor(log.actionType).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppSizes.r8),
                 ),
                 child: Icon(
-                  _actionIcon(log.action),
-                  color: _actionColor(log.action),
+                  _actionIcon(log.actionType),
+                  color: _actionColor(log.actionType),
                   size: 16,
                 ),
               ),
@@ -452,7 +452,7 @@ class _LogCard extends StatelessWidget {
                   border: Border.all(color: roleColor.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  _localizeRole(log.actorRole, l),
+                  _localizeRole(log.performedByRole, l),
                   style: GoogleFonts.manrope(
                     color: roleColor,
                     fontSize: AppSizes.sp10,
@@ -466,9 +466,12 @@ class _LogCard extends StatelessWidget {
           SizedBox(height: AppSizes.h10),
           _InfoRow(
             label: l.actorLabel,
-            value: log.actorEmail.isNotEmpty ? log.actorEmail : l.unknownUser,
+            value: log.performedByEmail.isNotEmpty
+                ? log.performedByEmail
+                : l.unknownUser,
           ),
-          if (log.organizationName != null && log.organizationName!.isNotEmpty) ...[
+          if (log.organizationName != null &&
+              log.organizationName!.isNotEmpty) ...[
             SizedBox(height: AppSizes.h4),
             _InfoRow(label: l.organizationField, value: log.organizationName!),
           ],
@@ -1022,7 +1025,7 @@ class _ErrorState extends StatelessWidget {
 // ── Pure helper functions ─────────────────────────────────────────────
 
 String _localizeDescription(ActivityLogModel log, AppLocalizations l) {
-  final key = log.descriptionKey ?? log.action;
+  final key = log.descriptionKey.isNotEmpty ? log.descriptionKey : log.actionType;
   switch (key) {
     case ActivityLogService.actionLogin:
       return l.logDescLogin;
@@ -1049,9 +1052,7 @@ String _localizeDescription(ActivityLogModel log, AppLocalizations l) {
     case ActivityLogService.actionRequestSubmitted:
       return l.logDescRequestSubmitted;
     default:
-      // Fall back to raw description field for legacy logs
-      final raw = log.description ?? '';
-      return raw.isNotEmpty ? raw : l.unknownUser;
+      return key.isNotEmpty ? key : l.unknownUser;
   }
 }
 

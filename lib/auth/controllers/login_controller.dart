@@ -166,10 +166,10 @@ class LoginController extends ChangeNotifier {
 
       // Track login activity (fire-and-forget — never block navigation)
       ActivityLogService.instance.log(
-        action: ActivityLogService.actionLogin,
-        actorId: uid,
-        actorEmail: user.email,
-        actorRole: user.role,
+        actionType: ActivityLogService.actionLogin,
+        userId: uid,
+        email: user.email,
+        role: user.role,
         organizationId: user.organizationId,
       );
       ActivityLogService.instance.updateLoginActivity();

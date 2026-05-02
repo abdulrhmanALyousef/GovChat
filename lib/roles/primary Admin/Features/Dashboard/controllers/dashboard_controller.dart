@@ -62,12 +62,14 @@ class DashboardController extends ChangeNotifier {
       final totalEmployees = results[2] as int;
       final recentLogs = results[3] as List<Map<String, dynamic>>;
 
-      // Derive active users from unique actor IDs in recent logs
-      final activeUsers = recentLogs
-          .map((d) => d['actorId'] as String? ?? '')
-          .where((id) => id.isNotEmpty)
-          .toSet()
-          .length;
+      // Derive active users from unique performer IDs in recent logs.
+      // Supports both new structure (performedBy.userId) and old flat field (actorId).
+      final activeUsers = recentLogs.map((d) {
+        final performedBy = d['performedBy'] as Map<String, dynamic>?;
+        return performedBy?['userId'] as String? ??
+            d['actorId'] as String? ??
+            '';
+      }).where((id) => id.isNotEmpty).toSet().length;
 
       // Total recent-activity count
       final recentActivity = recentLogs.length;

@@ -199,10 +199,10 @@ class OrganizationsManagementController extends ChangeNotifier {
       final actor = _firebase.auth.currentUser;
       if (actor != null) {
         ActivityLogService.instance.log(
-          action: ActivityLogService.actionOrgUpdated,
-          actorId: actor.uid,
-          actorEmail: actor.email ?? '',
-          actorRole: 'primary_admin',
+          actionType: ActivityLogService.actionOrgUpdated,
+          userId: actor.uid,
+          email: actor.email ?? '',
+          role: 'primary_admin',
           organizationId: organizationId,
           organizationName: name,
         );
@@ -283,10 +283,10 @@ class OrganizationsManagementController extends ChangeNotifier {
       final actor = _firebase.auth.currentUser;
       if (actor != null) {
         ActivityLogService.instance.log(
-          action: ActivityLogService.actionOrgDeleted,
-          actorId: actor.uid,
-          actorEmail: actor.email ?? '',
-          actorRole: 'primary_admin',
+          actionType: ActivityLogService.actionOrgDeleted,
+          userId: actor.uid,
+          email: actor.email ?? '',
+          role: 'primary_admin',
           organizationId: orgId,
           organizationName: organization.name,
         );
@@ -344,10 +344,10 @@ class OrganizationsManagementController extends ChangeNotifier {
       final actor = _firebase.auth.currentUser;
       if (actor != null) {
         ActivityLogService.instance.log(
-          action: ActivityLogService.actionEmployeeUpdated,
-          actorId: actor.uid,
-          actorEmail: actor.email ?? '',
-          actorRole: 'primary_admin',
+          actionType: ActivityLogService.actionEmployeeUpdated,
+          userId: actor.uid,
+          email: actor.email ?? '',
+          role: 'primary_admin',
           targetId: employeeId,
           targetEmail: email,
         );
@@ -412,10 +412,10 @@ class OrganizationsManagementController extends ChangeNotifier {
       final actor = _firebase.auth.currentUser;
       if (actor != null) {
         ActivityLogService.instance.log(
-          action: ActivityLogService.actionEmployeeDeleted,
-          actorId: actor.uid,
-          actorEmail: actor.email ?? '',
-          actorRole: 'primary_admin',
+          actionType: ActivityLogService.actionEmployeeDeleted,
+          userId: actor.uid,
+          email: actor.email ?? '',
+          role: 'primary_admin',
           targetId: employeeId,
           targetEmail: employee.email,
         );
