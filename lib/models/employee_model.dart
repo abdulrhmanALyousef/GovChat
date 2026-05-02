@@ -12,6 +12,7 @@ class EmployeeModel {
   final String displayId;
   final String status; // pending, approved, rejected
   final DateTime? createdAt;
+  final String avatarUrl;
 
   EmployeeModel({
     this.id,
@@ -25,6 +26,7 @@ class EmployeeModel {
     this.displayId = '',
     this.status = 'pending',
     this.createdAt,
+    this.avatarUrl = '',
   });
 
   String get fullName => name;
@@ -45,6 +47,7 @@ class EmployeeModel {
       createdAt: json['createdAt'] is Timestamp
           ? (json['createdAt'] as Timestamp).toDate()
           : null,
+      avatarUrl: json['avatarUrl'] ?? '',
     );
   }
 
@@ -60,6 +63,7 @@ class EmployeeModel {
       'displayId': displayId,
       'status': status,
       'createdAt': FieldValue.serverTimestamp(),
+      if (avatarUrl.isNotEmpty) 'avatarUrl': avatarUrl,
     };
   }
 }
