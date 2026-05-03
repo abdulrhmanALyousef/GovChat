@@ -3,7 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cryptography/cryptography.dart' show SecretBoxAuthenticationError;
+import 'package:cryptography/cryptography.dart'
+    show SecretBoxAuthenticationError;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -79,9 +80,9 @@ class ChatController extends ChangeNotifier {
   // ── Internal ───────────────────────────────────────────────────────────────
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
-      _typingSubscription;
+  _typingSubscription;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
-      _keyDocSubscription;
+  _keyDocSubscription;
 
   Timer? _typingDebounceTimer;
   Timer? _typingClearTimer;
@@ -95,12 +96,14 @@ class ChatController extends ChangeNotifier {
   final Map<String, Map<String, String>> _profileCache = {};
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
-      _profilesSubscription;
+  _profilesSubscription;
 
   /// Look up a sender's current profile info. Falls back gracefully for
   /// messages sent before senderUid was stored.
   ({String name, String avatarUrl}) getSenderProfile(
-      String? senderUid, String senderId) {
+    String? senderUid,
+    String senderId,
+  ) {
     // Try by UID first (new messages).
     if (senderUid != null && _profileCache.containsKey(senderUid)) {
       final p = _profileCache[senderUid]!;
@@ -109,7 +112,10 @@ class ChatController extends ChangeNotifier {
     // Fall back to displayId match (old messages).
     for (final entry in _profileCache.values) {
       if (entry['displayId'] == senderId) {
-        return (name: entry['name'] ?? senderId, avatarUrl: entry['avatarUrl'] ?? '');
+        return (
+          name: entry['name'] ?? senderId,
+          avatarUrl: entry['avatarUrl'] ?? '',
+        );
       }
     }
     return (name: senderId, avatarUrl: '');
@@ -120,20 +126,17 @@ class ChatController extends ChangeNotifier {
         .collection('employees')
         .where('organizationId', isEqualTo: organizationId)
         .snapshots()
-        .listen(
-          (snapshot) {
-            for (final doc in snapshot.docs) {
-              final data = doc.data();
-              _profileCache[doc.id] = {
-                'name': (data['name'] as String?) ?? '',
-                'avatarUrl': (data['avatarUrl'] as String?) ?? '',
-                'displayId': (data['displayId'] as String?) ?? '',
-              };
-            }
-            notifyListeners();
-          },
-          onError: (_) {},
-        );
+        .listen((snapshot) {
+          for (final doc in snapshot.docs) {
+            final data = doc.data();
+            _profileCache[doc.id] = {
+              'name': (data['name'] as String?) ?? '',
+              'avatarUrl': (data['avatarUrl'] as String?) ?? '',
+              'displayId': (data['displayId'] as String?) ?? '',
+            };
+          }
+          notifyListeners();
+        }, onError: (_) {});
   }
 
   // ── Conversation-path helpers ──────────────────────────────────────────────
@@ -202,21 +205,28 @@ class ChatController extends ChangeNotifier {
       );
 
       if (_conversationKey == null) {
-        debugPrint('[E2EE] no conversation key for $uid — '
-            'listening for group key distribution');
+        debugPrint(
+          '[E2EE] no conversation key for $uid — '
+          'listening for group key distribution',
+        );
         _listenForKeyDoc(uid);
-        errorMessage = 'Waiting for encryption key. '
+        errorMessage =
+            'Waiting for encryption key. '
             'Ask the conversation starter to re-open this chat, '
             'then tap Retry.';
       } else {
-        debugPrint('[E2EE] conversation key ready '
-            '(${_conversationKey!.length} B)');
+        debugPrint(
+          '[E2EE] conversation key ready '
+          '(${_conversationKey!.length} B)',
+        );
         if (errorMessage?.contains('Waiting for encryption key') == true) {
           errorMessage = null;
         }
         if (messages.isNotEmpty) {
-          debugPrint('[E2EE] re-decrypting ${messages.length} buffered '
-              'messages');
+          debugPrint(
+            '[E2EE] re-decrypting ${messages.length} buffered '
+            'messages',
+          );
           messages = await Future.wait(messages.map(_tryDecrypt));
         }
       }
@@ -268,8 +278,10 @@ class ChatController extends ChangeNotifier {
     //   composite index is missing or the stored departmentId uses different
     //   casing/formatting than our normalized version).
     final normalizedId = _normalizedDepartmentId();
-    debugPrint('[E2EE] fetching dept members for deptId=$normalizedId '
-        'org=$organizationId');
+    debugPrint(
+      '[E2EE] fetching dept members for deptId=$normalizedId '
+      'org=$organizationId',
+    );
 
     try {
       final snap = await _firebase.firestore
@@ -286,8 +298,10 @@ class ChatController extends ChangeNotifier {
       }
 
       // Index query returned zero results — might be a format mismatch.
-      debugPrint('[E2EE] composite query returned 0 results — '
-          'trying org-level fallback');
+      debugPrint(
+        '[E2EE] composite query returned 0 results — '
+        'trying org-level fallback',
+      );
     } catch (e) {
       // FAILED_PRECONDITION → composite index doesn't exist yet.
       // Any other error → Firestore unavailable.
@@ -302,17 +316,22 @@ class ChatController extends ChangeNotifier {
           .where('organizationId', isEqualTo: organizationId)
           .get();
 
-      final uids = allSnap.docs.where((doc) {
-        final data = doc.data();
-        final storedDeptId =
-            _sanitize((data['departmentId'] as String? ?? '').trim());
-        final storedDeptName =
-            _sanitize((data['department'] as String? ?? '').trim());
-        return storedDeptId == normalizedId ||
-            storedDeptName == normalizedId ||
-            storedDeptId == _sanitize(departmentId.trim()) ||
-            storedDeptName == _sanitize(departmentName.trim());
-      }).map((d) => d.id).toList();
+      final uids = allSnap.docs
+          .where((doc) {
+            final data = doc.data();
+            final storedDeptId = _sanitize(
+              (data['departmentId'] as String? ?? '').trim(),
+            );
+            final storedDeptName = _sanitize(
+              (data['department'] as String? ?? '').trim(),
+            );
+            return storedDeptId == normalizedId ||
+                storedDeptName == normalizedId ||
+                storedDeptId == _sanitize(departmentId.trim()) ||
+                storedDeptName == _sanitize(departmentName.trim());
+          })
+          .map((d) => d.id)
+          .toList();
 
       if (!uids.contains(currentUid)) uids.add(currentUid);
       debugPrint('[E2EE] dept members via fallback (${uids.length}): $uids');
@@ -351,13 +370,15 @@ class ChatController extends ChangeNotifier {
         .doc('$_conversationPath/groupKey/$uid')
         .snapshots()
         .listen((snap) {
-      if (snap.exists && _conversationKey == null) {
-        debugPrint('[E2EE] group key doc appeared for $uid — re-initialising');
-        _keyDocSubscription?.cancel();
-        _keyDocSubscription = null;
-        _encryptionReady = _initEncryption();
-      }
-    });
+          if (snap.exists && _conversationKey == null) {
+            debugPrint(
+              '[E2EE] group key doc appeared for $uid — re-initialising',
+            );
+            _keyDocSubscription?.cancel();
+            _keyDocSubscription = null;
+            _encryptionReady = _initEncryption();
+          }
+        });
   }
 
   // ── Decrypt helper ─────────────────────────────────────────────────────────
@@ -392,7 +413,9 @@ class ChatController extends ChangeNotifier {
       try {
         decryptedMediaUrl = await E2eeManager.decryptMessage(
           EncryptedPayload(
-              ciphertext: msg.encryptedMediaUrl!, nonce: msg.mediaIv!),
+            ciphertext: msg.encryptedMediaUrl!,
+            nonce: msg.mediaIv!,
+          ),
           _conversationKey!,
         );
       } catch (e) {
@@ -456,7 +479,8 @@ class ChatController extends ChangeNotifier {
       // _awaitEncryptionKey() guarantees a non-null key; this guard is a
       // last-resort defensive check only.
       if (_conversationKey == null) {
-        errorMessage = 'Could not initialise encryption. '
+        errorMessage =
+            'Could not initialise encryption. '
             'Tap Retry on the banner or restart the app.';
         isSending = false;
         notifyListeners();
@@ -567,9 +591,19 @@ class ChatController extends ChangeNotifier {
   // ── Image / Video / Voice send ─────────────────────────────────────────────
 
   Future<void> pickAndSendImage() async {
+    await _pickAndSendImage(ImageSource.gallery);
+  }
+
+  Future<void> captureAndSendImage() async {
+    await _pickAndSendImage(ImageSource.camera);
+  }
+
+  Future<void> _pickAndSendImage(ImageSource source) async {
     final XFile? xFile = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       imageQuality: 80,
+      maxWidth: 1920,
+      maxHeight: 1920,
     );
     if (xFile == null) return;
 
@@ -588,8 +622,17 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> pickAndSendVideo() async {
+    await _pickAndSendVideo(ImageSource.gallery);
+  }
+
+  Future<void> captureAndSendVideo() async {
+    await _pickAndSendVideo(ImageSource.camera);
+  }
+
+  Future<void> _pickAndSendVideo(ImageSource source) async {
     final XFile? xFile = await _imagePicker.pickVideo(
-      source: ImageSource.gallery,
+      source: source,
+      maxDuration: const Duration(minutes: 5),
     );
     if (xFile == null) return;
 
@@ -696,9 +739,9 @@ class ChatController extends ChangeNotifier {
       }
 
       // ── Upload file to Storage ───────────────────────────────────────────
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('chat_media/$organizationId/$_chatStorageId/$mediaFileName');
+      final ref = FirebaseStorage.instance.ref().child(
+        'chat_media/$organizationId/$_chatStorageId/$mediaFileName',
+      );
 
       final metadata = messageType == MessageType.voice
           ? SettableMetadata(contentType: 'audio/mp4')
@@ -708,8 +751,7 @@ class ChatController extends ChangeNotifier {
       final url = await ref.getDownloadURL();
 
       // ── Encrypt Storage URL and write to Firestore ───────────────────────
-      final encUrl =
-          await E2eeManager.encryptMessage(url, _conversationKey!);
+      final encUrl = await E2eeManager.encryptMessage(url, _conversationKey!);
 
       await _messagesCollection().add({
         'senderId': displayId,
@@ -754,14 +796,18 @@ class ChatController extends ChangeNotifier {
       try {
         await _encryptionReady;
       } catch (e) {
-        debugPrint('[E2EE] _encryptionReady completed with error (swallowed): $e');
+        debugPrint(
+          '[E2EE] _encryptionReady completed with error (swallowed): $e',
+        );
       }
     }
 
     // One retry — covers the race where ensureInitialized() returned before the
     // Firestore write completed on first login, or after a transient network blip.
     if (_conversationKey == null) {
-      debugPrint('[E2EE] Key still null after initial wait — retrying _initEncryption()');
+      debugPrint(
+        '[E2EE] Key still null after initial wait — retrying _initEncryption()',
+      );
       try {
         await _initEncryption();
       } catch (e) {
@@ -769,8 +815,10 @@ class ChatController extends ChangeNotifier {
       }
     }
 
-    debugPrint('[E2EE] _awaitEncryptionKey done — '
-        'key ${_conversationKey == null ? "STILL NULL" : "ready"}');
+    debugPrint(
+      '[E2EE] _awaitEncryptionKey done — '
+      'key ${_conversationKey == null ? "STILL NULL" : "ready"}',
+    );
   }
 
   // ── Storage path ───────────────────────────────────────────────────────────
@@ -804,50 +852,48 @@ class ChatController extends ChangeNotifier {
   }
 
   void _listenToTyping() {
-    _typingSubscription = _chatDocRef().snapshots().listen(
-      (snap) {
-        if (!snap.exists) {
-          if (typingDisplayIds.isNotEmpty) {
-            typingDisplayIds = [];
-            notifyListeners();
-          }
-          return;
+    _typingSubscription = _chatDocRef().snapshots().listen((snap) {
+      if (!snap.exists) {
+        if (typingDisplayIds.isNotEmpty) {
+          typingDisplayIds = [];
+          notifyListeners();
         }
-        final data = snap.data() ?? {};
-        final raw =
-            Map<String, dynamic>.from(data['typing'] as Map? ?? {});
-        final now = DateTime.now();
-        typingDisplayIds = raw.entries
-            .where((e) => e.key != displayId)
-            .where((e) {
-              final ts = e.value;
-              if (ts is Timestamp) {
-                return now.difference(ts.toDate()) <
-                    const Duration(seconds: 10);
-              }
-              return false;
-            })
-            .map((e) => e.key)
-            .toList();
-        notifyListeners();
-      },
-      onError: (e) => debugPrint('[Typing] stream error: $e'),
-    );
+        return;
+      }
+      final data = snap.data() ?? {};
+      final raw = Map<String, dynamic>.from(data['typing'] as Map? ?? {});
+      final now = DateTime.now();
+      typingDisplayIds = raw.entries
+          .where((e) => e.key != displayId)
+          .where((e) {
+            final ts = e.value;
+            if (ts is Timestamp) {
+              return now.difference(ts.toDate()) < const Duration(seconds: 10);
+            }
+            return false;
+          })
+          .map((e) => e.key)
+          .toList();
+      notifyListeners();
+    }, onError: (e) => debugPrint('[Typing] stream error: $e'));
   }
 
   Future<void> _setTyping(bool isTyping) async {
     try {
       if (isTyping) {
         await _chatDocRef().set(
-          {'typing': {displayId: FieldValue.serverTimestamp()}},
-          SetOptions(mergeFields: [
-            FieldPath(['typing', displayId])
-          ]),
+          {
+            'typing': {displayId: FieldValue.serverTimestamp()},
+          },
+          SetOptions(
+            mergeFields: [
+              FieldPath(['typing', displayId]),
+            ],
+          ),
         );
         _isTypingSet = true;
       } else if (_isTypingSet) {
-        await _chatDocRef()
-            .update({'typing.$displayId': FieldValue.delete()});
+        await _chatDocRef().update({'typing.$displayId': FieldValue.delete()});
         _isTypingSet = false;
       }
     } catch (e) {
@@ -858,8 +904,7 @@ class ChatController extends ChangeNotifier {
   DocumentReference<Map<String, dynamic>> _chatDocRef() {
     if (messagesPath != null && messagesPath!.isNotEmpty) {
       final segments = messagesPath!.split('/');
-      final docPath =
-          segments.sublist(0, segments.length - 1).join('/');
+      final docPath = segments.sublist(0, segments.length - 1).join('/');
       return _firebase.firestore.doc(docPath);
     }
     return _firebase.firestore
@@ -878,8 +923,7 @@ class ChatController extends ChangeNotifier {
       final data = doc.data();
       final senderId = data['senderId'] as String? ?? '';
       if (senderId == displayId) return false;
-      final readBy =
-          List<String>.from(data['readBy'] as List? ?? []);
+      final readBy = List<String>.from(data['readBy'] as List? ?? []);
       return !readBy.contains(displayId);
     }).toList();
 
