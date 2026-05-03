@@ -14,6 +14,7 @@ import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
 import '../../../../models/employee_model.dart';
+import 'verification_code_screen.dart';
 
 class EmployeeProfileScreen extends StatefulWidget {
   const EmployeeProfileScreen({super.key, required this.employee});
@@ -262,10 +263,10 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                             width: 56,
                             height: 56,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryColor
-                                  .withValues(alpha: 0.1),
-                              borderRadius:
-                                  BorderRadius.circular(AppSizes.r12),
+                              color: AppColors.primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(AppSizes.r12),
                             ),
                             clipBehavior: Clip.antiAlias,
                             child: _avatarUrl.isNotEmpty
@@ -297,8 +298,9 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                               padding: const EdgeInsets.all(3),
                               decoration: BoxDecoration(
                                 color: AppColors.primaryColor,
-                                borderRadius:
-                                    BorderRadius.circular(AppSizes.r6),
+                                borderRadius: BorderRadius.circular(
+                                  AppSizes.r6,
+                                ),
                               ),
                               child: _uploading
                                   ? const SizedBox(
@@ -461,6 +463,94 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                             color: AppColors.primaryColor,
                             fontSize: AppSizes.sp12,
                             fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: AppSizes.ph16),
+
+              // ── Change Password Card ──
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(AppSizes.ph16),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  borderRadius: BorderRadius.circular(AppSizes.r16),
+                  border: Border.all(color: AppColors.inputBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lock_outline,
+                          color: AppColors.primaryColor,
+                          size: AppSizes.sp20,
+                        ),
+                        SizedBox(width: AppSizes.w12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.changePasswordButton,
+                                style: GoogleFonts.manrope(
+                                  color: AppColors.textTitle,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: AppSizes.sp14,
+                                ),
+                              ),
+                              SizedBox(height: AppSizes.h2),
+                              Text(
+                                l.changePasswordDescription,
+                                style: GoogleFonts.manrope(
+                                  color: AppColors.textMuted,
+                                  fontSize: AppSizes.sp11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: AppSizes.ph16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: AppSizes.h44,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => VerificationCodeScreen(
+                                uid: widget.employee.id ?? '',
+                                email: widget.employee.email,
+                              ),
+                            ),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.primaryColor),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSizes.r12),
+                          ),
+                        ),
+                        icon: Icon(
+                          Icons.lock_reset_outlined,
+                          color: AppColors.primaryColor,
+                          size: AppSizes.sp18,
+                        ),
+                        label: Text(
+                          l.changePasswordButton,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.primaryColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: AppSizes.sp13,
                           ),
                         ),
                       ),

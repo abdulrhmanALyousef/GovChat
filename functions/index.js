@@ -557,6 +557,188 @@ exports.createEmployeeRequest = onCall(
 );
 
 /**
+ * Cloud Function: Send Password Reset Verification Code
+ * Generates a 6-digit code, stores it in Firestore with 10-min expiry,
+ * and sends it to the employee's email via Resend.
+ */
+exports.sendPasswordResetCode = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+      secrets: [resendApiKey],
+    },
+    async (request) => {
+      const resend = new Resend(resendApiKey.value());
+      const data = request.data;
+
+      if (!data.email) {
+        throw new HttpsError(
+            "invalid-argument",
+            "Email is required",
+        );
+      }
+      if (!data.uid) {
+        throw new HttpsError(
+            "invalid-argument",
+            "UID is required",
+        );
+      }
+
+      const email = data.email;
+      const uid = data.uid;
+
+      try {
+        // Generate 6-digit code
+        let code = "";
+        for (let i = 0; i < 6; i++) {
+          code += Math.floor(Math.random() * 10).toString();
+        }
+
+        // Store in Firestore with 10-minute expiry
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+        await admin.firestore()
+            .collection("passwordResetCodes").doc(uid).set({
+              code: code,
+              email: email,
+              uid: uid,
+              expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+              createdAt:
+                admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+        // Send email via Resend
+        const html =
+          "<div style=\"font-family:Arial;" +
+          "max-width:500px;margin:auto;" +
+          "padding:30px;background:#0F1320;" +
+          "border-radius:12px;color:#fff;\">" +
+          "<h2 style=\"color:#4ADE80;" +
+          "text-align:center;\">GovChat</h2>" +
+          "<h3 style=\"text-align:center;" +
+          "color:#DAE2FD;\">Password Reset Code</h3>" +
+          "<p style=\"color:#BCCBB9;\">Hello,</p>" +
+          "<p style=\"color:#BCCBB9;\">You requested to " +
+          "change your password. Use the following " +
+          "verification code:</p>" +
+          "<div style=\"background:#2D3449;" +
+          "padding:20px;border-radius:8px;" +
+          "margin:20px 0;text-align:center;\">" +
+          "<span style=\"font-size:36px;" +
+          "font-weight:bold;letter-spacing:12px;" +
+          "color:#4ADE80;\">" + code + "</span>" +
+          "</div>" +
+          "<p style=\"color:#BCCBB9;\">This code expires " +
+          "in <strong>10 minutes</strong>.</p>" +
+          "<p style=\"color:#8A95A3;" +
+          "font-size:12px;\">If you did not request this, " +
+          "please ignore this email.</p></div>";
+
+        const emailResult = await resend.emails.send({
+          from: "GovChat <support@awlamateam.team>",
+          to: [email],
+          subject: "GovChat - Password Reset Code",
+          html: html,
+        });
+
+        if (emailResult.error) {
+          console.error("Resend error: " +
+            JSON.stringify(emailResult.error));
+          return {
+            success: false,
+            emailSent: false,
+            message: "Failed to send email: " +
+              emailResult.error.message,
+          };
+        }
+
+        return {
+          success: true,
+          emailSent: true,
+          message: "Verification code sent to email.",
+        };
+      } catch (error) {
+        console.error("Error: " + error.message, error);
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError(
+            "internal",
+            error.message || "Unexpected error",
+        );
+      }
+    },
+);
+
+/**
+ * Cloud Function: Verify Password Reset Code
+ * Validates the 6-digit code against Firestore and checks expiry.
+ */
+exports.verifyPasswordResetCode = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+    },
+    async (request) => {
+      const data = request.data;
+
+      if (!data.uid || !data.code) {
+        throw new HttpsError(
+            "invalid-argument",
+            "UID and code are required",
+        );
+      }
+
+      const uid = data.uid;
+      const code = data.code;
+
+      try {
+        const doc = await admin.firestore()
+            .collection("passwordResetCodes").doc(uid).get();
+
+        if (!doc.exists) {
+          return {
+            success: false,
+            message: "No code found. " +
+              "Please request a new one.",
+          };
+        }
+
+        const docData = doc.data();
+
+        // Check expiry
+        const expiresAt = docData.expiresAt.toDate();
+        if (new Date() > expiresAt) {
+          await admin.firestore()
+              .collection("passwordResetCodes").doc(uid).delete();
+          return {
+            success: false,
+            message: "Code expired. " +
+              "Please request a new one.",
+          };
+        }
+
+        // Check code match
+        if (docData.code !== code) {
+          return {success: false, message: "Invalid code. Please try again."};
+        }
+
+        // Code valid — delete it so it can't be reused
+        await admin.firestore()
+            .collection("passwordResetCodes").doc(uid).delete();
+
+        return {success: true, message: "Code verified."};
+      } catch (error) {
+        console.error("Error: " + error.message, error);
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError(
+            "internal",
+            error.message || "Unexpected error",
+        );
+      }
+    },
+);
+
+/**
  * Cloud Function: Send Access Approval Email
  */
 exports.sendAccessApprovedEmail = onCall(

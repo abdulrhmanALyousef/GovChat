@@ -373,5 +373,21 @@
   "videoTooLarge": "الفيديو كبير جداً (الحد الأقصى 50 ميغابايت)",
   "imageTooLarge": "الصورة كبيرة جداً (الحد الأقصى 20 ميغابايت)",
   "microphonePermissionDenied": "تم رفض إذن الميكروفون",
-  "sendVoiceOption": "صوت"
+  "sendVoiceOption": "صوت",
+  "changePasswordButton": "تغيير كلمة المرور",
+  "changePasswordDescription": "تحقق من هويتك عبر البريد الإلكتروني لتحديث كلمة المرور.",
+  "verificationCodeTitle": "رمز التحقق",
+  "verificationCodeSubtitle": "تم إرسال رمز مكون من 6 أرقام إلى بريدك الإلكتروني المسجل.",
+  "enterCodeHint": "أدخل الرمز المكون من 6 أرقام",
+  "verifyButton": "تحقق",
+  "resendCodeButton": "إعادة إرسال الرمز",
+  "codeSentSuccess": "تم إرسال رمز التحقق إلى بريدك الإلكتروني.",
+  "codeResent": "تم إرسال رمز جديد إلى بريدك الإلكتروني.",
+  "invalidCode": "رمز غير صالح. حاول مرة أخرى.",
+  "codeExpired": "انتهت صلاحية الرمز. يرجى طلب رمز جديد.",
+  "resetPasswordTitle": "إعادة تعيين كلمة المرور",
+  "resetPasswordSubtitle": "أنشئ كلمة مرور جديدة لحسابك.\nاتبع القواعد أدناه.",
+  "passwordUpdatedSuccess": "تم تحديث كلمة المرور بنجاح.",
+  "sendingCode": "جاري إرسال الرمز...",
+  "verifyingCode": "جاري التحقق..."
 }

@@ -373,5 +373,21 @@
   "videoTooLarge": "Video too large (max 50 MB)",
   "imageTooLarge": "Image too large (max 20 MB)",
   "microphonePermissionDenied": "Microphone permission denied",
-  "sendVoiceOption": "Voice"
+  "sendVoiceOption": "Voice",
+  "changePasswordButton": "Change Password",
+  "changePasswordDescription": "Verify your identity via email to update your password.",
+  "verificationCodeTitle": "Verification Code",
+  "verificationCodeSubtitle": "A 6-digit code has been sent to your registered email address.",
+  "enterCodeHint": "Enter 6-digit code",
+  "verifyButton": "Verify",
+  "resendCodeButton": "Resend Code",
+  "codeSentSuccess": "Verification code sent to your email.",
+  "codeResent": "A new code has been sent to your email.",
+  "invalidCode": "Invalid code. Please try again.",
+  "codeExpired": "Code expired. Please request a new one.",
+  "resetPasswordTitle": "Reset Password",
+  "resetPasswordSubtitle": "Create a new password for your account.\nFollow the rules below.",
+  "passwordUpdatedSuccess": "Password updated successfully.",
+  "sendingCode": "Sending code...",
+  "verifyingCode": "Verifying..."
 }
