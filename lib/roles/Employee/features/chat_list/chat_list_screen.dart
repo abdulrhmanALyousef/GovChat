@@ -2,10 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_size.dart';
-import '../../../../core/services/session_manager.dart';
+
 import '../../../../core/theme/app_color.dart';
 import '../../../../models/conversation_model.dart';
 import '../../../../models/employee_model.dart';
@@ -43,7 +44,7 @@ class _ChatListView extends StatelessWidget {
         backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: Padding(
-          padding: EdgeInsets.only(left: AppSizes.pw16),
+          padding: EdgeInsetsDirectional.only(start: AppSizes.pw16),
           child: Icon(Icons.shield_outlined, color: AppColors.primaryColor),
         ),
         title: Column(
@@ -67,17 +68,6 @@ class _ChatListView extends StatelessWidget {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: AppColors.error),
-            tooltip: l.signOutButton,
-            onPressed: () async {
-              final confirmed = await _showLogoutDialog(context, l);
-              if (!confirmed || !context.mounted) return;
-              await SessionManager.instance.logout(context);
-            },
-          ),
-        ],
       ),
       body: SafeArea(
         child: Column(
@@ -91,11 +81,11 @@ class _ChatListView extends StatelessWidget {
                       ),
                     )
                   : controller.conversations.isEmpty
-                      ? _EmptyState()
-                      : _ConversationList(
-                          conversations: controller.conversations,
-                          employee: employee,
-                        ),
+                  ? _EmptyState()
+                  : _ConversationList(
+                      conversations: controller.conversations,
+                      employee: employee,
+                    ),
             ),
           ],
         ),
@@ -189,11 +179,8 @@ class _ConversationList extends StatelessWidget {
         vertical: AppSizes.ph12,
       ),
       itemCount: conversations.length,
-      separatorBuilder: (context, index) => const Divider(
-        color: AppColors.inputBorder,
-        height: 1,
-        thickness: 1,
-      ),
+      separatorBuilder: (context, index) =>
+          const Divider(color: AppColors.inputBorder, height: 1, thickness: 1),
       itemBuilder: (context, index) {
         return _ConversationTile(
           conversation: conversations[index],
@@ -205,10 +192,7 @@ class _ConversationList extends StatelessWidget {
 }
 
 class _ConversationTile extends StatelessWidget {
-  const _ConversationTile({
-    required this.conversation,
-    required this.employee,
-  });
+  const _ConversationTile({required this.conversation, required this.employee});
 
   final ConversationModel conversation;
   final EmployeeModel employee;
@@ -287,8 +271,8 @@ class _ConversationTile extends StatelessWidget {
           chatSubtitle: isPrivate
               ? l.privateChatSubtitle
               : isOrg
-                  ? l.orgChatLabel
-                  : null,
+              ? l.orgChatLabel
+              : null,
           messagesPath: (isPrivate || isOrg)
               ? conversation.messagesCollectionPath
               : null,
@@ -317,9 +301,65 @@ class _LastMessagePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final lastMsg = conversation.lastMessage;
     final senderName = conversation.lastSenderName;
+    final msgType = conversation.lastMessageType;
 
+    // No messages yet — lastMessageType is null when no message exists.
+    if (msgType == null) {
+      return Text(
+        l.noMessagesYet,
+        style: GoogleFonts.manrope(
+          color: AppColors.textMuted,
+          fontSize: AppSizes.sp12,
+          fontStyle: FontStyle.italic,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    // Media messages: show bold black icon + label in a Row.
+    IconData? mediaIcon;
+    String? mediaLabel;
+    switch (msgType) {
+      case 'image':
+        mediaIcon = LucideIcons.image;
+        mediaLabel = l.imageMessage;
+      case 'video':
+        mediaIcon = LucideIcons.video;
+        mediaLabel = l.videoMessage;
+      case 'voice':
+        mediaIcon = LucideIcons.mic;
+        mediaLabel = l.voiceMessage;
+    }
+
+    if (mediaIcon != null) {
+      return Row(
+        children: [
+          if (senderName != null && senderName.isNotEmpty)
+            Text(
+              '$senderName: ',
+              style: GoogleFonts.manrope(
+                color: AppColors.primaryColor,
+                fontSize: AppSizes.sp12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          Icon(mediaIcon, color: Colors.black, size: AppSizes.sp14),
+          const SizedBox(width: 4),
+          Text(
+            mediaLabel!,
+            style: GoogleFonts.manrope(
+              color: AppColors.textMuted,
+              fontSize: AppSizes.sp12,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Text message fallback.
+    final lastMsg = conversation.lastMessage;
     if (lastMsg == null || lastMsg.isEmpty) {
       return Text(
         l.noMessagesYet,
@@ -371,8 +411,8 @@ class _ConversationAvatar extends StatelessWidget {
     final icon = type == 'organization'
         ? Icons.corporate_fare_outlined
         : type == 'department'
-            ? Icons.groups_outlined
-            : Icons.person_outline;
+        ? Icons.groups_outlined
+        : Icons.person_outline;
 
     return Container(
       height: AppSizes.h48,
@@ -414,8 +454,8 @@ class _ConversationTypeBadge extends StatelessWidget {
     final label = type == 'organization'
         ? l.orgChatLabel
         : type == 'department'
-            ? l.groupChatLabel
-            : l.privateChatLabel;
+        ? l.groupChatLabel
+        : l.privateChatLabel;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -467,106 +507,3 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
-  return await showDialog<bool>(
-        context: context,
-        barrierDismissible: true,
-        builder: (ctx) => Dialog(
-          backgroundColor: AppColors.cardBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.r20),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(AppSizes.pw24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(AppSizes.ph16),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.logout_rounded,
-                    color: AppColors.error,
-                    size: AppSizes.sp28,
-                  ),
-                ),
-                SizedBox(height: AppSizes.h16),
-                Text(
-                  l.signOutButton,
-                  style: GoogleFonts.manrope(
-                    color: AppColors.textTitle,
-                    fontWeight: FontWeight.w800,
-                    fontSize: AppSizes.sp18,
-                  ),
-                ),
-                SizedBox(height: AppSizes.h8),
-                Text(
-                  l.signOutConfirm,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.manrope(
-                    color: AppColors.textMuted,
-                    fontSize: AppSizes.sp13,
-                    height: 1.5,
-                  ),
-                ),
-                SizedBox(height: AppSizes.h24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.inputBorder),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.r12),
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            vertical: AppSizes.ph14,
-                          ),
-                        ),
-                        child: Text(
-                          l.cancelButton,
-                          style: GoogleFonts.manrope(
-                            color: AppColors.textMuted,
-                            fontWeight: FontWeight.w600,
-                            fontSize: AppSizes.sp14,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: AppSizes.w12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.r12),
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            vertical: AppSizes.ph14,
-                          ),
-                        ),
-                        child: Text(
-                          l.signOutButton,
-                          style: GoogleFonts.manrope(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: AppSizes.sp14,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ) ??
-      false;
-}

@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../../../../core/constants/app_size.dart';
@@ -50,7 +51,7 @@ class ChatImageBubble extends StatelessWidget {
             height: AppSizes.h200,
             color: AppColors.cardBackground,
             child: Icon(
-              Icons.broken_image_outlined,
+              LucideIcons.imageOff,
               color: AppColors.textMuted,
               size: AppSizes.sp32,
             ),
@@ -96,7 +97,7 @@ class _FullScreenImagePage extends StatelessWidget {
               color: AppColors.primaryColor,
             ),
             errorWidget: (ctx, url, err) => Icon(
-              Icons.broken_image_outlined,
+              LucideIcons.imageOff,
               color: AppColors.textMuted,
               size: AppSizes.sp64,
             ),
@@ -137,10 +138,8 @@ class ChatVideoBubble extends StatelessWidget {
                   : AppColors.cardBackground,
               child: Center(
                 child: Icon(
-                  Icons.videocam_rounded,
-                  color: isMine
-                      ? AppColors.buttonText.withValues(alpha: 0.5)
-                      : AppColors.textMuted,
+                  LucideIcons.video,
+                  color: Colors.black,
                   size: AppSizes.sp64,
                 ),
               ),
