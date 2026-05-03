@@ -943,4 +943,55 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sendVoiceOption => 'صوت';
+
+  @override
+  String get changePasswordButton => 'تغيير كلمة المرور';
+
+  @override
+  String get changePasswordDescription =>
+      'تحقق من هويتك عبر البريد الإلكتروني لتحديث كلمة المرور.';
+
+  @override
+  String get verificationCodeTitle => 'رمز التحقق';
+
+  @override
+  String get verificationCodeSubtitle =>
+      'تم إرسال رمز مكون من 6 أرقام إلى بريدك الإلكتروني المسجل.';
+
+  @override
+  String get enterCodeHint => 'أدخل الرمز المكون من 6 أرقام';
+
+  @override
+  String get verifyButton => 'تحقق';
+
+  @override
+  String get resendCodeButton => 'إعادة إرسال الرمز';
+
+  @override
+  String get codeSentSuccess => 'تم إرسال رمز التحقق إلى بريدك الإلكتروني.';
+
+  @override
+  String get codeResent => 'تم إرسال رمز جديد إلى بريدك الإلكتروني.';
+
+  @override
+  String get invalidCode => 'رمز غير صالح. حاول مرة أخرى.';
+
+  @override
+  String get codeExpired => 'انتهت صلاحية الرمز. يرجى طلب رمز جديد.';
+
+  @override
+  String get resetPasswordTitle => 'إعادة تعيين كلمة المرور';
+
+  @override
+  String get resetPasswordSubtitle =>
+      'أنشئ كلمة مرور جديدة لحسابك.\nاتبع القواعد أدناه.';
+
+  @override
+  String get passwordUpdatedSuccess => 'تم تحديث كلمة المرور بنجاح.';
+
+  @override
+  String get sendingCode => 'جاري إرسال الرمز...';
+
+  @override
+  String get verifyingCode => 'جاري التحقق...';
 }

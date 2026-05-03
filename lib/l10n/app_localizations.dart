@@ -1873,6 +1873,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Voice'**
   String get sendVoiceOption;
+
+  /// No description provided for @changePasswordButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get changePasswordButton;
+
+  /// No description provided for @changePasswordDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your identity via email to update your password.'**
+  String get changePasswordDescription;
+
+  /// No description provided for @verificationCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification Code'**
+  String get verificationCodeTitle;
+
+  /// No description provided for @verificationCodeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A 6-digit code has been sent to your registered email address.'**
+  String get verificationCodeSubtitle;
+
+  /// No description provided for @enterCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 6-digit code'**
+  String get enterCodeHint;
+
+  /// No description provided for @verifyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verifyButton;
+
+  /// No description provided for @resendCodeButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Code'**
+  String get resendCodeButton;
+
+  /// No description provided for @codeSentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code sent to your email.'**
+  String get codeSentSuccess;
+
+  /// No description provided for @codeResent.
+  ///
+  /// In en, this message translates to:
+  /// **'A new code has been sent to your email.'**
+  String get codeResent;
+
+  /// No description provided for @invalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid code. Please try again.'**
+  String get invalidCode;
+
+  /// No description provided for @codeExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Code expired. Please request a new one.'**
+  String get codeExpired;
+
+  /// No description provided for @resetPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get resetPasswordTitle;
+
+  /// No description provided for @resetPasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new password for your account.\nFollow the rules below.'**
+  String get resetPasswordSubtitle;
+
+  /// No description provided for @passwordUpdatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated successfully.'**
+  String get passwordUpdatedSuccess;
+
+  /// No description provided for @sendingCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending code...'**
+  String get sendingCode;
+
+  /// No description provided for @verifyingCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying...'**
+  String get verifyingCode;
 }
 
 class _AppLocalizationsDelegate

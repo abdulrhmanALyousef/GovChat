@@ -945,4 +945,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendVoiceOption => 'Voice';
+
+  @override
+  String get changePasswordButton => 'Change Password';
+
+  @override
+  String get changePasswordDescription =>
+      'Verify your identity via email to update your password.';
+
+  @override
+  String get verificationCodeTitle => 'Verification Code';
+
+  @override
+  String get verificationCodeSubtitle =>
+      'A 6-digit code has been sent to your registered email address.';
+
+  @override
+  String get enterCodeHint => 'Enter 6-digit code';
+
+  @override
+  String get verifyButton => 'Verify';
+
+  @override
+  String get resendCodeButton => 'Resend Code';
+
+  @override
+  String get codeSentSuccess => 'Verification code sent to your email.';
+
+  @override
+  String get codeResent => 'A new code has been sent to your email.';
+
+  @override
+  String get invalidCode => 'Invalid code. Please try again.';
+
+  @override
+  String get codeExpired => 'Code expired. Please request a new one.';
+
+  @override
+  String get resetPasswordTitle => 'Reset Password';
+
+  @override
+  String get resetPasswordSubtitle =>
+      'Create a new password for your account.\nFollow the rules below.';
+
+  @override
+  String get passwordUpdatedSuccess => 'Password updated successfully.';
+
+  @override
+  String get sendingCode => 'Sending code...';
+
+  @override
+  String get verifyingCode => 'Verifying...';
 }
