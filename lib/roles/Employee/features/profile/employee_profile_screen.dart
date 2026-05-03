@@ -26,12 +26,14 @@ class EmployeeProfileScreen extends StatefulWidget {
 
 class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
   late String _avatarUrl;
+  late String _name;
   bool _uploading = false;
 
   @override
   void initState() {
     super.initState();
     _avatarUrl = widget.employee.avatarUrl;
+    _name = widget.employee.name;
   }
 
   Future<void> _pickAndUploadAvatar() async {
@@ -76,6 +78,136 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
           SnackBar(
             content: Text(
               'Failed to update avatar',
+              style: GoogleFonts.manrope(),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _editName() async {
+    final controller = TextEditingController(text: _name);
+    final l = AppLocalizations.of(context)!;
+
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: AppColors.cardBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.r20),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(AppSizes.pw24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l.editNameTitle,
+                style: GoogleFonts.manrope(
+                  color: AppColors.textTitle,
+                  fontWeight: FontWeight.w800,
+                  fontSize: AppSizes.sp18,
+                ),
+              ),
+              SizedBox(height: AppSizes.h16),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                style: GoogleFonts.manrope(
+                  color: AppColors.textPrimary,
+                  fontSize: AppSizes.sp14,
+                ),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.sectionBackground,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.r12),
+                    borderSide: const BorderSide(color: AppColors.inputBorder),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.r12),
+                    borderSide: const BorderSide(color: AppColors.inputBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.r12),
+                    borderSide: const BorderSide(color: AppColors.primaryColor),
+                  ),
+                ),
+              ),
+              SizedBox(height: AppSizes.h24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.inputBorder),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppSizes.r12),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
+                      ),
+                      child: Text(
+                        l.cancelButton,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w600,
+                          fontSize: AppSizes.sp14,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: AppSizes.w12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final value = controller.text.trim();
+                        if (value.isNotEmpty) Navigator.pop(ctx, value);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppSizes.r12),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
+                      ),
+                      child: Text(
+                        l.saveButton,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.buttonText,
+                          fontWeight: FontWeight.w700,
+                          fontSize: AppSizes.sp14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (newName == null || newName == _name) return;
+
+    try {
+      final employeeId = widget.employee.id ?? '';
+      await FirebaseService.instance.firestore
+          .collection('employees')
+          .doc(employeeId)
+          .update({'name': newName});
+
+      if (mounted) setState(() => _name = newName);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to update name',
               style: GoogleFonts.manrope(),
             ),
             backgroundColor: AppColors.error,
@@ -192,12 +324,27 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.employee.name,
-                            style: GoogleFonts.manrope(
-                              color: AppColors.textTitle,
-                              fontSize: AppSizes.sp18,
-                              fontWeight: FontWeight.w800,
+                          GestureDetector(
+                            onTap: _editName,
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    _name,
+                                    style: GoogleFonts.manrope(
+                                      color: AppColors.textTitle,
+                                      fontSize: AppSizes.sp18,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: AppSizes.w6),
+                                Icon(
+                                  Icons.edit_outlined,
+                                  color: AppColors.textMuted,
+                                  size: AppSizes.sp14,
+                                ),
+                              ],
                             ),
                           ),
                           SizedBox(height: AppSizes.h4),

@@ -932,6 +932,12 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get saveButton;
 
+  /// No description provided for @editNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Name'**
+  String get editNameTitle;
+
   /// No description provided for @adminSession.
   ///
   /// In en, this message translates to:

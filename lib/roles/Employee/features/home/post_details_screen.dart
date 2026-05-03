@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -133,7 +134,10 @@ class _PostDetailsView extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    _Avatar(displayId: post.createdByDisplayId),
+                    _Avatar(
+                      displayId: post.createdByDisplayId,
+                      employeeUid: post.employeeId,
+                    ),
                     SizedBox(width: AppSizes.w10),
                     Expanded(
                       child: Text(
@@ -331,7 +335,11 @@ class _CommentTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Avatar(displayId: comment.createdByDisplayId, size: 34),
+          _Avatar(
+            displayId: comment.createdByDisplayId,
+            size: 34,
+            employeeUid: comment.createdByUid,
+          ),
           SizedBox(width: AppSizes.w10),
           Expanded(
             child: Column(
@@ -432,6 +440,7 @@ class _CommentInputBarState extends State<_CommentInputBar> {
       text: text,
       createdByDisplayId: widget.employee.displayId,
       createdByName: widget.employee.name,
+      createdByUid: widget.employee.id ?? '',
     );
   }
 
@@ -535,14 +544,83 @@ class _CommentInputBarState extends State<_CommentInputBar> {
 // ─── Shared avatar ────────────────────────────────────────────────────────────
 
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.displayId, this.size = 42});
+  const _Avatar({
+    required this.displayId,
+    this.size = 42,
+    this.employeeUid = '',
+  });
 
   final String displayId;
   final double size;
+  final String employeeUid;
 
   @override
   Widget build(BuildContext context) {
     final initial = displayId.isNotEmpty ? displayId[0].toUpperCase() : '?';
+
+    if (employeeUid.isEmpty) return _buildFallback(initial);
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('employees')
+          .doc(employeeUid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final avatarUrl =
+            snapshot.data?.data()?['avatarUrl'] as String? ?? '';
+
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.primaryColor.withValues(alpha: 0.35),
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: avatarUrl.isNotEmpty
+              ? CachedNetworkImage(
+                  imageUrl: avatarUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (_, url) => Center(
+                    child: Text(
+                      initial,
+                      style: GoogleFonts.manrope(
+                        color: AppColors.primaryColor,
+                        fontWeight: FontWeight.w800,
+                        fontSize: size * 0.38,
+                      ),
+                    ),
+                  ),
+                  errorWidget: (_, url, error) => Center(
+                    child: Text(
+                      initial,
+                      style: GoogleFonts.manrope(
+                        color: AppColors.primaryColor,
+                        fontWeight: FontWeight.w800,
+                        fontSize: size * 0.38,
+                      ),
+                    ),
+                  ),
+                )
+              : Center(
+                  child: Text(
+                    initial,
+                    style: GoogleFonts.manrope(
+                      color: AppColors.primaryColor,
+                      fontWeight: FontWeight.w800,
+                      fontSize: size * 0.38,
+                    ),
+                  ),
+                ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFallback(String initial) {
     return Container(
       width: size,
       height: size,

@@ -153,6 +153,7 @@
   "departmentIsRequired": "Department is required",
   "nationalIdIsRequired": "National ID is required",
   "saveButton": "Save",
+  "editNameTitle": "Edit Name",
   "adminSession": "Admin Session",
   "adminSessionDescription": "Securely manage your admin account and sign out when finished.",
   "logsTitle": "Logs",

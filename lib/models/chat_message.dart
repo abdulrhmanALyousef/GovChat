@@ -12,6 +12,11 @@ class ChatMessage {
   final String text;
 
   final String senderId;
+
+  /// Firebase Auth UID of the sender — used to look up live profile data
+  /// (name, avatar). Absent on messages created before this field was added.
+  final String? senderUid;
+
   final String organizationId;
   final String departmentId;
   final DateTime? createdAt;
@@ -46,6 +51,7 @@ class ChatMessage {
     this.id,
     required this.text,
     required this.senderId,
+    this.senderUid,
     required this.organizationId,
     required this.departmentId,
     this.createdAt,
@@ -79,6 +85,7 @@ class ChatMessage {
         id: id,
         text: text ?? this.text,
         senderId: senderId,
+        senderUid: senderUid,
         organizationId: organizationId,
         departmentId: departmentId,
         createdAt: createdAt,
@@ -103,6 +110,7 @@ class ChatMessage {
       // Plain-text field kept for backwards compatibility with old messages.
       text: json['text'] as String? ?? '',
       senderId: json['senderId'] as String? ?? '',
+      senderUid: json['senderUid'] as String?,
       organizationId: json['organizationId'] as String? ?? '',
       departmentId: json['departmentId'] as String? ?? '',
       createdAt: json['createdAt'] is Timestamp
@@ -142,6 +150,7 @@ class ChatMessage {
     return {
       'text': text,
       'senderId': senderId,
+      if (senderUid != null) 'senderUid': senderUid,
       'organizationId': organizationId,
       'departmentId': departmentId,
       'createdAt': FieldValue.serverTimestamp(),

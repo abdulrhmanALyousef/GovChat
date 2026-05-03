@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -110,9 +111,10 @@ class _NewChatView extends StatelessWidget {
       MaterialPageRoute(
         builder: (_) => EmployeeChatScreen(
           employee: currentEmployee,
-          chatTitle: other.displayId,
+          chatTitle: other.name,
           chatSubtitle: AppLocalizations.of(context)!.privateChatSubtitle,
           messagesPath: messagesPath,
+          otherUid: other.id,
         ),
       ),
     );
@@ -224,11 +226,11 @@ class _EmployeeTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            _Avatar(),
+            _Avatar(avatarUrl: employee.avatarUrl),
             SizedBox(width: AppSizes.w12),
             Expanded(
               child: Text(
-                employee.displayId,
+                employee.name,
                 style: GoogleFonts.manrope(
                   color: AppColors.textTitle,
                   fontWeight: FontWeight.w700,
@@ -251,6 +253,10 @@ class _EmployeeTile extends StatelessWidget {
 }
 
 class _Avatar extends StatelessWidget {
+  const _Avatar({this.avatarUrl = ''});
+
+  final String avatarUrl;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -261,11 +267,27 @@ class _Avatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.inputBorder),
       ),
-      child: Icon(
-        Icons.person_outline,
-        color: AppColors.primaryColor,
-        size: AppSizes.sp20,
-      ),
+      clipBehavior: Clip.antiAlias,
+      child: avatarUrl.isNotEmpty
+          ? CachedNetworkImage(
+              imageUrl: avatarUrl,
+              fit: BoxFit.cover,
+              placeholder: (_, url) => Icon(
+                Icons.person_outline,
+                color: AppColors.primaryColor,
+                size: AppSizes.sp20,
+              ),
+              errorWidget: (_, url, error) => Icon(
+                Icons.person_outline,
+                color: AppColors.primaryColor,
+                size: AppSizes.sp20,
+              ),
+            )
+          : Icon(
+              Icons.person_outline,
+              color: AppColors.primaryColor,
+              size: AppSizes.sp20,
+            ),
     );
   }
 }

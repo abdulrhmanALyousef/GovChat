@@ -53,7 +53,9 @@ class NewChatController extends ChangeNotifier {
       filteredEmployees = List<EmployeeModel>.from(_allEmployees);
     } else {
       filteredEmployees = _allEmployees
-          .where((e) => e.displayId.toLowerCase().contains(trimmed))
+          .where((e) =>
+              e.name.toLowerCase().contains(trimmed) ||
+              e.displayId.toLowerCase().contains(trimmed))
           .toList();
     }
     notifyListeners();
