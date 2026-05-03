@@ -389,5 +389,9 @@
   "resetPasswordSubtitle": "Create a new password for your account.\nFollow the rules below.",
   "passwordUpdatedSuccess": "Password updated successfully.",
   "sendingCode": "Sending code...",
-  "verifyingCode": "Verifying..."
+  "verifyingCode": "Verifying...",
+  "takePhotoOption": "Take Photo",
+  "choosePhotoOption": "Choose Photo",
+  "recordVideoOption": "Record Video",
+  "chooseVideoOption": "Choose Video"
 }

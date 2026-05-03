@@ -1969,6 +1969,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Verifying...'**
   String get verifyingCode;
+
+  /// No description provided for @takePhotoOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Take Photo'**
+  String get takePhotoOption;
+
+  /// No description provided for @choosePhotoOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Photo'**
+  String get choosePhotoOption;
+
+  /// No description provided for @recordVideoOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Video'**
+  String get recordVideoOption;
+
+  /// No description provided for @chooseVideoOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Video'**
+  String get chooseVideoOption;
 }
 
 class _AppLocalizationsDelegate

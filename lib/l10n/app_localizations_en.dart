@@ -996,4 +996,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get verifyingCode => 'Verifying...';
+
+  @override
+  String get takePhotoOption => 'Take Photo';
+
+  @override
+  String get choosePhotoOption => 'Choose Photo';
+
+  @override
+  String get recordVideoOption => 'Record Video';
+
+  @override
+  String get chooseVideoOption => 'Choose Video';
 }

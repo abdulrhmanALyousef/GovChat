@@ -94,8 +94,10 @@ class _ChatView extends StatelessWidget {
         backgroundColor: AppColors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: AppColors.textTitle),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColors.textTitle,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: otherUid != null && otherUid!.isNotEmpty
@@ -105,10 +107,8 @@ class _ChatView extends StatelessWidget {
                     .doc(otherUid)
                     .snapshots(),
                 builder: (context, snapshot) {
-                  final name =
-                      snapshot.data?.data()?['name'] as String? ?? '';
-                  final title =
-                      name.isNotEmpty ? name : fallbackTitle;
+                  final name = snapshot.data?.data()?['name'] as String? ?? '';
+                  final title = name.isNotEmpty ? name : fallbackTitle;
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -155,8 +155,7 @@ class _ChatView extends StatelessWidget {
               ),
         actions: [
           IconButton(
-            icon:
-                const Icon(Icons.logout_rounded, color: AppColors.error),
+            icon: const Icon(Icons.logout_rounded, color: AppColors.error),
             tooltip: l.signOutButton,
             onPressed: () async {
               final confirmed = await _showLogoutDialog(context, l);
@@ -195,8 +194,7 @@ class _ChatView extends StatelessWidget {
                 ),
               ),
               if (controller.typingDisplayIds.isNotEmpty)
-                _TypingIndicator(
-                    typingIds: controller.typingDisplayIds),
+                _TypingIndicator(typingIds: controller.typingDisplayIds),
               if (controller.errorMessage != null)
                 _ErrorBanner(
                   message: controller.errorMessage!,
@@ -244,8 +242,10 @@ class _MessagesList extends StatelessWidget {
       itemBuilder: (context, index) {
         final message = messages[index];
         final isMine = message.senderId == myDisplayId;
-        final profile =
-            controller.getSenderProfile(message.senderUid, message.senderId);
+        final profile = controller.getSenderProfile(
+          message.senderUid,
+          message.senderId,
+        );
         return _MessageItem(
           message: message,
           isMine: isMine,
@@ -297,8 +297,9 @@ class _MessageItem extends StatelessWidget {
       padding: EdgeInsets.only(bottom: AppSizes.ph12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment:
-            isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMine
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         children: [
           // Avatar on the left for other's messages
           if (!isMine) ...[
@@ -307,8 +308,9 @@ class _MessageItem extends StatelessWidget {
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment:
-                  isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: isMine
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
                 // Sender name label — group chat only, not for own messages
                 if (!isMine && !isPrivateChat)
@@ -330,11 +332,11 @@ class _MessageItem extends StatelessWidget {
                       ? Alignment.centerRight
                       : Alignment.centerLeft,
                   child: GestureDetector(
-                    onLongPress:
-                        isMine ? () => _showActionsSheet(context) : null,
+                    onLongPress: isMine
+                        ? () => _showActionsSheet(context)
+                        : null,
                     child: Container(
-                      constraints:
-                          BoxConstraints(maxWidth: AppSizes.w240),
+                      constraints: BoxConstraints(maxWidth: AppSizes.w240),
                       padding: _isMediaBubble
                           ? EdgeInsets.zero
                           : EdgeInsets.all(AppSizes.ph14),
@@ -342,8 +344,7 @@ class _MessageItem extends StatelessWidget {
                         color: isMine
                             ? AppColors.primaryColor
                             : AppColors.sectionBackground,
-                        borderRadius:
-                            BorderRadius.circular(AppSizes.r16),
+                        borderRadius: BorderRadius.circular(AppSizes.r16),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: _buildContent(context),
@@ -419,9 +420,7 @@ class _MessageItem extends StatelessWidget {
         return Text(
           message.text,
           style: GoogleFonts.manrope(
-            color: isMine
-                ? AppColors.buttonText
-                : AppColors.textPrimary,
+            color: isMine ? AppColors.buttonText : AppColors.textPrimary,
             fontSize: AppSizes.sp14,
             height: 1.4,
           ),
@@ -432,8 +431,7 @@ class _MessageItem extends StatelessWidget {
   bool _canDelete() {
     final createdAt = message.createdAt;
     if (createdAt == null) return false;
-    return DateTime.now().difference(createdAt) <=
-        const Duration(minutes: 5);
+    return DateTime.now().difference(createdAt) <= const Duration(minutes: 5);
   }
 
   void _showActionsSheet(BuildContext context) {
@@ -443,9 +441,7 @@ class _MessageItem extends StatelessWidget {
       context: context,
       backgroundColor: AppColors.cardBackground,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSizes.r20),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r20)),
       ),
       builder: (_) => _MessageActionsSheet(
         onEdit: canEdit
@@ -488,14 +484,23 @@ class _StatusIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (status) {
       case MessageStatus.sent:
-        return Icon(Icons.check,
-            size: AppSizes.sp12, color: AppColors.textMuted);
+        return Icon(
+          Icons.check,
+          size: AppSizes.sp12,
+          color: AppColors.textMuted,
+        );
       case MessageStatus.delivered:
-        return Icon(Icons.done_all,
-            size: AppSizes.sp12, color: AppColors.textMuted);
+        return Icon(
+          Icons.done_all,
+          size: AppSizes.sp12,
+          color: AppColors.textMuted,
+        );
       case MessageStatus.read:
-        return Icon(Icons.done_all,
-            size: AppSizes.sp12, color: AppColors.primaryColor);
+        return Icon(
+          Icons.done_all,
+          size: AppSizes.sp12,
+          color: AppColors.primaryColor,
+        );
     }
   }
 }
@@ -577,8 +582,7 @@ class _MessageActionsSheet extends StatelessWidget {
           Container(
             width: AppSizes.w42,
             height: AppSizes.h4,
-            margin:
-                EdgeInsets.symmetric(vertical: AppSizes.ph12),
+            margin: EdgeInsets.symmetric(vertical: AppSizes.ph12),
             decoration: BoxDecoration(
               color: AppColors.textMuted.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(AppSizes.r4),
@@ -586,9 +590,11 @@ class _MessageActionsSheet extends StatelessWidget {
           ),
           if (onEdit != null)
             ListTile(
-              leading: Icon(Icons.edit_outlined,
-                  color: AppColors.primaryColor,
-                  size: AppSizes.sp20),
+              leading: Icon(
+                Icons.edit_outlined,
+                color: AppColors.primaryColor,
+                size: AppSizes.sp20,
+              ),
               title: Text(
                 l.editMessageTitle,
                 style: GoogleFonts.manrope(
@@ -601,8 +607,11 @@ class _MessageActionsSheet extends StatelessWidget {
             ),
           if (onDelete != null)
             ListTile(
-              leading: Icon(Icons.delete_outline,
-                  color: AppColors.error, size: AppSizes.sp20),
+              leading: Icon(
+                Icons.delete_outline,
+                color: AppColors.error,
+                size: AppSizes.sp20,
+              ),
               title: Text(
                 l.deleteMessageTitle,
                 style: GoogleFonts.manrope(
@@ -633,7 +642,8 @@ class _DeleteConfirmationDialog extends StatelessWidget {
     return AlertDialog(
       backgroundColor: AppColors.cardBackground,
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSizes.r16)),
+        borderRadius: BorderRadius.circular(AppSizes.r16),
+      ),
       title: Text(
         l.deleteMessageTitle,
         style: GoogleFonts.manrope(
@@ -653,19 +663,25 @@ class _DeleteConfirmationDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(l.cancelButton,
-              style: GoogleFonts.manrope(
-                  color: AppColors.textMuted,
-                  fontWeight: FontWeight.w600,
-                  fontSize: AppSizes.sp14)),
+          child: Text(
+            l.cancelButton,
+            style: GoogleFonts.manrope(
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w600,
+              fontSize: AppSizes.sp14,
+            ),
+          ),
         ),
         TextButton(
           onPressed: onConfirm,
-          child: Text(l.deleteButton,
-              style: GoogleFonts.manrope(
-                  color: AppColors.error,
-                  fontWeight: FontWeight.w700,
-                  fontSize: AppSizes.sp14)),
+          child: Text(
+            l.deleteButton,
+            style: GoogleFonts.manrope(
+              color: AppColors.error,
+              fontWeight: FontWeight.w700,
+              fontSize: AppSizes.sp14,
+            ),
+          ),
         ),
       ],
     );
@@ -729,8 +745,11 @@ class _EditContextStrip extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: Icon(Icons.close,
-                color: AppColors.textMuted, size: AppSizes.sp20),
+            icon: Icon(
+              Icons.close,
+              color: AppColors.textMuted,
+              size: AppSizes.sp20,
+            ),
             onPressed: controller.cancelEditing,
           ),
         ],
@@ -834,8 +853,11 @@ class _EncryptionPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.lock_outline,
-              color: AppColors.primaryColor, size: AppSizes.sp14),
+          Icon(
+            Icons.lock_outline,
+            color: AppColors.primaryColor,
+            size: AppSizes.sp14,
+          ),
           SizedBox(width: AppSizes.w8),
           Text(
             l.endToEndEncryptedChannel,
@@ -879,8 +901,8 @@ class _InputBar extends StatelessWidget {
           child: isRecording
               ? _RecordingBar(controller: controller)
               : isUploading
-                  ? _UploadingBar()
-                  : _TextInputRow(controller: controller),
+              ? _UploadingBar()
+              : _TextInputRow(controller: controller),
         ),
       ],
     );
@@ -943,9 +965,7 @@ class _TextInputRow extends StatelessWidget {
               maxLines: null,
               decoration: InputDecoration(
                 isCollapsed: true,
-                hintText: isEditing
-                    ? l.editMessageHint
-                    : l.typeAMessage,
+                hintText: isEditing ? l.editMessageHint : l.typeAMessage,
                 hintStyle: GoogleFonts.manrope(
                   color: AppColors.hintText,
                   fontSize: AppSizes.sp14,
@@ -979,8 +999,9 @@ class _TextInputRow extends StatelessWidget {
                   : _CircleIconButton(
                       icon: Icons.mic_rounded,
                       color: AppColors.primaryColor,
-                      backgroundColor: AppColors.primaryColor
-                          .withValues(alpha: 0.15),
+                      backgroundColor: AppColors.primaryColor.withValues(
+                        alpha: 0.15,
+                      ),
                       onTap: controller.startVoiceRecording,
                     );
             },
@@ -1024,8 +1045,7 @@ class _RecordingBar extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(AppSizes.r16),
-              border: Border.all(
-                  color: AppColors.error.withValues(alpha: 0.4)),
+              border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
             ),
             child: Row(
               children: [
@@ -1113,8 +1133,7 @@ void _showAttachmentSheet(
     context: context,
     backgroundColor: AppColors.cardBackground,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSizes.r20)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r20)),
     ),
     builder: (sheetCtx) {
       return SafeArea(
@@ -1125,18 +1144,17 @@ void _showAttachmentSheet(
             Container(
               width: AppSizes.w42,
               height: AppSizes.h4,
-              margin:
-                  EdgeInsets.symmetric(vertical: AppSizes.ph12),
+              margin: EdgeInsets.symmetric(vertical: AppSizes.ph12),
               decoration: BoxDecoration(
                 color: AppColors.textMuted.withValues(alpha: 0.4),
-                borderRadius:
-                    BorderRadius.circular(AppSizes.r4),
+                borderRadius: BorderRadius.circular(AppSizes.r4),
               ),
             ),
             Padding(
               padding: EdgeInsets.symmetric(
-                  horizontal: AppSizes.pw16,
-                  vertical: AppSizes.ph8),
+                horizontal: AppSizes.pw16,
+                vertical: AppSizes.ph8,
+              ),
               child: Text(
                 l.mediaAttachmentTitle,
                 style: GoogleFonts.manrope(
@@ -1151,17 +1169,41 @@ void _showAttachmentSheet(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _AttachOption(
+                  icon: Icons.camera_alt_rounded,
+                  label: l.takePhotoOption,
+                  color: const Color(0xFF10B981),
+                  onTap: () {
+                    Navigator.pop(sheetCtx);
+                    controller.captureAndSendImage();
+                  },
+                ),
+                _AttachOption(
                   icon: Icons.image_rounded,
-                  label: l.sendImageOption,
+                  label: l.choosePhotoOption,
                   color: const Color(0xFF3B82F6),
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.pickAndSendImage();
                   },
                 ),
+              ],
+            ),
+            SizedBox(height: AppSizes.ph16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
                 _AttachOption(
                   icon: Icons.videocam_rounded,
-                  label: l.sendVideoOption,
+                  label: l.recordVideoOption,
+                  color: const Color(0xFFEF4444),
+                  onTap: () {
+                    Navigator.pop(sheetCtx);
+                    controller.captureAndSendVideo();
+                  },
+                ),
+                _AttachOption(
+                  icon: Icons.video_library_rounded,
+                  label: l.chooseVideoOption,
                   color: const Color(0xFFEC4899),
                   onTap: () {
                     Navigator.pop(sheetCtx);
@@ -1275,15 +1317,11 @@ class _GradientActionButton extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: const LinearGradient(
-            colors: [
-              AppColors.gradientStart,
-              AppColors.gradientEnd,
-            ],
+            colors: [AppColors.gradientStart, AppColors.gradientEnd],
           ),
           boxShadow: [
             BoxShadow(
-              color:
-                  AppColors.primaryColor.withValues(alpha: 0.3),
+              color: AppColors.primaryColor.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1297,9 +1335,7 @@ class _GradientActionButton extends StatelessWidget {
                   color: AppColors.buttonText,
                 ),
               )
-            : Icon(icon,
-                color: AppColors.buttonText,
-                size: AppSizes.sp20),
+            : Icon(icon, color: AppColors.buttonText, size: AppSizes.sp20),
       ),
     );
   }
@@ -1322,9 +1358,10 @@ class _PulsingDotState extends State<_PulsingDot>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _anim = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -1382,8 +1419,11 @@ class _ErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline_rounded,
-              color: AppColors.error, size: AppSizes.sp16),
+          Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.error,
+            size: AppSizes.sp16,
+          ),
           SizedBox(width: AppSizes.w8),
           Expanded(
             child: Text(
@@ -1413,8 +1453,11 @@ class _ErrorBanner extends StatelessWidget {
           SizedBox(width: AppSizes.w6),
           GestureDetector(
             onTap: onDismiss,
-            child: Icon(Icons.close,
-                color: AppColors.error, size: AppSizes.sp16),
+            child: Icon(
+              Icons.close,
+              color: AppColors.error,
+              size: AppSizes.sp16,
+            ),
           ),
         ],
       ),
@@ -1424,8 +1467,7 @@ class _ErrorBanner extends StatelessWidget {
 
 // ─── Logout dialog ────────────────────────────────────────────────────────────
 
-Future<bool> _showLogoutDialog(
-    BuildContext context, AppLocalizations l) async {
+Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
   return await showDialog<bool>(
         context: context,
         barrierDismissible: true,
@@ -1475,17 +1517,15 @@ Future<bool> _showLogoutDialog(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () =>
-                            Navigator.pop(ctx, false),
+                        onPressed: () => Navigator.pop(ctx, false),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                              color: AppColors.inputBorder),
+                          side: const BorderSide(color: AppColors.inputBorder),
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppSizes.r12),
+                            borderRadius: BorderRadius.circular(AppSizes.r12),
                           ),
                           padding: EdgeInsets.symmetric(
-                              vertical: AppSizes.ph14),
+                            vertical: AppSizes.ph14,
+                          ),
                         ),
                         child: Text(
                           l.cancelButton,
@@ -1500,17 +1540,16 @@ Future<bool> _showLogoutDialog(
                     SizedBox(width: AppSizes.w12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () =>
-                            Navigator.pop(ctx, true),
+                        onPressed: () => Navigator.pop(ctx, true),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.error,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppSizes.r12),
+                            borderRadius: BorderRadius.circular(AppSizes.r12),
                           ),
                           padding: EdgeInsets.symmetric(
-                              vertical: AppSizes.ph14),
+                            vertical: AppSizes.ph14,
+                          ),
                         ),
                         child: Text(
                           l.signOutButton,

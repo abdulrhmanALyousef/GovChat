@@ -994,4 +994,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get verifyingCode => 'جاري التحقق...';
+
+  @override
+  String get takePhotoOption => 'التقاط صورة';
+
+  @override
+  String get choosePhotoOption => 'اختيار صورة';
+
+  @override
+  String get recordVideoOption => 'تسجيل فيديو';
+
+  @override
+  String get chooseVideoOption => 'اختيار فيديو';
 }
