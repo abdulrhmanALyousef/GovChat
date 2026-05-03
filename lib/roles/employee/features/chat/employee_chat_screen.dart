@@ -4,10 +4,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_size.dart';
-import '../../../../core/services/session_manager.dart';
+
 import '../../../../core/theme/app_color.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/chat_message.dart'
@@ -153,17 +154,6 @@ class _ChatView extends StatelessWidget {
                   ),
                 ],
               ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: AppColors.error),
-            tooltip: l.signOutButton,
-            onPressed: () async {
-              final confirmed = await _showLogoutDialog(context, l);
-              if (!confirmed || !context.mounted) return;
-              await SessionManager.instance.logout(context);
-            },
-          ),
-        ],
       ),
       body: SafeArea(
         child: Container(
@@ -329,8 +319,8 @@ class _MessageItem extends StatelessWidget {
                 // Bubble
                 Align(
                   alignment: isMine
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
+                      ? AlignmentDirectional.centerEnd
+                      : AlignmentDirectional.centerStart,
                   child: GestureDetector(
                     onLongPress: isMine
                         ? () => _showActionsSheet(context)
@@ -419,6 +409,7 @@ class _MessageItem extends StatelessWidget {
       case MessageType.text:
         return Text(
           message.text,
+          textDirection: Directionality.of(context),
           style: GoogleFonts.manrope(
             color: isMine ? AppColors.buttonText : AppColors.textPrimary,
             fontSize: AppSizes.sp14,
@@ -927,7 +918,7 @@ class _TextInputRow extends StatelessWidget {
         // Attach button (hidden in edit mode)
         if (!isEditing) ...[
           _CircleIconButton(
-            icon: Icons.attach_file_rounded,
+            icon: LucideIcons.paperclip,
             color: AppColors.textMuted,
             backgroundColor: AppColors.cardBackground,
             onTap: () => _showAttachmentSheet(context, controller, l),
@@ -997,7 +988,7 @@ class _TextInputRow extends StatelessWidget {
                       onTap: controller.sendMessage,
                     )
                   : _CircleIconButton(
-                      icon: Icons.mic_rounded,
+                      icon: LucideIcons.mic,
                       color: AppColors.primaryColor,
                       backgroundColor: AppColors.primaryColor.withValues(
                         alpha: 0.15,
@@ -1169,18 +1160,18 @@ void _showAttachmentSheet(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _AttachOption(
-                  icon: Icons.camera_alt_rounded,
+                  icon: LucideIcons.camera,
                   label: l.takePhotoOption,
-                  color: const Color(0xFF10B981),
+                  color: Colors.black,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.captureAndSendImage();
                   },
                 ),
                 _AttachOption(
-                  icon: Icons.image_rounded,
+                  icon: LucideIcons.image,
                   label: l.choosePhotoOption,
-                  color: const Color(0xFF3B82F6),
+                  color: Colors.black,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.pickAndSendImage();
@@ -1193,18 +1184,18 @@ void _showAttachmentSheet(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _AttachOption(
-                  icon: Icons.videocam_rounded,
+                  icon: LucideIcons.video,
                   label: l.recordVideoOption,
-                  color: const Color(0xFFEF4444),
+                  color: Colors.black,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.captureAndSendVideo();
                   },
                 ),
                 _AttachOption(
-                  icon: Icons.video_library_rounded,
+                  icon: LucideIcons.film,
                   label: l.chooseVideoOption,
-                  color: const Color(0xFFEC4899),
+                  color: Colors.black,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.pickAndSendVideo();
@@ -1465,108 +1456,3 @@ class _ErrorBanner extends StatelessWidget {
   }
 }
 
-// ─── Logout dialog ────────────────────────────────────────────────────────────
-
-Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
-  return await showDialog<bool>(
-        context: context,
-        barrierDismissible: true,
-        builder: (ctx) => Dialog(
-          backgroundColor: AppColors.cardBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.r20),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(AppSizes.pw24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(AppSizes.ph16),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.logout_rounded,
-                    color: AppColors.error,
-                    size: AppSizes.sp28,
-                  ),
-                ),
-                SizedBox(height: AppSizes.h16),
-                Text(
-                  l.signOutButton,
-                  style: GoogleFonts.manrope(
-                    color: AppColors.textTitle,
-                    fontWeight: FontWeight.w800,
-                    fontSize: AppSizes.sp18,
-                  ),
-                ),
-                SizedBox(height: AppSizes.h8),
-                Text(
-                  l.signOutConfirm,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.manrope(
-                    color: AppColors.textMuted,
-                    fontSize: AppSizes.sp13,
-                    height: 1.5,
-                  ),
-                ),
-                SizedBox(height: AppSizes.h24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.inputBorder),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.r12),
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            vertical: AppSizes.ph14,
-                          ),
-                        ),
-                        child: Text(
-                          l.cancelButton,
-                          style: GoogleFonts.manrope(
-                            color: AppColors.textMuted,
-                            fontWeight: FontWeight.w600,
-                            fontSize: AppSizes.sp14,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: AppSizes.w12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.r12),
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            vertical: AppSizes.ph14,
-                          ),
-                        ),
-                        child: Text(
-                          l.signOutButton,
-                          style: GoogleFonts.manrope(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: AppSizes.sp14,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ) ??
-      false;
-}

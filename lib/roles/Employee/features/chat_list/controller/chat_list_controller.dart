@@ -27,22 +27,22 @@ class ChatListController extends ChangeNotifier {
 
   // Firestore stream for private_chats collection.
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
-      _privateChatsSubscription;
+  _privateChatsSubscription;
 
   // Per-conversation last-message subscriptions, keyed by conversation ID.
   final Map<String, StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>
-      _lastMessageSubs = {};
+  _lastMessageSubs = {};
 
   // Per-conversation profile subscriptions for private chats (other user's doc).
   final Map<String, StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>>
-      _profileSubs = {};
+  _profileSubs = {};
 
   // Employee profile cache: uid → {name, avatarUrl, displayId}.
   // Populated by a live stream on all employees in the org.
   final Map<String, Map<String, String>> _profileCache = {};
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
-      _employeesSubscription;
+  _employeesSubscription;
 
   /// Resolve a sender's display name from their UID or displayId.
   String _resolveSenderName(String? senderUid, String? senderId) {
@@ -77,22 +77,19 @@ class ChatListController extends ChangeNotifier {
         .collection('employees')
         .where('organizationId', isEqualTo: employee.organizationId)
         .snapshots()
-        .listen(
-          (snapshot) {
-            for (final doc in snapshot.docs) {
-              final data = doc.data();
-              _profileCache[doc.id] = {
-                'name': (data['name'] as String?) ?? '',
-                'avatarUrl': (data['avatarUrl'] as String?) ?? '',
-                'displayId': (data['displayId'] as String?) ?? '',
-              };
-            }
-            // Re-resolve all lastSenderName values with fresh data.
-            _refreshLastSenderNames();
-            notifyListeners();
-          },
-          onError: (_) {},
-        );
+        .listen((snapshot) {
+          for (final doc in snapshot.docs) {
+            final data = doc.data();
+            _profileCache[doc.id] = {
+              'name': (data['name'] as String?) ?? '',
+              'avatarUrl': (data['avatarUrl'] as String?) ?? '',
+              'displayId': (data['displayId'] as String?) ?? '',
+            };
+          }
+          // Re-resolve all lastSenderName values with fresh data.
+          _refreshLastSenderNames();
+          notifyListeners();
+        }, onError: (_) {});
   }
 
   /// Walk all conversations and re-resolve lastSenderName, plus refresh
@@ -156,7 +153,9 @@ class ChatListController extends ChangeNotifier {
 
     final conv = ConversationModel(
       id: convId,
-      name: employee.department.isNotEmpty ? employee.department : 'Department Chat',
+      name: employee.department.isNotEmpty
+          ? employee.department
+          : 'Department Chat',
       type: 'department',
       organizationId: employee.organizationId,
       departmentId: deptId,
@@ -180,10 +179,7 @@ class ChatListController extends ChangeNotifier {
         .collection('private_chats')
         .where('participants', arrayContains: employee.id ?? '')
         .snapshots()
-        .listen(
-          _handlePrivateChatSnapshot,
-          onError: (_) {},
-        );
+        .listen(_handlePrivateChatSnapshot, onError: (_) {});
   }
 
   void _handlePrivateChatSnapshot(
@@ -211,10 +207,13 @@ class ChatListController extends ChangeNotifier {
     if (_convMap.containsKey(chatId)) return;
 
     final myId = employee.id ?? '';
-    final participants =
-        List<String>.from((data['participants'] as List?) ?? []);
-    final otherId =
-        participants.firstWhere((id) => id != myId, orElse: () => '');
+    final participants = List<String>.from(
+      (data['participants'] as List?) ?? [],
+    );
+    final otherId = participants.firstWhere(
+      (id) => id != myId,
+      orElse: () => '',
+    );
 
     // Prefer fresh data from profile cache over stale participantNames.
     final cached = _profileCache[otherId];
@@ -256,23 +255,20 @@ class ChatListController extends ChangeNotifier {
         .collection('employees')
         .doc(otherId)
         .snapshots()
-        .listen(
-          (doc) {
-            final existing = _convMap[chatId];
-            if (existing == null) return;
-            final data = doc.data();
-            if (data == null) return;
-            final name = (data['name'] as String?) ?? '';
-            final avatarUrl = (data['avatarUrl'] as String?) ?? '';
-            _convMap[chatId] = existing.copyWith(
-              name: name.isNotEmpty ? name : null,
-              avatarUrl: avatarUrl,
-            );
-            _rebuildList();
-            notifyListeners();
-          },
-          onError: (_) {},
-        );
+        .listen((doc) {
+          final existing = _convMap[chatId];
+          if (existing == null) return;
+          final data = doc.data();
+          if (data == null) return;
+          final name = (data['name'] as String?) ?? '';
+          final avatarUrl = (data['avatarUrl'] as String?) ?? '';
+          _convMap[chatId] = existing.copyWith(
+            name: name.isNotEmpty ? name : null,
+            avatarUrl: avatarUrl,
+          );
+          _rebuildList();
+          notifyListeners();
+        }, onError: (_) {});
   }
 
   void _onPrivateChatRemoved(String chatId) {
@@ -293,38 +289,47 @@ class ChatListController extends ChangeNotifier {
         .orderBy('createdAt', descending: true)
         .limit(1)
         .snapshots()
-        .listen(
-          (snapshot) async {
-            final existing = _convMap[convId];
-            if (existing == null) return;
-            if (snapshot.docs.isEmpty) return;
+        .listen((snapshot) async {
+          final existing = _convMap[convId];
+          if (existing == null) return;
+          if (snapshot.docs.isEmpty) return;
 
-            final data = snapshot.docs.first.data();
-            final isEncrypted = data['isEncrypted'] as bool? ?? false;
-            final rawText = data['text'] as String?;
+          final data = snapshot.docs.first.data();
+          final isEncrypted = data['isEncrypted'] as bool? ?? false;
+          final rawText = data['text'] as String?;
+          final messageType = data['messageType'] as String? ?? 'text';
 
-            String? displayText;
+          // For media messages, the preview is handled by the UI
+          // based on lastMessageType — no need to decrypt.
+          String? displayText;
+          if (messageType == 'text') {
             if (isEncrypted) {
               displayText = await _decryptLastMessage(data, existing);
             }
+          }
 
-            final senderId = data['senderId'] as String?;
-            final senderUid = data['senderUid'] as String?;
-            final senderName = _resolveSenderName(senderUid, senderId);
+          final senderId = data['senderId'] as String?;
+          final senderUid = data['senderUid'] as String?;
+          final senderName = _resolveSenderName(senderUid, senderId);
 
-            _convMap[convId] = existing.copyWith(
-              lastMessage: displayText ?? (isEncrypted ? '[Encrypted message]' : rawText),
-              lastSenderId: senderId,
-              lastSenderName: senderName,
-              lastMessageTime: ConversationModel.timestampToDateTime(
-                data['createdAt'],
-              ),
-            );
-            _rebuildList();
-            notifyListeners();
-          },
-          onError: (_) {},
-        );
+          _convMap[convId] = existing.copyWith(
+            lastMessage:
+                displayText ??
+                (messageType != 'text'
+                    ? ''
+                    : isEncrypted
+                    ? '[Encrypted message]'
+                    : rawText),
+            lastMessageType: messageType,
+            lastSenderId: senderId,
+            lastSenderName: senderName,
+            lastMessageTime: ConversationModel.timestampToDateTime(
+              data['createdAt'],
+            ),
+          );
+          _rebuildList();
+          notifyListeners();
+        }, onError: (_) {});
   }
 
   /// Try to decrypt the last message preview.

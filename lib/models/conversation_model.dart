@@ -5,6 +5,7 @@ class ConversationModel {
   final String name;
   final String type; // 'organization', 'department', 'private'
   final String? lastMessage;
+  final String? lastMessageType; // 'text', 'image', 'video', 'voice'
   final String? lastSenderId;
   final String? lastSenderName;
   final DateTime? lastMessageTime;
@@ -21,6 +22,7 @@ class ConversationModel {
     required this.name,
     required this.type,
     this.lastMessage,
+    this.lastMessageType,
     this.lastSenderId,
     this.lastSenderName,
     this.lastMessageTime,
@@ -34,6 +36,7 @@ class ConversationModel {
   ConversationModel copyWith({
     String? name,
     String? lastMessage,
+    String? lastMessageType,
     String? lastSenderId,
     String? lastSenderName,
     DateTime? lastMessageTime,
@@ -44,6 +47,7 @@ class ConversationModel {
       name: name ?? this.name,
       type: type,
       lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageType: lastMessageType ?? this.lastMessageType,
       lastSenderId: lastSenderId ?? this.lastSenderId,
       lastSenderName: lastSenderName ?? this.lastSenderName,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
