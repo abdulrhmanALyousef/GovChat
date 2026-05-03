@@ -153,6 +153,7 @@
   "departmentIsRequired": "القسم مطلوب",
   "nationalIdIsRequired": "رقم الهوية مطلوب",
   "saveButton": "حفظ",
+  "editNameTitle": "تعديل الاسم",
   "adminSession": "جلسة المشرف",
   "adminSessionDescription": "إدارة حساب المشرف بشكل آمن وتسجيل الخروج عند الانتهاء.",
   "logsTitle": "السجلات",

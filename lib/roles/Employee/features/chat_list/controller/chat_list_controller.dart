@@ -33,12 +33,99 @@ class ChatListController extends ChangeNotifier {
   final Map<String, StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>
       _lastMessageSubs = {};
 
+  // Per-conversation profile subscriptions for private chats (other user's doc).
+  final Map<String, StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>>
+      _profileSubs = {};
+
+  // Employee profile cache: uid → {name, avatarUrl, displayId}.
+  // Populated by a live stream on all employees in the org.
+  final Map<String, Map<String, String>> _profileCache = {};
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+      _employeesSubscription;
+
+  /// Resolve a sender's display name from their UID or displayId.
+  String _resolveSenderName(String? senderUid, String? senderId) {
+    // Try by UID first.
+    if (senderUid != null && _profileCache.containsKey(senderUid)) {
+      final name = _profileCache[senderUid]!['name'] ?? '';
+      if (name.isNotEmpty) return name;
+    }
+    // Fall back to displayId match.
+    if (senderId != null) {
+      for (final p in _profileCache.values) {
+        if (p['displayId'] == senderId) {
+          final name = p['name'] ?? '';
+          if (name.isNotEmpty) return name;
+        }
+      }
+    }
+    return senderId ?? '';
+  }
+
   // ─── Init ────────────────────────────────────────────────────────────────
 
   void _init() {
+    _listenToEmployeeProfiles();
     _addOrganizationChat();
     _addDepartmentChat();
     _listenToPrivateChats();
+  }
+
+  void _listenToEmployeeProfiles() {
+    _employeesSubscription = FirebaseService.instance.firestore
+        .collection('employees')
+        .where('organizationId', isEqualTo: employee.organizationId)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            for (final doc in snapshot.docs) {
+              final data = doc.data();
+              _profileCache[doc.id] = {
+                'name': (data['name'] as String?) ?? '',
+                'avatarUrl': (data['avatarUrl'] as String?) ?? '',
+                'displayId': (data['displayId'] as String?) ?? '',
+              };
+            }
+            // Re-resolve all lastSenderName values with fresh data.
+            _refreshLastSenderNames();
+            notifyListeners();
+          },
+          onError: (_) {},
+        );
+  }
+
+  /// Walk all conversations and re-resolve lastSenderName, plus refresh
+  /// private chat names and avatars from the profile cache.
+  void _refreshLastSenderNames() {
+    for (final entry in _convMap.entries) {
+      var conv = entry.value;
+
+      // Re-resolve last sender name.
+      if (conv.lastSenderId != null) {
+        final resolved = _resolveSenderName(null, conv.lastSenderId);
+        if (resolved != conv.lastSenderName) {
+          conv = conv.copyWith(lastSenderName: resolved);
+          _convMap[entry.key] = conv;
+        }
+      }
+
+      // Refresh private chat name and avatar from the profile cache.
+      if (conv.type == 'private' && conv.otherUid.isNotEmpty) {
+        final profile = _profileCache[conv.otherUid];
+        if (profile != null) {
+          final name = profile['name'] ?? '';
+          final avatarUrl = profile['avatarUrl'] ?? '';
+          if (name != conv.name || avatarUrl != conv.avatarUrl) {
+            _convMap[entry.key] = conv.copyWith(
+              name: name.isNotEmpty ? name : null,
+              avatarUrl: avatarUrl,
+            );
+          }
+        }
+      }
+    }
+    _rebuildList();
   }
 
   // ─── Organization-wide general chat ──────────────────────────────────────
@@ -129,27 +216,70 @@ class ChatListController extends ChangeNotifier {
     final otherId =
         participants.firstWhere((id) => id != myId, orElse: () => '');
 
-    final displayIds = _toStringMap(data['participantDisplayIds']);
-    final otherDisplayId = displayIds[otherId]?.trim().isNotEmpty == true
-        ? displayIds[otherId]!
-        : 'Unknown';
+    // Prefer fresh data from profile cache over stale participantNames.
+    final cached = _profileCache[otherId];
+    final cachedName = cached?['name'] ?? '';
+    final cachedAvatar = cached?['avatarUrl'] ?? '';
+
+    String otherName;
+    if (cachedName.isNotEmpty) {
+      otherName = cachedName;
+    } else {
+      final names = _toStringMap(data['participantNames']);
+      otherName = names[otherId]?.trim().isNotEmpty == true
+          ? names[otherId]!
+          : 'Unknown';
+    }
 
     final conv = ConversationModel(
       id: chatId,
-      name: otherDisplayId,
+      name: otherName,
       type: 'private',
       organizationId: employee.organizationId,
       departmentId: '',
       department: '',
+      otherUid: otherId,
+      avatarUrl: cachedAvatar,
     );
 
     _convMap[chatId] = conv;
     _subscribeToLastMessage(chatId, conv.messagesCollectionPath);
+    _subscribeToOtherProfile(chatId, otherId);
+  }
+
+  /// Live-stream the other participant's employee doc so that name and avatar
+  /// stay up to date when they edit their profile.
+  void _subscribeToOtherProfile(String chatId, String otherId) {
+    if (otherId.isEmpty) return;
+    _profileSubs[chatId]?.cancel();
+    _profileSubs[chatId] = FirebaseService.instance.firestore
+        .collection('employees')
+        .doc(otherId)
+        .snapshots()
+        .listen(
+          (doc) {
+            final existing = _convMap[chatId];
+            if (existing == null) return;
+            final data = doc.data();
+            if (data == null) return;
+            final name = (data['name'] as String?) ?? '';
+            final avatarUrl = (data['avatarUrl'] as String?) ?? '';
+            _convMap[chatId] = existing.copyWith(
+              name: name.isNotEmpty ? name : null,
+              avatarUrl: avatarUrl,
+            );
+            _rebuildList();
+            notifyListeners();
+          },
+          onError: (_) {},
+        );
   }
 
   void _onPrivateChatRemoved(String chatId) {
     _lastMessageSubs[chatId]?.cancel();
     _lastMessageSubs.remove(chatId);
+    _profileSubs[chatId]?.cancel();
+    _profileSubs.remove(chatId);
     _convMap.remove(chatId);
   }
 
@@ -178,9 +308,14 @@ class ChatListController extends ChangeNotifier {
               displayText = await _decryptLastMessage(data, existing);
             }
 
+            final senderId = data['senderId'] as String?;
+            final senderUid = data['senderUid'] as String?;
+            final senderName = _resolveSenderName(senderUid, senderId);
+
             _convMap[convId] = existing.copyWith(
               lastMessage: displayText ?? (isEncrypted ? '[Encrypted message]' : rawText),
-              lastSenderId: data['senderId'] as String?,
+              lastSenderId: senderId,
+              lastSenderName: senderName,
               lastMessageTime: ConversationModel.timestampToDateTime(
                 data['createdAt'],
               ),
@@ -280,7 +415,11 @@ class ChatListController extends ChangeNotifier {
   @override
   void dispose() {
     _privateChatsSubscription?.cancel();
+    _employeesSubscription?.cancel();
     for (final sub in _lastMessageSubs.values) {
+      sub.cancel();
+    }
+    for (final sub in _profileSubs.values) {
       sub.cancel();
     }
     super.dispose();

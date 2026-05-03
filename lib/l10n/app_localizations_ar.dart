@@ -438,6 +438,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get saveButton => 'حفظ';
 
   @override
+  String get editNameTitle => 'تعديل الاسم';
+
+  @override
   String get adminSession => 'جلسة المشرف';
 
   @override

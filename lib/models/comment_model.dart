@@ -9,6 +9,7 @@ class CommentModel {
   final DateTime? createdAt;
   final String createdByDisplayId;
   final String createdByName;
+  final String createdByUid;
 
   const CommentModel({
     this.id,
@@ -16,6 +17,7 @@ class CommentModel {
     this.createdAt,
     required this.createdByDisplayId,
     required this.createdByName,
+    this.createdByUid = '',
   });
 
   factory CommentModel.fromJson(Map<String, dynamic> json, {String? id}) {
@@ -27,6 +29,7 @@ class CommentModel {
           : null,
       createdByDisplayId: json['createdByDisplayId'] as String? ?? '',
       createdByName: json['createdByName'] as String? ?? '',
+      createdByUid: json['createdByUid'] as String? ?? '',
     );
   }
 
@@ -36,6 +39,7 @@ class CommentModel {
       'createdAt': FieldValue.serverTimestamp(),
       'createdByDisplayId': createdByDisplayId,
       'createdByName': createdByName,
+      if (createdByUid.isNotEmpty) 'createdByUid': createdByUid,
     };
   }
 }

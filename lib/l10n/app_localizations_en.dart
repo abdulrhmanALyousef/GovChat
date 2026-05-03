@@ -441,6 +441,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveButton => 'Save';
 
   @override
+  String get editNameTitle => 'Edit Name';
+
+  @override
   String get adminSession => 'Admin Session';
 
   @override

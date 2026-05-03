@@ -83,7 +83,10 @@ class _CreatePostView extends StatelessWidget {
                     // ── Author row ──
                     Row(
                       children: [
-                        _AuthorAvatar(name: controller.employee.name),
+                        _AuthorAvatar(
+                          name: controller.employee.name,
+                          avatarUrl: controller.employee.avatarUrl,
+                        ),
                         SizedBox(width: AppSizes.w12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,9 +238,10 @@ class _PostButton extends StatelessWidget {
 // ─── Author avatar ────────────────────────────────────────────────────────────
 
 class _AuthorAvatar extends StatelessWidget {
-  const _AuthorAvatar({required this.name});
+  const _AuthorAvatar({required this.name, this.avatarUrl = ''});
 
   final String name;
+  final String avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -252,16 +256,42 @@ class _AuthorAvatar extends StatelessWidget {
           color: AppColors.primaryColor.withValues(alpha: 0.4),
         ),
       ),
-      child: Center(
-        child: Text(
-          initial,
-          style: GoogleFonts.manrope(
-            color: AppColors.primaryColor,
-            fontWeight: FontWeight.w800,
-            fontSize: AppSizes.sp16,
-          ),
-        ),
-      ),
+      clipBehavior: Clip.antiAlias,
+      child: avatarUrl.isNotEmpty
+          ? CachedNetworkImage(
+              imageUrl: avatarUrl,
+              fit: BoxFit.cover,
+              placeholder: (_, url) => Center(
+                child: Text(
+                  initial,
+                  style: GoogleFonts.manrope(
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: AppSizes.sp16,
+                  ),
+                ),
+              ),
+              errorWidget: (_, url, error) => Center(
+                child: Text(
+                  initial,
+                  style: GoogleFonts.manrope(
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: AppSizes.sp16,
+                  ),
+                ),
+              ),
+            )
+          : Center(
+              child: Text(
+                initial,
+                style: GoogleFonts.manrope(
+                  color: AppColors.primaryColor,
+                  fontWeight: FontWeight.w800,
+                  fontSize: AppSizes.sp16,
+                ),
+              ),
+            ),
     );
   }
 }

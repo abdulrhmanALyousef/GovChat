@@ -22,10 +22,12 @@ class ChatController extends ChangeNotifier {
     required this.departmentId,
     required this.departmentName,
     required this.displayId,
+    required this.employeeUid,
     this.messagesPath,
   }) {
     _listenForMessages();
     _listenToTyping();
+    _listenToEmployeeProfiles();
     // Store the future so every send path can await it if the key is not
     // ready yet when the user taps Send.
     _encryptionReady = _initEncryption();
@@ -43,6 +45,7 @@ class ChatController extends ChangeNotifier {
   final String departmentId;
   final String departmentName;
   final String displayId;
+  final String employeeUid;
 
   /// When set, overrides the default department-based Firestore path.
   final String? messagesPath;
@@ -86,6 +89,52 @@ class ChatController extends ChangeNotifier {
 
   bool _isTypingSet = false;
   String? _recordingPath;
+
+  // ── Live employee profile cache ───────────────────────────────────────────
+  /// Maps employee UID → {name, avatarUrl, displayId}.
+  final Map<String, Map<String, String>> _profileCache = {};
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+      _profilesSubscription;
+
+  /// Look up a sender's current profile info. Falls back gracefully for
+  /// messages sent before senderUid was stored.
+  ({String name, String avatarUrl}) getSenderProfile(
+      String? senderUid, String senderId) {
+    // Try by UID first (new messages).
+    if (senderUid != null && _profileCache.containsKey(senderUid)) {
+      final p = _profileCache[senderUid]!;
+      return (name: p['name'] ?? senderId, avatarUrl: p['avatarUrl'] ?? '');
+    }
+    // Fall back to displayId match (old messages).
+    for (final entry in _profileCache.values) {
+      if (entry['displayId'] == senderId) {
+        return (name: entry['name'] ?? senderId, avatarUrl: entry['avatarUrl'] ?? '');
+      }
+    }
+    return (name: senderId, avatarUrl: '');
+  }
+
+  void _listenToEmployeeProfiles() {
+    _profilesSubscription = _firebase.firestore
+        .collection('employees')
+        .where('organizationId', isEqualTo: organizationId)
+        .snapshots()
+        .listen(
+          (snapshot) {
+            for (final doc in snapshot.docs) {
+              final data = doc.data();
+              _profileCache[doc.id] = {
+                'name': (data['name'] as String?) ?? '',
+                'avatarUrl': (data['avatarUrl'] as String?) ?? '',
+                'displayId': (data['displayId'] as String?) ?? '',
+              };
+            }
+            notifyListeners();
+          },
+          onError: (_) {},
+        );
+  }
 
   // ── Conversation-path helpers ──────────────────────────────────────────────
 
@@ -417,6 +466,7 @@ class ChatController extends ChangeNotifier {
       final enc = await E2eeManager.encryptMessage(text, _conversationKey!);
       await _messagesCollection().add({
         'senderId': displayId,
+        'senderUid': employeeUid,
         'organizationId': organizationId,
         'departmentId': _normalizedDepartmentId(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -663,6 +713,7 @@ class ChatController extends ChangeNotifier {
 
       await _messagesCollection().add({
         'senderId': displayId,
+        'senderUid': employeeUid,
         'organizationId': organizationId,
         'departmentId': _normalizedDepartmentId(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -894,6 +945,7 @@ class ChatController extends ChangeNotifier {
     _setTyping(false).ignore();
     _typingSubscription?.cancel();
     _keyDocSubscription?.cancel();
+    _profilesSubscription?.cancel();
     _audioRecorder.dispose();
     messageController.dispose();
     scrollController.dispose();

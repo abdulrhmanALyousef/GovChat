@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +23,7 @@ class EmployeeChatScreen extends StatelessWidget {
     this.chatTitle,
     this.chatSubtitle,
     this.messagesPath,
+    this.otherUid,
   });
 
   final EmployeeModel employee;
@@ -28,11 +31,18 @@ class EmployeeChatScreen extends StatelessWidget {
   final String? chatSubtitle;
   final String? messagesPath;
 
+  /// For private chats: the UID of the other participant.
+  /// When set, the app bar streams this employee's profile for a live name.
+  final String? otherUid;
+
   @override
   Widget build(BuildContext context) {
     final deptKey = employee.departmentId.trim().isNotEmpty
         ? employee.departmentId.trim()
         : employee.department.trim().replaceAll(' ', '_').toLowerCase();
+
+    final isPrivateChat =
+        messagesPath != null && messagesPath!.contains('/private_chats/');
 
     return ChangeNotifierProvider(
       create: (_) => ChatController(
@@ -40,12 +50,15 @@ class EmployeeChatScreen extends StatelessWidget {
         departmentId: deptKey,
         departmentName: employee.department,
         displayId: employee.displayId,
+        employeeUid: employee.id ?? '',
         messagesPath: messagesPath,
       ),
       child: _ChatView(
         employee: employee,
         chatTitle: chatTitle,
         chatSubtitle: chatSubtitle,
+        isPrivateChat: isPrivateChat,
+        otherUid: otherUid,
       ),
     );
   }
@@ -58,17 +71,21 @@ class _ChatView extends StatelessWidget {
     required this.employee,
     this.chatTitle,
     this.chatSubtitle,
+    this.isPrivateChat = false,
+    this.otherUid,
   });
 
   final EmployeeModel employee;
   final String? chatTitle;
   final String? chatSubtitle;
+  final bool isPrivateChat;
+  final String? otherUid;
 
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ChatController>();
     final l = AppLocalizations.of(context)!;
-    final title = chatTitle ?? employee.department;
+    final fallbackTitle = chatTitle ?? employee.department;
     final subtitle = chatSubtitle ?? l.groupChatTitle;
 
     return Scaffold(
@@ -81,27 +98,61 @@ class _ChatView extends StatelessWidget {
               color: AppColors.textTitle),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.manrope(
-                color: AppColors.textTitle,
-                fontWeight: FontWeight.w800,
-                fontSize: AppSizes.sp16,
+        title: otherUid != null && otherUid!.isNotEmpty
+            ? StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('employees')
+                    .doc(otherUid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final name =
+                      snapshot.data?.data()?['name'] as String? ?? '';
+                  final title =
+                      name.isNotEmpty ? name : fallbackTitle;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.textTitle,
+                          fontWeight: FontWeight.w800,
+                          fontSize: AppSizes.sp16,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.textMuted,
+                          fontSize: AppSizes.sp10,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    fallbackTitle,
+                    style: GoogleFonts.manrope(
+                      color: AppColors.textTitle,
+                      fontWeight: FontWeight.w800,
+                      fontSize: AppSizes.sp16,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.manrope(
+                      color: AppColors.textMuted,
+                      fontSize: AppSizes.sp10,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            Text(
-              subtitle,
-              style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
-                fontSize: AppSizes.sp10,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
-        ),
         actions: [
           IconButton(
             icon:
@@ -139,6 +190,8 @@ class _ChatView extends StatelessWidget {
                   scrollController: controller.scrollController,
                   onEditTap: controller.startEditing,
                   onDeleteTap: controller.deleteMessage,
+                  controller: controller,
+                  isPrivateChat: isPrivateChat,
                 ),
               ),
               if (controller.typingDisplayIds.isNotEmpty)
@@ -170,6 +223,8 @@ class _MessagesList extends StatelessWidget {
     required this.scrollController,
     required this.onEditTap,
     required this.onDeleteTap,
+    required this.controller,
+    required this.isPrivateChat,
   });
 
   final List<ChatMessage> messages;
@@ -177,6 +232,8 @@ class _MessagesList extends StatelessWidget {
   final ScrollController scrollController;
   final ValueChanged<ChatMessage> onEditTap;
   final ValueChanged<ChatMessage> onDeleteTap;
+  final ChatController controller;
+  final bool isPrivateChat;
 
   @override
   Widget build(BuildContext context) {
@@ -187,12 +244,17 @@ class _MessagesList extends StatelessWidget {
       itemBuilder: (context, index) {
         final message = messages[index];
         final isMine = message.senderId == myDisplayId;
+        final profile =
+            controller.getSenderProfile(message.senderUid, message.senderId);
         return _MessageItem(
           message: message,
           isMine: isMine,
           status: isMine ? message.statusFor(myDisplayId) : null,
           onEditTap: onEditTap,
           onDeleteTap: onDeleteTap,
+          senderName: profile.name,
+          senderAvatarUrl: profile.avatarUrl,
+          isPrivateChat: isPrivateChat,
         );
       },
     );
@@ -207,6 +269,9 @@ class _MessageItem extends StatelessWidget {
     required this.isMine,
     required this.onEditTap,
     required this.onDeleteTap,
+    required this.senderName,
+    required this.senderAvatarUrl,
+    required this.isPrivateChat,
     this.status,
   });
 
@@ -215,6 +280,9 @@ class _MessageItem extends StatelessWidget {
   final MessageStatus? status;
   final ValueChanged<ChatMessage> onEditTap;
   final ValueChanged<ChatMessage> onDeleteTap;
+  final String senderName;
+  final String senderAvatarUrl;
+  final bool isPrivateChat;
 
   // For media bubbles we skip the inner padding so they fill edge-to-edge.
   bool get _isMediaBubble => message.messageType != MessageType.text;
@@ -227,79 +295,102 @@ class _MessageItem extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(bottom: AppSizes.ph12),
-      child: Column(
-        crossAxisAlignment:
-            isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment:
+            isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
-          // Sender label
-          Text(
-            message.senderId,
-            style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
-              fontSize: AppSizes.sp10,
-              letterSpacing: 0.6,
-            ),
-          ),
-          SizedBox(height: AppSizes.h4),
+          // Avatar on the left for other's messages
+          if (!isMine) ...[
+            _MessageAvatar(avatarUrl: senderAvatarUrl, name: senderName),
+            SizedBox(width: AppSizes.w8),
+          ],
+          Flexible(
+            child: Column(
+              crossAxisAlignment:
+                  isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                // Sender name label — group chat only, not for own messages
+                if (!isMine && !isPrivateChat)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: AppSizes.h4),
+                    child: Text(
+                      senderName,
+                      style: GoogleFonts.manrope(
+                        color: AppColors.textMuted,
+                        fontSize: AppSizes.sp10,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
 
-          // Bubble
-          Align(
-            alignment: isMine
-                ? Alignment.centerRight
-                : Alignment.centerLeft,
-            child: GestureDetector(
-              onLongPress: isMine ? () => _showActionsSheet(context) : null,
-              child: Container(
-                constraints:
-                    BoxConstraints(maxWidth: AppSizes.w240),
-                padding: _isMediaBubble
-                    ? EdgeInsets.zero
-                    : EdgeInsets.all(AppSizes.ph14),
-                decoration: BoxDecoration(
-                  color: isMine
-                      ? AppColors.primaryColor
-                      : AppColors.sectionBackground,
-                  borderRadius:
-                      BorderRadius.circular(AppSizes.r16),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: _buildContent(context),
-              ),
-            ),
-          ),
-
-          // Timestamp row
-          SizedBox(height: AppSizes.h4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: isMine
-                ? MainAxisAlignment.end
-                : MainAxisAlignment.start,
-            children: [
-              Text(
-                time,
-                style: GoogleFonts.manrope(
-                  color: AppColors.textMuted,
-                  fontSize: AppSizes.sp10,
-                ),
-              ),
-              if (message.isEdited) ...[
-                SizedBox(width: AppSizes.w6),
-                Text(
-                  AppLocalizations.of(context)!.editedLabel,
-                  style: GoogleFonts.manrope(
-                    color: AppColors.textMuted,
-                    fontSize: AppSizes.sp10,
-                    fontStyle: FontStyle.italic,
+                // Bubble
+                Align(
+                  alignment: isMine
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
+                  child: GestureDetector(
+                    onLongPress:
+                        isMine ? () => _showActionsSheet(context) : null,
+                    child: Container(
+                      constraints:
+                          BoxConstraints(maxWidth: AppSizes.w240),
+                      padding: _isMediaBubble
+                          ? EdgeInsets.zero
+                          : EdgeInsets.all(AppSizes.ph14),
+                      decoration: BoxDecoration(
+                        color: isMine
+                            ? AppColors.primaryColor
+                            : AppColors.sectionBackground,
+                        borderRadius:
+                            BorderRadius.circular(AppSizes.r16),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: _buildContent(context),
+                    ),
                   ),
                 ),
+
+                // Timestamp row
+                SizedBox(height: AppSizes.h4),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: isMine
+                      ? MainAxisAlignment.end
+                      : MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      time,
+                      style: GoogleFonts.manrope(
+                        color: AppColors.textMuted,
+                        fontSize: AppSizes.sp10,
+                      ),
+                    ),
+                    if (message.isEdited) ...[
+                      SizedBox(width: AppSizes.w6),
+                      Text(
+                        AppLocalizations.of(context)!.editedLabel,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.textMuted,
+                          fontSize: AppSizes.sp10,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                    if (status != null) ...[
+                      SizedBox(width: AppSizes.w6),
+                      _StatusIcon(status: status!),
+                    ],
+                  ],
+                ),
               ],
-              if (status != null) ...[
-                SizedBox(width: AppSizes.w6),
-                _StatusIcon(status: status!),
-              ],
-            ],
+            ),
           ),
+          // Avatar on the right for own messages
+          if (isMine) ...[
+            SizedBox(width: AppSizes.w8),
+            _MessageAvatar(avatarUrl: senderAvatarUrl, name: senderName),
+          ],
         ],
       ),
     );
@@ -406,6 +497,65 @@ class _StatusIcon extends StatelessWidget {
         return Icon(Icons.done_all,
             size: AppSizes.sp12, color: AppColors.primaryColor);
     }
+  }
+}
+
+// ─── Message avatar ──────────────────────────────────────────────────────────
+
+class _MessageAvatar extends StatelessWidget {
+  const _MessageAvatar({required this.avatarUrl, required this.name});
+
+  final String avatarUrl;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: AppColors.sectionBackground,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.inputBorder),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: avatarUrl.isNotEmpty
+          ? CachedNetworkImage(
+              imageUrl: avatarUrl,
+              fit: BoxFit.cover,
+              placeholder: (_, url) => Center(
+                child: Text(
+                  initial,
+                  style: GoogleFonts.manrope(
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: AppSizes.sp10,
+                  ),
+                ),
+              ),
+              errorWidget: (_, url, error) => Center(
+                child: Text(
+                  initial,
+                  style: GoogleFonts.manrope(
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: AppSizes.sp10,
+                  ),
+                ),
+              ),
+            )
+          : Center(
+              child: Text(
+                initial,
+                style: GoogleFonts.manrope(
+                  color: AppColors.primaryColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: AppSizes.sp10,
+                ),
+              ),
+            ),
+    );
   }
 }
 

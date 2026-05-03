@@ -108,6 +108,7 @@ class PostDetailsController extends ChangeNotifier {
     required String text,
     required String createdByDisplayId,
     required String createdByName,
+    required String createdByUid,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || isSubmitting) return;
@@ -125,6 +126,7 @@ class PostDetailsController extends ChangeNotifier {
           text: trimmed,
           createdByDisplayId: createdByDisplayId,
           createdByName: createdByName,
+          createdByUid: createdByUid,
         ).toJson(),
       );
 

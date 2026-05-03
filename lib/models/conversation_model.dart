@@ -6,10 +6,15 @@ class ConversationModel {
   final String type; // 'organization', 'department', 'private'
   final String? lastMessage;
   final String? lastSenderId;
+  final String? lastSenderName;
   final DateTime? lastMessageTime;
   final String organizationId;
   final String departmentId;
   final String department;
+  final String avatarUrl;
+
+  /// For private chats: the UID of the other participant.
+  final String otherUid;
 
   const ConversationModel({
     required this.id,
@@ -17,27 +22,36 @@ class ConversationModel {
     required this.type,
     this.lastMessage,
     this.lastSenderId,
+    this.lastSenderName,
     this.lastMessageTime,
     required this.organizationId,
     required this.departmentId,
     required this.department,
+    this.avatarUrl = '',
+    this.otherUid = '',
   });
 
   ConversationModel copyWith({
+    String? name,
     String? lastMessage,
     String? lastSenderId,
+    String? lastSenderName,
     DateTime? lastMessageTime,
+    String? avatarUrl,
   }) {
     return ConversationModel(
       id: id,
-      name: name,
+      name: name ?? this.name,
       type: type,
       lastMessage: lastMessage ?? this.lastMessage,
       lastSenderId: lastSenderId ?? this.lastSenderId,
+      lastSenderName: lastSenderName ?? this.lastSenderName,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
       organizationId: organizationId,
       departmentId: departmentId,
       department: department,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      otherUid: otherUid,
     );
   }
 

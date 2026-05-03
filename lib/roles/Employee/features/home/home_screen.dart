@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -410,7 +411,10 @@ class _PostCardState extends State<PostCard>
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      _PostAvatar(displayId: post.createdByDisplayId),
+                      _PostAvatar(
+                        displayId: post.createdByDisplayId,
+                        employeeId: post.employeeId,
+                      ),
                       SizedBox(width: AppSizes.w10),
                       Expanded(
                         child: Text(
@@ -667,13 +671,80 @@ enum _PostAction { edit, delete }
 // ─── Post avatar ──────────────────────────────────────────────────────────────
 
 class _PostAvatar extends StatelessWidget {
-  const _PostAvatar({required this.displayId});
+  const _PostAvatar({required this.displayId, required this.employeeId});
 
   final String displayId;
+  final String employeeId;
 
   @override
   Widget build(BuildContext context) {
     final initial = displayId.isNotEmpty ? displayId[0].toUpperCase() : '?';
+
+    if (employeeId.isEmpty) {
+      return _buildFallback(initial);
+    }
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('employees')
+          .doc(employeeId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final avatarUrl =
+            snapshot.data?.data()?['avatarUrl'] as String? ?? '';
+
+        return Container(
+          width: AppSizes.w42,
+          height: AppSizes.h42,
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.primaryColor.withValues(alpha: 0.35),
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: avatarUrl.isNotEmpty
+              ? CachedNetworkImage(
+                  imageUrl: avatarUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (_, url) => Center(
+                    child: Text(
+                      initial,
+                      style: GoogleFonts.manrope(
+                        color: AppColors.primaryColor,
+                        fontWeight: FontWeight.w800,
+                        fontSize: AppSizes.sp16,
+                      ),
+                    ),
+                  ),
+                  errorWidget: (_, url, error) => Center(
+                    child: Text(
+                      initial,
+                      style: GoogleFonts.manrope(
+                        color: AppColors.primaryColor,
+                        fontWeight: FontWeight.w800,
+                        fontSize: AppSizes.sp16,
+                      ),
+                    ),
+                  ),
+                )
+              : Center(
+                  child: Text(
+                    initial,
+                    style: GoogleFonts.manrope(
+                      color: AppColors.primaryColor,
+                      fontWeight: FontWeight.w800,
+                      fontSize: AppSizes.sp16,
+                    ),
+                  ),
+                ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFallback(String initial) {
     return Container(
       width: AppSizes.w42,
       height: AppSizes.h42,

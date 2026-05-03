@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -226,7 +227,10 @@ class _ConversationTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            _ConversationAvatar(type: conversation.type),
+            _ConversationAvatar(
+              type: conversation.type,
+              avatarUrl: conversation.avatarUrl,
+            ),
             SizedBox(width: AppSizes.w12),
             Expanded(
               child: Column(
@@ -288,6 +292,7 @@ class _ConversationTile extends StatelessWidget {
           messagesPath: (isPrivate || isOrg)
               ? conversation.messagesCollectionPath
               : null,
+          otherUid: isPrivate ? conversation.otherUid : null,
         ),
       ),
     );
@@ -313,7 +318,7 @@ class _LastMessagePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final lastMsg = conversation.lastMessage;
-    final senderId = conversation.lastSenderId;
+    final senderName = conversation.lastSenderName;
 
     if (lastMsg == null || lastMsg.isEmpty) {
       return Text(
@@ -333,9 +338,9 @@ class _LastMessagePreview extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       text: TextSpan(
         children: [
-          if (senderId != null && senderId.isNotEmpty)
+          if (senderName != null && senderName.isNotEmpty)
             TextSpan(
-              text: '$senderId: ',
+              text: '$senderName: ',
               style: GoogleFonts.manrope(
                 color: AppColors.primaryColor,
                 fontSize: AppSizes.sp12,
@@ -356,9 +361,10 @@ class _LastMessagePreview extends StatelessWidget {
 }
 
 class _ConversationAvatar extends StatelessWidget {
-  const _ConversationAvatar({required this.type});
+  const _ConversationAvatar({required this.type, this.avatarUrl = ''});
 
   final String type;
+  final String avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -366,7 +372,7 @@ class _ConversationAvatar extends StatelessWidget {
         ? Icons.corporate_fare_outlined
         : type == 'department'
             ? Icons.groups_outlined
-            : Icons.chat_bubble_outline;
+            : Icons.person_outline;
 
     return Container(
       height: AppSizes.h48,
@@ -376,7 +382,23 @@ class _ConversationAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.inputBorder),
       ),
-      child: Icon(icon, color: AppColors.primaryColor, size: AppSizes.sp20),
+      clipBehavior: Clip.antiAlias,
+      child: avatarUrl.isNotEmpty
+          ? CachedNetworkImage(
+              imageUrl: avatarUrl,
+              fit: BoxFit.cover,
+              placeholder: (_, url) => Icon(
+                icon,
+                color: AppColors.primaryColor,
+                size: AppSizes.sp20,
+              ),
+              errorWidget: (_, url, error) => Icon(
+                icon,
+                color: AppColors.primaryColor,
+                size: AppSizes.sp20,
+              ),
+            )
+          : Icon(icon, color: AppColors.primaryColor, size: AppSizes.sp20),
     );
   }
 }
