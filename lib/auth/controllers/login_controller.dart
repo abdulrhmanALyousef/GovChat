@@ -5,6 +5,7 @@ import 'package:projects/l10n/app_localizations.dart';
 import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../core/services/encryption/e2ee_manager.dart';
+import '../../core/services/logging_service.dart';
 import '../../core/services/session_manager.dart';
 import '../../models/admin_model.dart';
 import '../../models/employee_model.dart';
@@ -81,6 +82,18 @@ class LoginController extends ChangeNotifier {
       if (user.role == 'employee') {
         if (status == 'pending') {
           await FirebaseService.instance.auth.signOut();
+          if ((user.organizationId ?? '').isNotEmpty) {
+            LoggingService.instance.log(
+              organizationId: user.organizationId!,
+              actionType: 'login_failure',
+              descriptionKey: 'logLoginFailure',
+              performedByUserId: uid,
+              performedByRole: 'employee',
+              performedByEmail: user.email,
+              performedByName: user.email,
+              metadata: {'reason': 'account_pending'},
+            );
+          }
           errorMessage = l.accountPendingApproval;
           isLoading = false;
           notifyListeners();
@@ -88,6 +101,18 @@ class LoginController extends ChangeNotifier {
         }
         if (status == 'rejected') {
           await FirebaseService.instance.auth.signOut();
+          if ((user.organizationId ?? '').isNotEmpty) {
+            LoggingService.instance.log(
+              organizationId: user.organizationId!,
+              actionType: 'login_failure',
+              descriptionKey: 'logLoginFailure',
+              performedByUserId: uid,
+              performedByRole: 'employee',
+              performedByEmail: user.email,
+              performedByName: user.email,
+              metadata: {'reason': 'account_rejected'},
+            );
+          }
           errorMessage = l.accessRequestRejected;
           isLoading = false;
           notifyListeners();
@@ -145,6 +170,18 @@ class LoginController extends ChangeNotifier {
       switch (user.role) {
         case 'admin':
           destination = const AdminMainScreen();
+          // Log admin login (org-scoped)
+          if ((user.organizationId ?? '').isNotEmpty) {
+            LoggingService.instance.log(
+              organizationId: user.organizationId!,
+              actionType: 'login_success',
+              descriptionKey: 'logLoginSuccess',
+              performedByUserId: uid,
+              performedByRole: 'admin',
+              performedByEmail: user.email,
+              performedByName: user.email,
+            );
+          }
           break;
         case 'primary_admin':
           destination = const MainScreen();
@@ -152,13 +189,32 @@ class LoginController extends ChangeNotifier {
         case 'employee':
           final employee = await _loadEmployeeProfile(uid, doc.data()!);
           if (!context.mounted) return;
-          final orgId = user.organizationId ?? '';
-          if (orgId.isNotEmpty && employee.organizationId != orgId) {
+          final orgIdFromUser = user.organizationId ?? '';
+          if (orgIdFromUser.isNotEmpty &&
+              employee.organizationId != orgIdFromUser) {
             await SessionManager.instance.logout(
               context,
               reason: l.organizationMismatchSignIn,
             );
             return;
+          }
+          // Prefer employee.organizationId — it is always populated by the
+          // approval flow. user.organizationId may be empty for employees
+          // because the users/{uid} doc is not updated with organizationId
+          // during approval (only employees/{uid} is).
+          final effectiveOrgId = employee.organizationId.isNotEmpty
+              ? employee.organizationId
+              : orgIdFromUser;
+          if (effectiveOrgId.isNotEmpty) {
+            LoggingService.instance.log(
+              organizationId: effectiveOrgId,
+              actionType: 'login_success',
+              descriptionKey: 'logLoginSuccess',
+              performedByUserId: uid,
+              performedByRole: 'employee',
+              performedByEmail: employee.email,
+              performedByName: employee.name,
+            );
           }
           destination = EmployeeMainScreen(employee: employee);
           break;

@@ -15,6 +15,7 @@ import 'package:record/record.dart';
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
 import '../../../../../core/services/encryption/e2ee_crypto.dart';
 import '../../../../../core/services/encryption/e2ee_manager.dart';
+import '../../../../../core/services/logging_service.dart';
 import '../../../../../models/chat_message.dart';
 
 class ChatController extends ChangeNotifier {
@@ -488,7 +489,7 @@ class ChatController extends ChangeNotifier {
       }
 
       final enc = await E2eeManager.encryptMessage(text, _conversationKey!);
-      await _messagesCollection().add({
+      final ref = await _messagesCollection().add({
         'senderId': displayId,
         'senderUid': employeeUid,
         'organizationId': organizationId,
@@ -499,6 +500,22 @@ class ChatController extends ChangeNotifier {
         'encryptedText': enc.ciphertext,
         'iv': enc.nonce,
       });
+
+      LoggingService.instance.log(
+        organizationId: organizationId,
+        actionType: 'message_sent',
+        descriptionKey: 'logMessageSent',
+        performedByUserId: _firebase.currentUser?.uid ?? displayId,
+        performedByRole: 'employee',
+        performedByEmail: _firebase.currentUser?.email ?? '',
+        performedByName: displayId,
+        targetId: ref.id,
+        metadata: {
+          'chatType': _detectChatType(),
+          'departmentId': _normalizedDepartmentId(),
+          'messagePreview': text.length > 50 ? text.substring(0, 50) : text,
+        },
+      );
 
       messageController.clear();
       _scrollToBottom();
@@ -517,10 +534,31 @@ class ChatController extends ChangeNotifier {
     if (message.id == null) return;
     try {
       await _messagesCollection().doc(message.id!).delete();
+      LoggingService.instance.log(
+        organizationId: organizationId,
+        actionType: 'message_deleted',
+        descriptionKey: 'logMessageDeleted',
+        performedByUserId: _firebase.currentUser?.uid ?? displayId,
+        performedByRole: 'employee',
+        performedByEmail: _firebase.currentUser?.email ?? '',
+        performedByName: displayId,
+        targetId: message.id,
+        metadata: {
+          'chatType': _detectChatType(),
+          'departmentId': _normalizedDepartmentId(),
+        },
+      );
     } catch (e) {
       errorMessage = 'Failed to delete message.';
       notifyListeners();
     }
+  }
+
+  String _detectChatType() {
+    if (messagesPath == null || messagesPath!.isEmpty) return 'department';
+    if (messagesPath!.contains('private_chats')) return 'private';
+    if (messagesPath!.contains('org_chats')) return 'organization';
+    return 'department';
   }
 
   // ── Edit ───────────────────────────────────────────────────────────────────

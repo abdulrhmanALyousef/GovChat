@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
+import '../../../../../core/services/logging_service.dart';
 import '../../../../../models/admin_model.dart';
 import '../../../../../models/employee_model.dart';
 
@@ -250,6 +251,21 @@ class EmployeesController extends ChangeNotifier {
     );
 
     await batch.commit();
+
+    // Log the update (fire-and-forget)
+    final adminUser = _firebase.currentUser;
+    if (adminUser != null && orgId.isNotEmpty) {
+      LoggingService.instance.log(
+        organizationId: orgId,
+        actionType: 'employee_updated',
+        descriptionKey: 'logEmployeeUpdated',
+        performedByUserId: adminUser.uid,
+        performedByRole: 'admin',
+        performedByName: currentAdmin?.email,
+        targetId: employeeId,
+        metadata: {'updatedName': name.trim(), 'updatedDepartment': trimmedDept},
+      );
+    }
   }
 
   // ─── Soft-delete: set status → inactive in employees + users ─────────────────
@@ -281,6 +297,20 @@ class EmployeesController extends ChangeNotifier {
     );
 
     await batch.commit();
+
+    // Log the deactivation (fire-and-forget)
+    final adminUser = _firebase.currentUser;
+    if (adminUser != null && orgId.isNotEmpty) {
+      LoggingService.instance.log(
+        organizationId: orgId,
+        actionType: 'employee_deleted',
+        descriptionKey: 'logEmployeeDeleted',
+        performedByUserId: adminUser.uid,
+        performedByRole: 'admin',
+        performedByName: currentAdmin?.email,
+        targetId: employeeId,
+      );
+    }
   }
 
   @override
