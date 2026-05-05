@@ -36,6 +36,7 @@ class ChatListController extends ChangeNotifier {
     _addOrganizationChat();
     _addDepartmentChat();
     _listenToPrivateChats();
+    _listenToProjectGroups();
   }
 
   // ─── Organization-wide general chat ──────────────────────────────────────
@@ -150,6 +151,68 @@ class ChatListController extends ChangeNotifier {
     _convMap.remove(chatId);
   }
 
+  // ─── Project groups ──────────────────────────────────────────────────────
+
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _groupsSub;
+
+  void _listenToProjectGroups() {
+    final uid = employee.id ?? '';
+    if (uid.isEmpty) return;
+
+    _groupsSub = FirebaseService.instance.firestore
+        .collection('projectGroups')
+        .where('organizationId', isEqualTo: employee.organizationId)
+        .where('memberIds', arrayContains: uid)
+        .snapshots()
+        .listen(
+          _handleGroupSnapshot,
+          onError: (_) {},
+        );
+  }
+
+  void _handleGroupSnapshot(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    for (final change in snapshot.docChanges) {
+      switch (change.type) {
+        case DocumentChangeType.added:
+          _onGroupAdded(change.doc.id, change.doc.data()!);
+          break;
+        case DocumentChangeType.removed:
+          _onGroupRemoved(change.doc.id);
+          break;
+        case DocumentChangeType.modified:
+          break;
+      }
+    }
+    _rebuildList();
+    notifyListeners();
+  }
+
+  void _onGroupAdded(String groupId, Map<String, dynamic> data) {
+    final convId = 'group_$groupId';
+    if (_convMap.containsKey(convId)) return;
+
+    final conv = ConversationModel(
+      id: groupId,
+      name: (data['name'] as String?) ?? 'Group',
+      type: 'group',
+      organizationId: employee.organizationId,
+      departmentId: '',
+      department: '',
+    );
+
+    _convMap[convId] = conv;
+    _subscribeToLastMessage(convId, conv.messagesCollectionPath);
+  }
+
+  void _onGroupRemoved(String groupId) {
+    final convId = 'group_$groupId';
+    _lastMessageSubs[convId]?.cancel();
+    _lastMessageSubs.remove(convId);
+    _convMap.remove(convId);
+  }
+
   // ─── Last-message subscriptions ──────────────────────────────────────────
 
   void _subscribeToLastMessage(String convId, String messagesPath) {
@@ -222,6 +285,7 @@ class ChatListController extends ChangeNotifier {
   @override
   void dispose() {
     _privateChatsSubscription?.cancel();
+    _groupsSub?.cancel();
     for (final sub in _lastMessageSubs.values) {
       sub.cancel();
     }

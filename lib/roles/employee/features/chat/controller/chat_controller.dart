@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
+import '../../../../../core/services/logging_service.dart';
 import '../../../../../models/chat_message.dart';
 
 class ChatController extends ChangeNotifier {
@@ -67,6 +68,7 @@ class ChatController extends ChangeNotifier {
           (snapshot) {
             messages = snapshot.docs
                 .map((doc) => ChatMessage.fromJson(doc.data(), id: doc.id))
+                .where((m) => !m.isDeleted)
                 .toList();
             debugPrint('Messages count: ${messages.length}');
             _markMessagesAsRead(snapshot.docs).ignore();
@@ -116,7 +118,22 @@ class ChatController extends ChangeNotifier {
   Future<void> deleteMessage(ChatMessage message) async {
     if (message.id == null) return;
     try {
-      await _messagesCollection().doc(message.id!).delete();
+      final uid = _firebase.currentUser?.uid ?? displayId;
+      await _messagesCollection().doc(message.id!).update({
+        'isDeleted': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+        'deletedBy': uid,
+      });
+      LoggingService.instance.log(
+        actionType: 'MESSAGE_DELETED',
+        category: 'chat',
+        descriptionKey: 'logMessageDeleted',
+        metadata: {
+          'messageId': message.id,
+          'senderId': message.senderId,
+          'departmentId': message.departmentId,
+        },
+      ).ignore();
     } catch (e) {
       errorMessage = e.toString();
       notifyListeners();

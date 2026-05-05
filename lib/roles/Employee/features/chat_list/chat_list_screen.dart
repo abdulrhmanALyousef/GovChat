@@ -274,18 +274,21 @@ class _ConversationTile extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     final isPrivate = conversation.type == 'private';
     final isOrg = conversation.type == 'organization';
+    final isGroup = conversation.type == 'group';
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => EmployeeChatScreen(
           employee: employee,
-          chatTitle: (isPrivate || isOrg) ? conversation.name : null,
+          chatTitle: (isPrivate || isOrg || isGroup) ? conversation.name : null,
           chatSubtitle: isPrivate
               ? l.privateChatSubtitle
               : isOrg
                   ? l.orgChatLabel
-                  : null,
-          messagesPath: (isPrivate || isOrg)
+                  : isGroup
+                      ? l.groupChatLabel
+                      : null,
+          messagesPath: (isPrivate || isOrg || isGroup)
               ? conversation.messagesCollectionPath
               : null,
         ),
@@ -366,7 +369,9 @@ class _ConversationAvatar extends StatelessWidget {
         ? Icons.corporate_fare_outlined
         : type == 'department'
             ? Icons.groups_outlined
-            : Icons.chat_bubble_outline;
+            : type == 'group'
+                ? Icons.group_outlined
+                : Icons.chat_bubble_outline;
 
     return Container(
       height: AppSizes.h48,
@@ -393,7 +398,9 @@ class _ConversationTypeBadge extends StatelessWidget {
         ? l.orgChatLabel
         : type == 'department'
             ? l.groupChatLabel
-            : l.privateChatLabel;
+            : type == 'group'
+                ? l.projectGroupLabel
+                : l.privateChatLabel;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

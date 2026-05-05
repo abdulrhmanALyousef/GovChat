@@ -892,4 +892,115 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deptOther => 'أخرى';
+
+  @override
+  String get navGroups => 'المجموعات';
+
+  @override
+  String get deletedMessagesTitle => 'الرسائل المحذوفة';
+
+  @override
+  String get activityLogsTab => 'النشاط';
+
+  @override
+  String get noDeletedMessages => 'لا توجد رسائل محذوفة';
+
+  @override
+  String get noDeletedMessagesDesc =>
+      'ستظهر الرسائل المحذوفة هنا للمراجعة من قبل المشرف.';
+
+  @override
+  String get noActivityLogs => 'لا توجد سجلات نشاط بعد';
+
+  @override
+  String get senderLabel => 'المرسل';
+
+  @override
+  String get deletedByLabel => 'حذف بواسطة';
+
+  @override
+  String get deletedAtLabel => 'وقت الحذف';
+
+  @override
+  String get locationLabel => 'الموقع';
+
+  @override
+  String get messageDeletedPlaceholder => 'تم حذف هذه الرسالة';
+
+  @override
+  String get projectGroupsTitle => 'مجموعات المشاريع';
+
+  @override
+  String get createGroupButton => 'إنشاء مجموعة';
+
+  @override
+  String get createGroupTitle => 'إنشاء مجموعة';
+
+  @override
+  String get groupNameLabel => 'اسم المجموعة';
+
+  @override
+  String get groupNameHint => 'أدخل اسم المجموعة';
+
+  @override
+  String get selectMembersLabel => 'اختر الأعضاء';
+
+  @override
+  String get groupNameRequired => 'اسم المجموعة مطلوب';
+
+  @override
+  String get atLeastOneMember => 'اختر عضواً واحداً على الأقل';
+
+  @override
+  String get noGroupsYet => 'لا توجد مجموعات بعد';
+
+  @override
+  String get noGroupsDesc => 'أنشئ مجموعة مشروع للتعاون مع الموظفين المختارين.';
+
+  @override
+  String get groupCreatedSuccess => 'تم إنشاء المجموعة بنجاح';
+
+  @override
+  String membersCount(int count) {
+    return '$count أعضاء';
+  }
+
+  @override
+  String get noEmployeesAvailable => 'لا يوجد موظفون متاحون';
+
+  @override
+  String get projectGroupLabel => 'مجموعة المشروع';
+
+  @override
+  String get changePasswordFromProfile => 'تغيير كلمة المرور';
+
+  @override
+  String get changePasswordDescription => 'قم بتحديث كلمة مرور حسابك بشكل آمن.';
+
+  @override
+  String get currentPasswordLabel => 'كلمة المرور الحالية';
+
+  @override
+  String get currentPasswordHint => 'أدخل كلمة المرور الحالية';
+
+  @override
+  String get currentPasswordRequired => 'كلمة المرور الحالية مطلوبة';
+
+  @override
+  String get passwordChangedSuccess => 'تم تغيير كلمة المرور بنجاح';
+
+  @override
+  String get wrongCurrentPassword => 'كلمة المرور الحالية غير صحيحة';
+
+  @override
+  String get logMessageDeleted => 'تم حذف رسالة';
+
+  @override
+  String get logProjectGroupCreated => 'تم إنشاء مجموعة مشروع';
+
+  @override
+  String get logGroupMessageSent => 'تم إرسال رسالة في المجموعة';
+
+  @override
+  String get logPasswordChanged => 'تم تغيير كلمة المرور';
 }
