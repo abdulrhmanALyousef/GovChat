@@ -11,6 +11,9 @@ class ChatMessage {
   final DateTime? createdAt;
   final bool isEdited;
   final DateTime? editedAt;
+  final bool isDeleted;
+  final DateTime? deletedAt;
+  final String? deletedBy;
 
   /// DisplayIds of participants who have opened this message.
   final List<String> readBy;
@@ -24,6 +27,9 @@ class ChatMessage {
     this.createdAt,
     this.isEdited = false,
     this.editedAt,
+    this.isDeleted = false,
+    this.deletedAt,
+    this.deletedBy,
     this.readBy = const [],
   });
 
@@ -49,6 +55,11 @@ class ChatMessage {
       editedAt: json['editedAt'] is Timestamp
           ? (json['editedAt'] as Timestamp).toDate()
           : null,
+      isDeleted: json['isDeleted'] as bool? ?? false,
+      deletedAt: json['deletedAt'] is Timestamp
+          ? (json['deletedAt'] as Timestamp).toDate()
+          : null,
+      deletedBy: json['deletedBy'] as String?,
       readBy: List<String>.from(json['readBy'] as List? ?? []),
     );
   }

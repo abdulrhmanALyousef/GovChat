@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(flutter analyze *)"
+      "Bash(flutter analyze *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(sed -n '322,326p' lib/roles/Admin/features/groups/admin_groups_screen.dart)",
+      "Bash(sed -n '137,141p' lib/roles/Admin/features/logs/logs_screen.dart)",
+      "Bash(sed -n '301,305p' lib/roles/Admin/features/logs/logs_screen.dart)"
     ]
   }
 }

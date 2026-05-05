@@ -356,5 +356,53 @@
   "deptHR": "HR Department",
   "deptOperations": "Operations",
   "deptSecurity": "Security",
-  "deptOther": "Other"
+  "deptOther": "Other",
+
+  "navGroups": "GROUPS",
+
+  "deletedMessagesTitle": "DELETED MESSAGES",
+  "activityLogsTab": "ACTIVITY",
+  "noDeletedMessages": "No deleted messages",
+  "noDeletedMessagesDesc": "Deleted messages will appear here for admin review.",
+  "noActivityLogs": "No activity logs yet",
+  "senderLabel": "Sender",
+  "deletedByLabel": "Deleted by",
+  "deletedAtLabel": "Deleted at",
+  "locationLabel": "Location",
+  "messageDeletedPlaceholder": "This message was deleted",
+
+  "projectGroupsTitle": "Project Groups",
+  "createGroupButton": "CREATE GROUP",
+  "createGroupTitle": "Create Group",
+  "groupNameLabel": "GROUP NAME",
+  "groupNameHint": "Enter group name",
+  "selectMembersLabel": "SELECT MEMBERS",
+  "groupNameRequired": "Group name is required",
+  "atLeastOneMember": "Select at least one member",
+  "noGroupsYet": "No groups yet",
+  "noGroupsDesc": "Create a project group to collaborate with selected employees.",
+  "groupCreatedSuccess": "Group created successfully",
+  "membersCount": "{count} members",
+  "@membersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noEmployeesAvailable": "No employees available",
+  "projectGroupLabel": "PROJECT GROUP",
+
+  "changePasswordFromProfile": "Change Password",
+  "changePasswordDescription": "Update your account password securely.",
+  "currentPasswordLabel": "CURRENT PASSWORD",
+  "currentPasswordHint": "Enter current password",
+  "currentPasswordRequired": "Current password is required",
+  "passwordChangedSuccess": "Password changed successfully",
+  "wrongCurrentPassword": "Current password is incorrect",
+
+  "logMessageDeleted": "Message deleted",
+  "logProjectGroupCreated": "Project group created",
+  "logGroupMessageSent": "Group message sent",
+  "logPasswordChanged": "Password changed"
 }

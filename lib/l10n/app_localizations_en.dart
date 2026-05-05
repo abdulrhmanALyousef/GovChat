@@ -894,4 +894,117 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deptOther => 'Other';
+
+  @override
+  String get navGroups => 'GROUPS';
+
+  @override
+  String get deletedMessagesTitle => 'DELETED MESSAGES';
+
+  @override
+  String get activityLogsTab => 'ACTIVITY';
+
+  @override
+  String get noDeletedMessages => 'No deleted messages';
+
+  @override
+  String get noDeletedMessagesDesc =>
+      'Deleted messages will appear here for admin review.';
+
+  @override
+  String get noActivityLogs => 'No activity logs yet';
+
+  @override
+  String get senderLabel => 'Sender';
+
+  @override
+  String get deletedByLabel => 'Deleted by';
+
+  @override
+  String get deletedAtLabel => 'Deleted at';
+
+  @override
+  String get locationLabel => 'Location';
+
+  @override
+  String get messageDeletedPlaceholder => 'This message was deleted';
+
+  @override
+  String get projectGroupsTitle => 'Project Groups';
+
+  @override
+  String get createGroupButton => 'CREATE GROUP';
+
+  @override
+  String get createGroupTitle => 'Create Group';
+
+  @override
+  String get groupNameLabel => 'GROUP NAME';
+
+  @override
+  String get groupNameHint => 'Enter group name';
+
+  @override
+  String get selectMembersLabel => 'SELECT MEMBERS';
+
+  @override
+  String get groupNameRequired => 'Group name is required';
+
+  @override
+  String get atLeastOneMember => 'Select at least one member';
+
+  @override
+  String get noGroupsYet => 'No groups yet';
+
+  @override
+  String get noGroupsDesc =>
+      'Create a project group to collaborate with selected employees.';
+
+  @override
+  String get groupCreatedSuccess => 'Group created successfully';
+
+  @override
+  String membersCount(int count) {
+    return '$count members';
+  }
+
+  @override
+  String get noEmployeesAvailable => 'No employees available';
+
+  @override
+  String get projectGroupLabel => 'PROJECT GROUP';
+
+  @override
+  String get changePasswordFromProfile => 'Change Password';
+
+  @override
+  String get changePasswordDescription =>
+      'Update your account password securely.';
+
+  @override
+  String get currentPasswordLabel => 'CURRENT PASSWORD';
+
+  @override
+  String get currentPasswordHint => 'Enter current password';
+
+  @override
+  String get currentPasswordRequired => 'Current password is required';
+
+  @override
+  String get passwordChangedSuccess => 'Password changed successfully';
+
+  @override
+  String get wrongCurrentPassword => 'Current password is incorrect';
+
+  @override
+  String get logMessageDeleted => 'Message deleted';
+
+  @override
+  String get logProjectGroupCreated => 'Project group created';
+
+  @override
+  String get logGroupMessageSent => 'Group message sent';
+
+  @override
+  String get logPasswordChanged => 'Password changed';
 }
