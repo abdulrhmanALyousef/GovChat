@@ -1008,4 +1008,95 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chooseVideoOption => 'Choose Video';
+
+  @override
+  String get logLoginSuccess => 'Login successful';
+
+  @override
+  String get logLoginFailure => 'Login attempt failed';
+
+  @override
+  String get logLogout => 'User logged out';
+
+  @override
+  String get logPasswordChanged => 'Password changed';
+
+  @override
+  String get logFirstLoginPasswordReset => 'First-time password reset';
+
+  @override
+  String get logAccessRequestSubmitted => 'Access request submitted';
+
+  @override
+  String get logAccessRequestApproved => 'Access request approved';
+
+  @override
+  String get logAccessRequestRejected => 'Access request rejected';
+
+  @override
+  String get logEmployeeUpdated => 'Employee profile updated';
+
+  @override
+  String get logEmployeeDeleted => 'Employee account deactivated';
+
+  @override
+  String get logMessageSent => 'Message sent';
+
+  @override
+  String get logMessageDeleted => 'Message deleted';
+
+  @override
+  String get logUnauthorizedAccess => 'Unauthorized access attempt';
+
+  @override
+  String get logAutoLogoutInactivity => 'Auto logout due to inactivity';
+
+  @override
+  String get logRoleMisuseAttempt => 'Role misuse attempt detected';
+
+  @override
+  String get logUnknownAction => 'Unknown action';
+
+  @override
+  String get logFilterAll => 'All';
+
+  @override
+  String get logFilterAuth => 'Auth';
+
+  @override
+  String get logFilterEmployee => 'Employee';
+
+  @override
+  String get logFilterChat => 'Chat';
+
+  @override
+  String get logFilterSecurity => 'Security';
+
+  @override
+  String get logDateAll => 'All Time';
+
+  @override
+  String get logDateToday => 'Today';
+
+  @override
+  String get logDateLast7Days => 'Last 7 Days';
+
+  @override
+  String get logSearchHint => 'Search by name, ID or action';
+
+  @override
+  String get logNoLogsFound => 'No logs found';
+
+  @override
+  String get logNoLogsYet => 'No activity logs yet';
+
+  @override
+  String get logActivityWillAppear =>
+      'Activity within your organization will appear here.';
+
+  @override
+  String get logLoadMore => 'LOAD MORE';
+
+  @override
+  String get logPerformedBy => 'By';
 }

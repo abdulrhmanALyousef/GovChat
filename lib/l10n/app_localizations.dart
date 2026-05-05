@@ -1993,6 +1993,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose Video'**
   String get chooseVideoOption;
+
+  /// No description provided for @logLoginSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Login successful'**
+  String get logLoginSuccess;
+
+  /// No description provided for @logLoginFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Login attempt failed'**
+  String get logLoginFailure;
+
+  /// No description provided for @logLogout.
+  ///
+  /// In en, this message translates to:
+  /// **'User logged out'**
+  String get logLogout;
+
+  /// No description provided for @logPasswordChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed'**
+  String get logPasswordChanged;
+
+  /// No description provided for @logFirstLoginPasswordReset.
+  ///
+  /// In en, this message translates to:
+  /// **'First-time password reset'**
+  String get logFirstLoginPasswordReset;
+
+  /// No description provided for @logAccessRequestSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Access request submitted'**
+  String get logAccessRequestSubmitted;
+
+  /// No description provided for @logAccessRequestApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Access request approved'**
+  String get logAccessRequestApproved;
+
+  /// No description provided for @logAccessRequestRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Access request rejected'**
+  String get logAccessRequestRejected;
+
+  /// No description provided for @logEmployeeUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee profile updated'**
+  String get logEmployeeUpdated;
+
+  /// No description provided for @logEmployeeDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee account deactivated'**
+  String get logEmployeeDeleted;
+
+  /// No description provided for @logMessageSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Message sent'**
+  String get logMessageSent;
+
+  /// No description provided for @logMessageDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Message deleted'**
+  String get logMessageDeleted;
+
+  /// No description provided for @logUnauthorizedAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Unauthorized access attempt'**
+  String get logUnauthorizedAccess;
+
+  /// No description provided for @logAutoLogoutInactivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto logout due to inactivity'**
+  String get logAutoLogoutInactivity;
+
+  /// No description provided for @logRoleMisuseAttempt.
+  ///
+  /// In en, this message translates to:
+  /// **'Role misuse attempt detected'**
+  String get logRoleMisuseAttempt;
+
+  /// No description provided for @logUnknownAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown action'**
+  String get logUnknownAction;
+
+  /// No description provided for @logFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get logFilterAll;
+
+  /// No description provided for @logFilterAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Auth'**
+  String get logFilterAuth;
+
+  /// No description provided for @logFilterEmployee.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee'**
+  String get logFilterEmployee;
+
+  /// No description provided for @logFilterChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get logFilterChat;
+
+  /// No description provided for @logFilterSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get logFilterSecurity;
+
+  /// No description provided for @logDateAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All Time'**
+  String get logDateAll;
+
+  /// No description provided for @logDateToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get logDateToday;
+
+  /// No description provided for @logDateLast7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 Days'**
+  String get logDateLast7Days;
+
+  /// No description provided for @logSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name, ID or action'**
+  String get logSearchHint;
+
+  /// No description provided for @logNoLogsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs found'**
+  String get logNoLogsFound;
+
+  /// No description provided for @logNoLogsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity logs yet'**
+  String get logNoLogsYet;
+
+  /// No description provided for @logActivityWillAppear.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity within your organization will appear here.'**
+  String get logActivityWillAppear;
+
+  /// No description provided for @logLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'LOAD MORE'**
+  String get logLoadMore;
+
+  /// No description provided for @logPerformedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'By'**
+  String get logPerformedBy;
 }
 
 class _AppLocalizationsDelegate
