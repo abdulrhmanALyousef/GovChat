@@ -1007,4 +1007,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logPasswordChanged => 'Password changed';
+
+  @override
+  String get adminLabel => 'Admin';
+
+  @override
+  String get companyGroupLabel => 'Company';
+
+  @override
+  String get departmentGroupLabel => 'Department';
+
+  @override
+  String get logProjectGroupDeleted => 'Project group deleted';
+
+  @override
+  String get deleteGroupConfirmTitle => 'Delete group?';
+
+  @override
+  String get deleteGroupConfirmMessage =>
+      'This group and all its messages will be permanently deleted.';
+
+  @override
+  String get cannotDeleteSystemGroup => 'System groups cannot be deleted.';
 }

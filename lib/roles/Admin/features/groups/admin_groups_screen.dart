@@ -5,7 +5,7 @@ import 'package:projects/l10n/app_localizations.dart';
 
 import '../../../../core/constants/app_size.dart';
 import '../../../../core/theme/app_color.dart';
-import '../../../../models/project_group_model.dart';
+import '../../../../models/unified_group.dart';
 import 'controller/admin_groups_controller.dart';
 import 'group_chat_screen.dart';
 
@@ -59,9 +59,13 @@ class _GroupsView extends StatelessWidget {
             )
           : controller.errorMessage != null
               ? _ErrorState(message: controller.errorMessage!)
-              : controller.groups.isEmpty
+              : controller.unifiedGroups.isEmpty
                   ? _EmptyState(l: l)
-                  : _GroupList(groups: controller.groups, l: l),
+                  : _GroupList(
+                      groups: controller.unifiedGroups,
+                      controller: controller,
+                      l: l,
+                    ),
     );
   }
 
@@ -84,6 +88,248 @@ class _GroupsView extends StatelessWidget {
     );
   }
 }
+
+// ─── Group list ───────────────────────────────────────────────────────────────
+
+class _GroupList extends StatelessWidget {
+  const _GroupList({
+    required this.groups,
+    required this.controller,
+    required this.l,
+  });
+  final List<UnifiedGroup> groups;
+  final AdminGroupsController controller;
+  final AppLocalizations l;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: EdgeInsets.all(AppSizes.pw16),
+      itemCount: groups.length,
+      separatorBuilder: (context, index) => SizedBox(height: AppSizes.h8),
+      itemBuilder: (_, i) => _GroupCard(
+        group: groups[i],
+        controller: controller,
+        l: l,
+      ),
+    );
+  }
+}
+
+class _GroupCard extends StatelessWidget {
+  const _GroupCard({
+    required this.group,
+    required this.controller,
+    required this.l,
+  });
+  final UnifiedGroup group;
+  final AdminGroupsController controller;
+  final AppLocalizations l;
+
+  @override
+  Widget build(BuildContext context) {
+    final typeColor = _typeColor(group.type);
+    final typeIcon = _typeIcon(group.type);
+    final typeLabel = _typeLabel(l, group.type);
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AdminGroupChatScreen(group: group),
+        ),
+      ),
+      child: Container(
+        padding: EdgeInsets.all(AppSizes.ph16),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(AppSizes.r16),
+          border: Border.all(color: AppColors.inputBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(AppSizes.ph8),
+              decoration: BoxDecoration(
+                color: typeColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppSizes.r12),
+              ),
+              child: Icon(typeIcon, color: typeColor, size: 22),
+            ),
+            SizedBox(width: AppSizes.w12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    group.name,
+                    style: GoogleFonts.manrope(
+                      color: AppColors.textTitle,
+                      fontWeight: FontWeight.w700,
+                      fontSize: AppSizes.sp14,
+                    ),
+                  ),
+                  SizedBox(height: AppSizes.h4),
+                  Row(
+                    children: [
+                      _TypeBadge(label: typeLabel, color: typeColor),
+                      SizedBox(width: AppSizes.w8),
+                      Text(
+                        l.membersCount(group.memberCount),
+                        style: GoogleFonts.manrope(
+                          color: AppColors.textMuted,
+                          fontSize: AppSizes.sp11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (group.isDeletable)
+              IconButton(
+                icon: const Icon(Icons.delete_outline,
+                    color: AppColors.error, size: 20),
+                onPressed: () =>
+                    _confirmDelete(context, controller, group, l),
+                splashRadius: 20,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              )
+            else
+              const Icon(Icons.chevron_right, color: AppColors.navUnselected),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    AdminGroupsController controller,
+    UnifiedGroup group,
+    AppLocalizations l,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: Text(
+          l.deleteGroupConfirmTitle,
+          style: GoogleFonts.manrope(
+            color: AppColors.textTitle,
+            fontWeight: FontWeight.w700,
+            fontSize: AppSizes.sp16,
+          ),
+        ),
+        content: Text(
+          l.deleteGroupConfirmMessage,
+          style: GoogleFonts.manrope(
+            color: AppColors.textSecondary,
+            fontSize: AppSizes.sp14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              l.cancelUppercase,
+              style: GoogleFonts.manrope(color: AppColors.textMuted),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              l.deleteUppercase,
+              style: GoogleFonts.manrope(
+                color: AppColors.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await controller.deleteGroup(group);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l.cannotDeleteSystemGroup),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Color _typeColor(String type) {
+    switch (type) {
+      case 'company':
+        return const Color(0xFF60A5FA);
+      case 'department':
+        return const Color(0xFF34D399);
+      default:
+        return AppColors.primaryColor;
+    }
+  }
+
+  IconData _typeIcon(String type) {
+    switch (type) {
+      case 'company':
+        return Icons.business_outlined;
+      case 'department':
+        return Icons.group_outlined;
+      default:
+        return Icons.folder_outlined;
+    }
+  }
+
+  String _typeLabel(AppLocalizations l, String type) {
+    switch (type) {
+      case 'company':
+        return l.companyGroupLabel;
+      case 'department':
+        return l.departmentGroupLabel;
+      default:
+        return l.projectGroupLabel;
+    }
+  }
+}
+
+class _TypeBadge extends StatelessWidget {
+  const _TypeBadge({required this.label, required this.color});
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSizes.pw6,
+        vertical: AppSizes.ph4,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppSizes.r4),
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: GoogleFonts.manrope(
+          color: color,
+          fontSize: AppSizes.sp9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Create group bottom sheet ────────────────────────────────────────────────
 
 class _CreateGroupSheet extends StatefulWidget {
   const _CreateGroupSheet({required this.l});
@@ -171,9 +417,8 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                       const BorderSide(color: AppColors.inputFocusBorder),
                 ),
               ),
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? l.groupNameRequired
-                  : null,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? l.groupNameRequired : null,
             ),
             SizedBox(height: AppSizes.ph16),
             Text(
@@ -249,7 +494,9 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
               width: double.infinity,
               height: AppSizes.h48,
               child: ElevatedButton(
-                onPressed: _isCreating ? null : () => _submit(context, controller, l),
+                onPressed: _isCreating
+                    ? null
+                    : () => _submit(context, controller, l),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
                   elevation: 0,
@@ -311,91 +558,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
   }
 }
 
-class _GroupList extends StatelessWidget {
-  const _GroupList({required this.groups, required this.l});
-  final List<ProjectGroupModel> groups;
-  final AppLocalizations l;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: EdgeInsets.all(AppSizes.pw16),
-      itemCount: groups.length,
-      separatorBuilder: (context, index) => SizedBox(height: AppSizes.h8),
-      itemBuilder: (_, i) => _GroupCard(group: groups[i], l: l),
-    );
-  }
-}
-
-class _GroupCard extends StatelessWidget {
-  const _GroupCard({required this.group, required this.l});
-  final ProjectGroupModel group;
-  final AppLocalizations l;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => AdminGroupChatScreen(group: group),
-        ),
-      ),
-      child: Container(
-        padding: EdgeInsets.all(AppSizes.ph16),
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(AppSizes.r16),
-          border: Border.all(color: AppColors.inputBorder),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(AppSizes.ph8),
-              decoration: BoxDecoration(
-                color: AppColors.primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppSizes.r12),
-              ),
-              child: const Icon(
-                Icons.group_outlined,
-                color: AppColors.primaryColor,
-                size: 22,
-              ),
-            ),
-            SizedBox(width: AppSizes.w12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    group.name,
-                    style: GoogleFonts.manrope(
-                      color: AppColors.textTitle,
-                      fontWeight: FontWeight.w700,
-                      fontSize: AppSizes.sp14,
-                    ),
-                  ),
-                  SizedBox(height: AppSizes.h4),
-                  Text(
-                    l.membersCount(group.memberIds.length),
-                    style: GoogleFonts.manrope(
-                      color: AppColors.textMuted,
-                      fontSize: AppSizes.sp11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.navUnselected,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// ─── Empty / error states ─────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.l});
@@ -409,11 +572,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.group_outlined,
-              size: 64,
-              color: AppColors.navUnselected,
-            ),
+            Icon(Icons.group_outlined, size: 64, color: AppColors.navUnselected),
             SizedBox(height: AppSizes.ph16),
             Text(
               l.noGroupsYet,

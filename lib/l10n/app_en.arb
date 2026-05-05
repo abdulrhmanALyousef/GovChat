@@ -404,5 +404,13 @@
   "logMessageDeleted": "Message deleted",
   "logProjectGroupCreated": "Project group created",
   "logGroupMessageSent": "Group message sent",
-  "logPasswordChanged": "Password changed"
+  "logPasswordChanged": "Password changed",
+
+  "adminLabel": "Admin",
+  "companyGroupLabel": "Company",
+  "departmentGroupLabel": "Department",
+  "logProjectGroupDeleted": "Project group deleted",
+  "deleteGroupConfirmTitle": "Delete group?",
+  "deleteGroupConfirmMessage": "This group and all its messages will be permanently deleted.",
+  "cannotDeleteSystemGroup": "System groups cannot be deleted."
 }

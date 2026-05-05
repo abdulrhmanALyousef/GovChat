@@ -1003,4 +1003,26 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get logPasswordChanged => 'تم تغيير كلمة المرور';
+
+  @override
+  String get adminLabel => 'مشرف';
+
+  @override
+  String get companyGroupLabel => 'الشركة';
+
+  @override
+  String get departmentGroupLabel => 'القسم';
+
+  @override
+  String get logProjectGroupDeleted => 'تم حذف مجموعة المشروع';
+
+  @override
+  String get deleteGroupConfirmTitle => 'حذف المجموعة؟';
+
+  @override
+  String get deleteGroupConfirmMessage =>
+      'سيتم حذف هذه المجموعة وجميع رسائلها بشكل نهائي.';
+
+  @override
+  String get cannotDeleteSystemGroup => 'لا يمكن حذف مجموعات النظام.';
 }

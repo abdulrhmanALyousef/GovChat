@@ -10,11 +10,11 @@ import '../../../../core/datasource/remote_data/firebase_service.dart';
 import '../../../../core/services/logging_service.dart';
 import '../../../../core/theme/app_color.dart';
 import '../../../../models/chat_message.dart';
-import '../../../../models/project_group_model.dart';
+import '../../../../models/unified_group.dart';
 
 class AdminGroupChatScreen extends StatefulWidget {
   const AdminGroupChatScreen({super.key, required this.group});
-  final ProjectGroupModel group;
+  final UnifiedGroup group;
 
   @override
   State<AdminGroupChatScreen> createState() => _AdminGroupChatScreenState();
@@ -27,37 +27,25 @@ class _AdminGroupChatScreenState extends State<AdminGroupChatScreen> {
 
   List<ChatMessage> _messages = [];
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _sub;
-  String _senderDisplayId = '';
+  String _adminUid = '';
   bool _isSending = false;
 
   @override
   void initState() {
     super.initState();
-    _loadSenderInfo();
+    _loadAdminUid();
     _listenMessages();
   }
 
-  Future<void> _loadSenderInfo() async {
+  Future<void> _loadAdminUid() async {
     final user = _firebase.currentUser;
     if (user == null) return;
-    final uid = user.uid;
-    final doc = await _firebase.firestore
-        .collection('users')
-        .doc(uid)
-        .get();
-    final data = doc.data() ?? {};
-    setState(() {
-      _senderDisplayId = (data['displayId'] as String?)?.isNotEmpty == true
-          ? data['displayId'] as String
-          : (data['email'] as String? ?? user.email ?? user.uid);
-    });
+    setState(() => _adminUid = user.uid);
   }
 
   void _listenMessages() {
     _sub = _firebase.firestore
-        .collection('projectGroups')
-        .doc(widget.group.id)
-        .collection('messages')
+        .collection(widget.group.messagesPath)
         .orderBy('createdAt')
         .snapshots()
         .listen((snap) {
@@ -79,14 +67,11 @@ class _AdminGroupChatScreenState extends State<AdminGroupChatScreen> {
     _msgCtrl.clear();
 
     try {
-      await _firebase.firestore
-          .collection('projectGroups')
-          .doc(widget.group.id)
-          .collection('messages')
-          .add({
+      await _firebase.firestore.collection(widget.group.messagesPath).add({
         'text': text,
-        'senderId': _senderDisplayId,
-        'organizationId': widget.group.organizationId,
+        'senderId': _adminUid,
+        'senderRole': 'admin',
+        'organizationId': _orgId,
         'departmentId': '',
         'createdAt': FieldValue.serverTimestamp(),
         'isDeleted': false,
@@ -99,6 +84,7 @@ class _AdminGroupChatScreenState extends State<AdminGroupChatScreen> {
         metadata: {
           'groupId': widget.group.id,
           'groupName': widget.group.name,
+          'groupType': widget.group.type,
         },
       ).ignore();
 
@@ -106,6 +92,15 @@ class _AdminGroupChatScreenState extends State<AdminGroupChatScreen> {
     } catch (_) {}
 
     if (mounted) setState(() => _isSending = false);
+  }
+
+  String get _orgId {
+    final path = widget.group.messagesPath;
+    if (path.startsWith('organizations/')) {
+      final parts = path.split('/');
+      if (parts.length > 1) return parts[1];
+    }
+    return '';
   }
 
   void _scrollToBottom() {
@@ -154,7 +149,7 @@ class _AdminGroupChatScreenState extends State<AdminGroupChatScreen> {
               ),
             ),
             Text(
-              l.membersCount(widget.group.memberIds.length),
+              l.membersCount(widget.group.memberCount),
               style: GoogleFonts.manrope(
                 color: AppColors.textMuted,
                 fontSize: AppSizes.sp10,
@@ -207,8 +202,9 @@ class _AdminGroupChatScreenState extends State<AdminGroupChatScreen> {
                     itemCount: _messages.length,
                     itemBuilder: (_, i) {
                       final msg = _messages[i];
-                      final isMe = msg.senderId == _senderDisplayId;
-                      return _MessageBubble(msg: msg, isMe: isMe);
+                      final isMe = msg.senderId == _adminUid;
+                      return _MessageBubble(
+                          msg: msg, isMe: isMe, adminLabel: l.adminLabel);
                     },
                   ),
           ),
@@ -225,12 +221,22 @@ class _AdminGroupChatScreenState extends State<AdminGroupChatScreen> {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.msg, required this.isMe});
+  const _MessageBubble({
+    required this.msg,
+    required this.isMe,
+    required this.adminLabel,
+  });
   final ChatMessage msg;
   final bool isMe;
+  final String adminLabel;
 
   @override
   Widget build(BuildContext context) {
+    final isAdmin = msg.senderRole == 'admin';
+    final senderName = isAdmin ? adminLabel : msg.senderId;
+    final senderColor =
+        isAdmin ? const Color(0xFFEF4444) : AppColors.primaryColor;
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -257,16 +263,17 @@ class _MessageBubble extends StatelessWidget {
           crossAxisAlignment:
               isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            if (!isMe)
+            if (!isMe) ...[
               Text(
-                msg.senderId,
+                senderName,
                 style: GoogleFonts.manrope(
-                  color: AppColors.primaryColor,
+                  color: senderColor,
                   fontSize: AppSizes.sp10,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-            if (!isMe) SizedBox(height: AppSizes.h4),
+              SizedBox(height: AppSizes.h4),
+            ],
             Text(
               msg.text,
               style: GoogleFonts.manrope(

@@ -8,16 +8,18 @@ import '../../../../../core/services/logging_service.dart';
 import '../../../../../models/admin_model.dart';
 import '../../../../../models/employee_model.dart';
 import '../../../../../models/project_group_model.dart';
+import '../../../../../models/unified_group.dart';
 
 class AdminGroupsController extends ChangeNotifier {
   final FirebaseService _firebase = FirebaseService.instance;
 
-  List<ProjectGroupModel> groups = [];
+  List<UnifiedGroup> unifiedGroups = [];
   List<EmployeeModel> employees = [];
   bool isLoading = true;
   String? errorMessage;
 
   AdminModel? currentAdmin;
+  String _orgName = '';
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _groupsSub;
 
@@ -39,10 +41,8 @@ class AdminGroupsController extends ChangeNotifier {
         return;
       }
 
-      final doc = await _firebase.firestore
-          .collection('users')
-          .doc(user.uid)
-          .get();
+      final doc =
+          await _firebase.firestore.collection('users').doc(user.uid).get();
 
       if (!doc.exists) {
         errorMessage = 'Admin data not found';
@@ -61,12 +61,29 @@ class AdminGroupsController extends ChangeNotifier {
         return;
       }
 
-      await _loadEmployees(orgId);
-      _listenToGroups(orgId);
+      await Future.wait([
+        _loadOrgName(orgId),
+        _loadEmployees(orgId),
+      ]);
+
+      _listenToProjectGroups(orgId);
     } catch (e) {
       errorMessage = e.toString();
       isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> _loadOrgName(String orgId) async {
+    try {
+      final snap =
+          await _firebase.firestore.collection('organizations').doc(orgId).get();
+      _orgName =
+          (snap.data()?['name'] as String?)?.trim().isNotEmpty == true
+              ? snap.data()!['name'] as String
+              : 'Company';
+    } catch (_) {
+      _orgName = 'Company';
     }
   }
 
@@ -88,7 +105,7 @@ class AdminGroupsController extends ChangeNotifier {
     }
   }
 
-  void _listenToGroups(String orgId) {
+  void _listenToProjectGroups(String orgId) {
     _groupsSub?.cancel();
     _groupsSub = _firebase.firestore
         .collection('projectGroups')
@@ -97,10 +114,11 @@ class AdminGroupsController extends ChangeNotifier {
         .snapshots()
         .listen(
           (snapshot) {
-            groups = snapshot.docs
+            final projectGroups = snapshot.docs
                 .map((doc) =>
                     ProjectGroupModel.fromJson(doc.data(), id: doc.id))
                 .toList();
+            _rebuild(orgId, projectGroups);
             isLoading = false;
             notifyListeners();
           },
@@ -111,6 +129,64 @@ class AdminGroupsController extends ChangeNotifier {
           },
         );
   }
+
+  void _rebuild(String orgId, List<ProjectGroupModel> projectGroups) {
+    final result = <UnifiedGroup>[];
+
+    // 1. Company-wide group
+    result.add(UnifiedGroup(
+      id: 'org_general',
+      name: _orgName,
+      type: 'company',
+      messagesPath: 'organizations/$orgId/org_chats/general/messages',
+      isDeletable: false,
+      memberCount: employees.length,
+    ));
+
+    // 2. Department groups — one per unique department
+    final seen = <String>{};
+    for (final emp in employees) {
+      final deptId = _normalizeDeptId(emp);
+      if (seen.contains(deptId)) continue;
+      seen.add(deptId);
+      result.add(UnifiedGroup(
+        id: 'dept_$deptId',
+        name: emp.department.isNotEmpty ? emp.department : deptId,
+        type: 'department',
+        messagesPath:
+            'organizations/$orgId/departments/$deptId/messages',
+        isDeletable: false,
+        memberCount: employees
+            .where((e) => _normalizeDeptId(e) == deptId)
+            .length,
+      ));
+    }
+
+    // 3. Project groups (admin-created, deletable)
+    for (final pg in projectGroups) {
+      result.add(UnifiedGroup(
+        id: pg.id!,
+        name: pg.name,
+        type: 'project',
+        messagesPath: 'projectGroups/${pg.id}/messages',
+        isDeletable: true,
+        memberCount: pg.memberIds.length,
+      ));
+    }
+
+    unifiedGroups = result;
+  }
+
+  String _normalizeDeptId(EmployeeModel emp) {
+    final id = emp.departmentId.trim();
+    if (id.isNotEmpty) return _sanitize(id);
+    final name = emp.department.trim();
+    if (name.isNotEmpty) return _sanitize(name);
+    return 'general';
+  }
+
+  String _sanitize(String value) =>
+      value.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_').toLowerCase();
 
   Future<void> createGroup({
     required String name,
@@ -133,10 +209,25 @@ class AdminGroupsController extends ChangeNotifier {
       actionType: 'PROJECT_GROUP_CREATED',
       category: 'groups',
       descriptionKey: 'logProjectGroupCreated',
-      metadata: {
-        'groupName': name.trim(),
-        'memberCount': memberIds.length,
-      },
+      metadata: {'groupName': name.trim(), 'memberCount': memberIds.length},
+    ).ignore();
+  }
+
+  Future<void> deleteGroup(UnifiedGroup group) async {
+    if (!group.isDeletable) {
+      throw Exception('cannotDeleteSystemGroup');
+    }
+
+    await _firebase.firestore
+        .collection('projectGroups')
+        .doc(group.id)
+        .delete();
+
+    LoggingService.instance.log(
+      actionType: 'PROJECT_GROUP_DELETED',
+      category: 'groups',
+      descriptionKey: 'logProjectGroupDeleted',
+      metadata: {'groupName': group.name},
     ).ignore();
   }
 
