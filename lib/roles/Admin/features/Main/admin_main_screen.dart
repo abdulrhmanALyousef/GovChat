@@ -4,6 +4,7 @@ import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
 import '../requests/requests_screen.dart';
 import '../emplyees/employees_screen.dart';
+import '../groups/admin_groups_screen.dart';
 import '../logs/logs_screen.dart';
 import '../profile/admin_profile_screen.dart';
 
@@ -22,6 +23,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   final List<Widget> _screens = [
     const RequestsScreen(),
     const EmployeesScreen(),
+    const AdminGroupsScreen(),
     const LogsScreen(),
     const AdminProfileScreen(),
   ];
@@ -64,85 +66,52 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
           },
           items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.inbox_outlined),
-              activeIcon: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    height: 3,
-                    width: 36,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Icon(Icons.inbox),
-                ],
-              ),
+              icon: const Icon(Icons.inbox_outlined),
+              activeIcon: _activeIcon(Icons.inbox),
               label: l.navRequests,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.people_outline),
-              activeIcon: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    height: 3,
-                    width: 36,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Icon(Icons.people),
-                ],
-              ),
+              icon: const Icon(Icons.people_outline),
+              activeIcon: _activeIcon(Icons.people),
               label: l.navEmployees,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.history_outlined),
-              activeIcon: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    height: 3,
-                    width: 36,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Icon(Icons.history),
-                ],
-              ),
+              icon: const Icon(Icons.group_outlined),
+              activeIcon: _activeIcon(Icons.group),
+              label: l.navGroups,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.history_outlined),
+              activeIcon: _activeIcon(Icons.history),
               label: l.navLogs,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    height: 3,
-                    width: 36,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Icon(Icons.person),
-                ],
-              ),
+              icon: const Icon(Icons.person_outline),
+              activeIcon: _activeIcon(Icons.person),
               label: l.navProfile,
             ),
           ],
         ),
       ),
       body: _screens[_currentIndex],
+    );
+  }
+
+  Widget _activeIcon(IconData icon) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          height: 3,
+          width: 36,
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Icon(icon),
+      ],
     );
   }
 

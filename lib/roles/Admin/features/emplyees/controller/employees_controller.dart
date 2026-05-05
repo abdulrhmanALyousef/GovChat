@@ -261,6 +261,7 @@ class EmployeesController extends ChangeNotifier {
         descriptionKey: 'logEmployeeUpdated',
         performedByUserId: adminUser.uid,
         performedByRole: 'admin',
+        performedByEmail: adminUser.email ?? '',
         performedByName: currentAdmin?.email,
         targetId: employeeId,
         metadata: {'updatedName': name.trim(), 'updatedDepartment': trimmedDept},
@@ -307,6 +308,7 @@ class EmployeesController extends ChangeNotifier {
         descriptionKey: 'logEmployeeDeleted',
         performedByUserId: adminUser.uid,
         performedByRole: 'admin',
+        performedByEmail: adminUser.email ?? '',
         performedByName: currentAdmin?.email,
         targetId: employeeId,
       );

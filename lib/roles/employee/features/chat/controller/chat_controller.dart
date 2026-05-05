@@ -440,6 +440,7 @@ class ChatController extends ChangeNotifier {
           (snapshot) async {
             final rawMessages = snapshot.docs
                 .map((doc) => ChatMessage.fromJson(doc.data(), id: doc.id))
+                .where((m) => !m.isDeleted)
                 .toList();
 
             if (_conversationKey != null) {
@@ -533,12 +534,17 @@ class ChatController extends ChangeNotifier {
   Future<void> deleteMessage(ChatMessage message) async {
     if (message.id == null) return;
     try {
-      await _messagesCollection().doc(message.id!).delete();
+      final uid = _firebase.currentUser?.uid ?? displayId;
+      await _messagesCollection().doc(message.id!).update({
+        'isDeleted': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+        'deletedBy': uid,
+      });
       LoggingService.instance.log(
         organizationId: organizationId,
         actionType: 'message_deleted',
         descriptionKey: 'logMessageDeleted',
-        performedByUserId: _firebase.currentUser?.uid ?? displayId,
+        performedByUserId: uid,
         performedByRole: 'employee',
         performedByEmail: _firebase.currentUser?.email ?? '',
         performedByName: displayId,
@@ -546,8 +552,10 @@ class ChatController extends ChangeNotifier {
         metadata: {
           'chatType': _detectChatType(),
           'departmentId': _normalizedDepartmentId(),
+          'messageId': message.id,
+          'senderId': message.senderId,
         },
-      );
+      ).ignore();
     } catch (e) {
       errorMessage = 'Failed to delete message.';
       notifyListeners();

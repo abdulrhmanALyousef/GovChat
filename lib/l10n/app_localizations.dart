@@ -1994,6 +1994,192 @@ abstract class AppLocalizations {
   /// **'Choose Video'**
   String get chooseVideoOption;
 
+  /// No description provided for @navGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'GROUPS'**
+  String get navGroups;
+
+  /// No description provided for @deletedMessagesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'DELETED MESSAGES'**
+  String get deletedMessagesTitle;
+
+  /// No description provided for @activityLogsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'ACTIVITY'**
+  String get activityLogsTab;
+
+  /// No description provided for @noDeletedMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No deleted messages'**
+  String get noDeletedMessages;
+
+  /// No description provided for @noDeletedMessagesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted messages will appear here for admin review.'**
+  String get noDeletedMessagesDesc;
+
+  /// No description provided for @noActivityLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity logs yet'**
+  String get noActivityLogs;
+
+  /// No description provided for @senderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender'**
+  String get senderLabel;
+
+  /// No description provided for @deletedByLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted by'**
+  String get deletedByLabel;
+
+  /// No description provided for @deletedAtLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted at'**
+  String get deletedAtLabel;
+
+  /// No description provided for @locationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get locationLabel;
+
+  /// No description provided for @messageDeletedPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'This message was deleted'**
+  String get messageDeletedPlaceholder;
+
+  /// No description provided for @projectGroupsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Project Groups'**
+  String get projectGroupsTitle;
+
+  /// No description provided for @createGroupButton.
+  ///
+  /// In en, this message translates to:
+  /// **'CREATE GROUP'**
+  String get createGroupButton;
+
+  /// No description provided for @createGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Group'**
+  String get createGroupTitle;
+
+  /// No description provided for @groupNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'GROUP NAME'**
+  String get groupNameLabel;
+
+  /// No description provided for @groupNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter group name'**
+  String get groupNameHint;
+
+  /// No description provided for @selectMembersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SELECT MEMBERS'**
+  String get selectMembersLabel;
+
+  /// No description provided for @groupNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Group name is required'**
+  String get groupNameRequired;
+
+  /// No description provided for @atLeastOneMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Select at least one member'**
+  String get atLeastOneMember;
+
+  /// No description provided for @noGroupsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups yet'**
+  String get noGroupsYet;
+
+  /// No description provided for @noGroupsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a project group to collaborate with selected employees.'**
+  String get noGroupsDesc;
+
+  /// No description provided for @groupCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Group created successfully'**
+  String get groupCreatedSuccess;
+
+  /// No description provided for @membersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} members'**
+  String membersCount(int count);
+
+  /// No description provided for @noEmployeesAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No employees available'**
+  String get noEmployeesAvailable;
+
+  /// No description provided for @projectGroupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PROJECT GROUP'**
+  String get projectGroupLabel;
+
+  /// No description provided for @changePasswordFromProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get changePasswordFromProfile;
+
+  /// No description provided for @currentPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'CURRENT PASSWORD'**
+  String get currentPasswordLabel;
+
+  /// No description provided for @currentPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter current password'**
+  String get currentPasswordHint;
+
+  /// No description provided for @currentPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password is required'**
+  String get currentPasswordRequired;
+
+  /// No description provided for @passwordChangedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed successfully'**
+  String get passwordChangedSuccess;
+
+  /// No description provided for @wrongCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password is incorrect'**
+  String get wrongCurrentPassword;
+
   /// No description provided for @logLoginSuccess.
   ///
   /// In en, this message translates to:
@@ -2065,6 +2251,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Message deleted'**
   String get logMessageDeleted;
+
+  /// No description provided for @logProjectGroupCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Project group created'**
+  String get logProjectGroupCreated;
+
+  /// No description provided for @logGroupMessageSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Group message sent'**
+  String get logGroupMessageSent;
+
+  /// No description provided for @logProjectGroupDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Project group deleted'**
+  String get logProjectGroupDeleted;
 
   /// No description provided for @logUnauthorizedAccess.
   ///
@@ -2173,6 +2377,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'By'**
   String get logPerformedBy;
+
+  /// No description provided for @adminLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get adminLabel;
+
+  /// No description provided for @companyGroupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Company'**
+  String get companyGroupLabel;
+
+  /// No description provided for @departmentGroupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Department'**
+  String get departmentGroupLabel;
+
+  /// No description provided for @deleteGroupConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete group?'**
+  String get deleteGroupConfirmTitle;
+
+  /// No description provided for @deleteGroupConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This group and all its messages will be permanently deleted.'**
+  String get deleteGroupConfirmMessage;
+
+  /// No description provided for @cannotDeleteSystemGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'System groups cannot be deleted.'**
+  String get cannotDeleteSystemGroup;
 }
 
 class _AppLocalizationsDelegate

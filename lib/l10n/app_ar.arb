@@ -395,6 +395,48 @@
   "recordVideoOption": "تسجيل فيديو",
   "chooseVideoOption": "اختيار فيديو",
 
+  "navGroups": "المجموعات",
+
+  "deletedMessagesTitle": "الرسائل المحذوفة",
+  "activityLogsTab": "النشاط",
+  "noDeletedMessages": "لا توجد رسائل محذوفة",
+  "noDeletedMessagesDesc": "ستظهر الرسائل المحذوفة هنا للمراجعة من قبل المشرف.",
+  "noActivityLogs": "لا توجد سجلات نشاط بعد",
+  "senderLabel": "المرسل",
+  "deletedByLabel": "حذف بواسطة",
+  "deletedAtLabel": "وقت الحذف",
+  "locationLabel": "الموقع",
+  "messageDeletedPlaceholder": "تم حذف هذه الرسالة",
+
+  "projectGroupsTitle": "مجموعات المشاريع",
+  "createGroupButton": "إنشاء مجموعة",
+  "createGroupTitle": "إنشاء مجموعة",
+  "groupNameLabel": "اسم المجموعة",
+  "groupNameHint": "أدخل اسم المجموعة",
+  "selectMembersLabel": "اختر الأعضاء",
+  "groupNameRequired": "اسم المجموعة مطلوب",
+  "atLeastOneMember": "اختر عضواً واحداً على الأقل",
+  "noGroupsYet": "لا توجد مجموعات بعد",
+  "noGroupsDesc": "أنشئ مجموعة مشروع للتعاون مع الموظفين المختارين.",
+  "groupCreatedSuccess": "تم إنشاء المجموعة بنجاح",
+  "membersCount": "{count} أعضاء",
+  "@membersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noEmployeesAvailable": "لا يوجد موظفون متاحون",
+  "projectGroupLabel": "مجموعة المشروع",
+
+  "changePasswordFromProfile": "تغيير كلمة المرور",
+  "currentPasswordLabel": "كلمة المرور الحالية",
+  "currentPasswordHint": "أدخل كلمة المرور الحالية",
+  "currentPasswordRequired": "كلمة المرور الحالية مطلوبة",
+  "passwordChangedSuccess": "تم تغيير كلمة المرور بنجاح",
+  "wrongCurrentPassword": "كلمة المرور الحالية غير صحيحة",
+
   "logLoginSuccess": "تم تسجيل الدخول بنجاح",
   "logLoginFailure": "فشل محاولة تسجيل الدخول",
   "logLogout": "تم تسجيل خروج المستخدم",
@@ -407,6 +449,9 @@
   "logEmployeeDeleted": "تم تعطيل حساب الموظف",
   "logMessageSent": "تم إرسال رسالة",
   "logMessageDeleted": "تم حذف رسالة",
+  "logProjectGroupCreated": "تم إنشاء مجموعة مشروع",
+  "logGroupMessageSent": "تم إرسال رسالة في المجموعة",
+  "logProjectGroupDeleted": "تم حذف مجموعة المشروع",
   "logUnauthorizedAccess": "محاولة وصول غير مصرح به",
   "logAutoLogoutInactivity": "تسجيل خروج تلقائي بسبب عدم النشاط",
   "logRoleMisuseAttempt": "تم اكتشاف محاولة إساءة استخدام الصلاحيات",
@@ -424,5 +469,12 @@
   "logNoLogsYet": "لا توجد سجلات نشاط بعد",
   "logActivityWillAppear": "ستظهر هنا أنشطة منظمتك.",
   "logLoadMore": "تحميل المزيد",
-  "logPerformedBy": "بواسطة"
+  "logPerformedBy": "بواسطة",
+
+  "adminLabel": "مشرف",
+  "companyGroupLabel": "الشركة",
+  "departmentGroupLabel": "القسم",
+  "deleteGroupConfirmTitle": "حذف المجموعة؟",
+  "deleteGroupConfirmMessage": "سيتم حذف هذه المجموعة وجميع رسائلها بشكل نهائي.",
+  "cannotDeleteSystemGroup": "لا يمكن حذف مجموعات النظام."
 }

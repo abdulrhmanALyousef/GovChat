@@ -67,6 +67,9 @@ class ConversationModel {
     if (type == 'organization') {
       return 'organizations/$organizationId/org_chats/general/messages';
     }
+    if (type == 'group') {
+      return 'projectGroups/$id/messages';
+    }
     return 'organizations/$organizationId/departments/$departmentId/messages';
   }
 
