@@ -170,6 +170,7 @@ class RequestController extends ChangeNotifier {
           descriptionKey: 'logAccessRequestApproved',
           performedByUserId: adminUser.uid,
           performedByRole: 'admin',
+          performedByEmail: adminUser.email ?? '',
           performedByName: currentAdmin?.email,
           targetId: request.uid,
           metadata: {
@@ -243,6 +244,7 @@ class RequestController extends ChangeNotifier {
           descriptionKey: 'logAccessRequestRejected',
           performedByUserId: adminUser.uid,
           performedByRole: 'admin',
+          performedByEmail: adminUser.email ?? '',
           performedByName: currentAdmin?.email,
           targetId: request.uid,
           metadata: {

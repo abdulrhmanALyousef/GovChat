@@ -1,59 +1,97 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
 import '../../../../../models/activity_log_model.dart';
 import '../../../../../models/admin_model.dart';
+import '../../../../../models/chat_message.dart';
+
+// ── Deleted message helper ────────────────────────────────────────────────────
+
+class DeletedMessageItem {
+  final String messageId;
+  final String text;
+  final String senderId;
+  final String deletedBy;
+  final DateTime? deletedAt;
+  final DateTime? createdAt;
+  final String departmentId;
+  final String organizationId;
+
+  DeletedMessageItem({
+    required this.messageId,
+    required this.text,
+    required this.senderId,
+    required this.deletedBy,
+    this.deletedAt,
+    this.createdAt,
+    required this.departmentId,
+    required this.organizationId,
+  });
+
+  factory DeletedMessageItem.fromMessage(ChatMessage msg) {
+    return DeletedMessageItem(
+      messageId: msg.id ?? '',
+      text: msg.text,
+      senderId: msg.senderId,
+      deletedBy: msg.deletedBy ?? '',
+      deletedAt: msg.deletedAt,
+      createdAt: msg.createdAt,
+      departmentId: msg.departmentId,
+      organizationId: msg.organizationId,
+    );
+  }
+}
+
+// ── Date filter enum ─────────────────────────────────────────────────────────
 
 enum LogDateFilter { all, today, last7Days }
 
-/// Query strategy explanation
-/// ─────────────────────────
-/// Firestore composite indexes are required for every unique combination of
-/// where-clauses + orderBy.  Keeping category filtering server-side would
-/// need 2 separate composite indexes AND both must be built before any
-/// filtered query works.
+// ── Controller ───────────────────────────────────────────────────────────────
+
+/// Query strategy for activity logs:
+/// ─────────────────────────────────
+/// Server-side  → where(organizationId) + [optional: where(timestamp >=)] + orderBy(timestamp DESC)
+/// Client-side  → category filter + search filter (no extra index needed)
 ///
-/// Instead we use a single-index approach:
-///   Server-side  → where(organizationId) + [optional: where(timestamp >=)] + orderBy(timestamp DESC)
-///   Client-side  → category filter   (instant, no extra index, no loading state)
-///   Client-side  → search filter     (same)
+/// Required Firestore composite index (logs collection):
+///   organizationId ASC + timestamp DESC
 ///
-/// Required Firestore composite index (ONE only):
-///   logs: organizationId ASC + timestamp DESC
-///
-/// Deploy with:  firebase deploy --only firestore:indexes
+/// Required Firestore composite index (messages collectionGroup):
+///   organizationId ASC + isDeleted ASC + deletedAt DESC
 class LogsController extends ChangeNotifier {
   final _firebase = FirebaseService.instance;
 
   AdminModel? _admin;
 
-  // Raw logs fetched from Firestore (unfiltered by category/search)
+  // ── Activity logs state ─────────────────────────────────────────────────────
   List<ActivityLogModel> _rawLogs = [];
-
   bool isLoading = true;
   bool isLoadingMore = false;
   bool hasMore = true;
   String? errorMessage;
 
-  // ── Filter state ─────────────────────────────────────────────────────────────
-  // Category + search are pure client-side — changing them never triggers a
-  // Firestore fetch, so no loading spinner appears.
-  // Date filter is server-side — changing it triggers a fresh Firestore fetch.
+  // ── Filter state (category + search are client-side; date is server-side) ───
   String? selectedCategory; // null = all
   LogDateFilter dateFilter = LogDateFilter.all;
   String searchQuery = '';
 
-  // Increase page size because client-side category filter may reduce visible
-  // count significantly — a larger batch keeps "load more" presses rare.
   static const int _pageSize = 50;
   DocumentSnapshot? _lastDoc;
+
+  // ── Deleted messages state ───────────────────────────────────────────────────
+  List<DeletedMessageItem> deletedMessages = [];
+  bool isLoadingDeleted = true;
+  String? deletedError;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _deletedSub;
 
   LogsController() {
     _init();
   }
 
-  // ── Derived (category + search applied here, never in Firestore) ─────────────
+  // ── Derived list ─────────────────────────────────────────────────────────────
 
   List<ActivityLogModel> get displayedLogs {
     List<ActivityLogModel> result = _rawLogs;
@@ -79,7 +117,10 @@ class LogsController extends ChangeNotifier {
 
   Future<void> _init() async {
     await _loadAdmin();
-    if (_admin != null) await _fetch(refresh: true);
+    if (_admin != null) {
+      await _fetch(refresh: true);
+      _listenToDeletedMessages(_admin!.organizationId!);
+    }
   }
 
   Future<void> _loadAdmin() async {
@@ -87,6 +128,8 @@ class LogsController extends ChangeNotifier {
       final user = _firebase.currentUser;
       if (user == null) {
         _setError('User not found');
+        isLoadingDeleted = false;
+        notifyListeners();
         return;
       }
       final doc = await _firebase.firestore
@@ -95,11 +138,15 @@ class LogsController extends ChangeNotifier {
           .get();
       if (!doc.exists) {
         _setError('Admin data not found');
+        isLoadingDeleted = false;
+        notifyListeners();
         return;
       }
       _admin = AdminModel.fromJson(doc.data()!);
     } catch (e) {
       _setError(e.toString());
+      isLoadingDeleted = false;
+      notifyListeners();
     }
   }
 
@@ -130,19 +177,7 @@ class LogsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Firestore fetch ──────────────────────────────────────────────────────────
-  // Single composite index required:
-  //   (organizationId ASC, timestamp DESC)
-  //
-  // Query shape:
-  //   .where('organizationId', isEqualTo: orgId)         ← equality
-  //   [.where('timestamp', isGreaterThanOrEqualTo: t)]   ← optional range on orderBy field
-  //   .orderBy('timestamp', descending: true)
-  //   .limit(50)
-  //
-  // Firestore allows the range filter on the same field as orderBy without
-  // requiring a third field in the index — the single (organizationId, timestamp)
-  // index covers both the equality and the range filter.
+  // ── Firestore fetch (activity logs) ─────────────────────────────────────────
 
   Future<void> _fetch({required bool refresh}) async {
     final orgId = _admin?.organizationId;
@@ -163,21 +198,17 @@ class LogsController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Base query — only ONE composite index needed.
       Query<Map<String, dynamic>> q = _firebase.firestore
           .collection('logs')
           .where('organizationId', isEqualTo: orgId);
 
-      // Date filter — server-side on same field as orderBy, no extra index.
       if (dateFilter != LogDateFilter.all) {
         final now = DateTime.now();
         final start = dateFilter == LogDateFilter.today
             ? DateTime(now.year, now.month, now.day)
             : now.subtract(const Duration(days: 7));
-        q = q.where(
-          'timestamp',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(start),
-        );
+        q = q.where('timestamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(start));
       }
 
       q = q.orderBy('timestamp', descending: true).limit(_pageSize);
@@ -207,11 +238,45 @@ class LogsController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Firestore stream (deleted messages) ──────────────────────────────────────
+
+  void _listenToDeletedMessages(String orgId) {
+    _deletedSub?.cancel();
+    _deletedSub = _firebase.firestore
+        .collectionGroup('messages')
+        .where('organizationId', isEqualTo: orgId)
+        .where('isDeleted', isEqualTo: true)
+        .orderBy('deletedAt', descending: true)
+        .limit(200)
+        .snapshots()
+        .listen(
+          (snap) {
+            deletedMessages = snap.docs
+                .map((d) => DeletedMessageItem.fromMessage(
+                    ChatMessage.fromJson(d.data(), id: d.id)))
+                .toList();
+            isLoadingDeleted = false;
+            notifyListeners();
+          },
+          onError: (e) {
+            deletedError = e.toString();
+            isLoadingDeleted = false;
+            notifyListeners();
+          },
+        );
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   void _setError(String message) {
     errorMessage = message;
     isLoading = false;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _deletedSub?.cancel();
+    super.dispose();
   }
 }

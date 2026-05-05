@@ -358,6 +358,7 @@
   "deptOperations": "Operations",
   "deptSecurity": "Security",
   "deptOther": "Other",
+
   "voiceMessage": "Voice message",
   "imageMessage": "Image",
   "videoMessage": "Video",
@@ -395,6 +396,48 @@
   "recordVideoOption": "Record Video",
   "chooseVideoOption": "Choose Video",
 
+  "navGroups": "GROUPS",
+
+  "deletedMessagesTitle": "DELETED MESSAGES",
+  "activityLogsTab": "ACTIVITY",
+  "noDeletedMessages": "No deleted messages",
+  "noDeletedMessagesDesc": "Deleted messages will appear here for admin review.",
+  "noActivityLogs": "No activity logs yet",
+  "senderLabel": "Sender",
+  "deletedByLabel": "Deleted by",
+  "deletedAtLabel": "Deleted at",
+  "locationLabel": "Location",
+  "messageDeletedPlaceholder": "This message was deleted",
+
+  "projectGroupsTitle": "Project Groups",
+  "createGroupButton": "CREATE GROUP",
+  "createGroupTitle": "Create Group",
+  "groupNameLabel": "GROUP NAME",
+  "groupNameHint": "Enter group name",
+  "selectMembersLabel": "SELECT MEMBERS",
+  "groupNameRequired": "Group name is required",
+  "atLeastOneMember": "Select at least one member",
+  "noGroupsYet": "No groups yet",
+  "noGroupsDesc": "Create a project group to collaborate with selected employees.",
+  "groupCreatedSuccess": "Group created successfully",
+  "membersCount": "{count} members",
+  "@membersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noEmployeesAvailable": "No employees available",
+  "projectGroupLabel": "PROJECT GROUP",
+
+  "changePasswordFromProfile": "Change Password",
+  "currentPasswordLabel": "CURRENT PASSWORD",
+  "currentPasswordHint": "Enter current password",
+  "currentPasswordRequired": "Current password is required",
+  "passwordChangedSuccess": "Password changed successfully",
+  "wrongCurrentPassword": "Current password is incorrect",
+
   "logLoginSuccess": "Login successful",
   "logLoginFailure": "Login attempt failed",
   "logLogout": "User logged out",
@@ -407,6 +450,9 @@
   "logEmployeeDeleted": "Employee account deactivated",
   "logMessageSent": "Message sent",
   "logMessageDeleted": "Message deleted",
+  "logProjectGroupCreated": "Project group created",
+  "logGroupMessageSent": "Group message sent",
+  "logProjectGroupDeleted": "Project group deleted",
   "logUnauthorizedAccess": "Unauthorized access attempt",
   "logAutoLogoutInactivity": "Auto logout due to inactivity",
   "logRoleMisuseAttempt": "Role misuse attempt detected",
@@ -424,5 +470,12 @@
   "logNoLogsYet": "No activity logs yet",
   "logActivityWillAppear": "Activity within your organization will appear here.",
   "logLoadMore": "LOAD MORE",
-  "logPerformedBy": "By"
+  "logPerformedBy": "By",
+
+  "adminLabel": "Admin",
+  "companyGroupLabel": "Company",
+  "departmentGroupLabel": "Department",
+  "deleteGroupConfirmTitle": "Delete group?",
+  "deleteGroupConfirmMessage": "This group and all its messages will be permanently deleted.",
+  "cannotDeleteSystemGroup": "System groups cannot be deleted."
 }

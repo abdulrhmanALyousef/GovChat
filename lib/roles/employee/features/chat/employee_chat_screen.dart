@@ -307,10 +307,17 @@ class _MessageItem extends StatelessWidget {
                   Padding(
                     padding: EdgeInsets.only(bottom: AppSizes.h4),
                     child: Text(
-                      senderName,
+                      message.senderRole == 'admin'
+                          ? AppLocalizations.of(context)!.adminLabel
+                          : senderName,
                       style: GoogleFonts.manrope(
-                        color: AppColors.textMuted,
+                        color: message.senderRole == 'admin'
+                            ? const Color(0xFFEF4444)
+                            : AppColors.textMuted,
                         fontSize: AppSizes.sp10,
+                        fontWeight: message.senderRole == 'admin'
+                            ? FontWeight.w700
+                            : FontWeight.normal,
                         letterSpacing: 0.6,
                       ),
                     ),
