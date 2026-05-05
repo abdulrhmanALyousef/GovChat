@@ -345,7 +345,7 @@ class _LastMessagePreview extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-          Icon(mediaIcon, color: Colors.black, size: AppSizes.sp14),
+          Icon(mediaIcon, color: Colors.white, size: AppSizes.sp14),
           const SizedBox(width: 4),
           Text(
             mediaLabel!,
