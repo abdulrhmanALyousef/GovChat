@@ -15,6 +15,9 @@ class ChatMessage {
   final DateTime? deletedAt;
   final String? deletedBy;
 
+  /// 'admin' when sent by an admin user; null/empty otherwise.
+  final String? senderRole;
+
   /// DisplayIds of participants who have opened this message.
   final List<String> readBy;
 
@@ -30,6 +33,7 @@ class ChatMessage {
     this.isDeleted = false,
     this.deletedAt,
     this.deletedBy,
+    this.senderRole,
     this.readBy = const [],
   });
 
@@ -60,6 +64,7 @@ class ChatMessage {
           ? (json['deletedAt'] as Timestamp).toDate()
           : null,
       deletedBy: json['deletedBy'] as String?,
+      senderRole: json['senderRole'] as String?,
       readBy: List<String>.from(json['readBy'] as List? ?? []),
     );
   }

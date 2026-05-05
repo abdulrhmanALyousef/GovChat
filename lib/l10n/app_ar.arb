@@ -404,5 +404,13 @@
   "logMessageDeleted": "تم حذف رسالة",
   "logProjectGroupCreated": "تم إنشاء مجموعة مشروع",
   "logGroupMessageSent": "تم إرسال رسالة في المجموعة",
-  "logPasswordChanged": "تم تغيير كلمة المرور"
+  "logPasswordChanged": "تم تغيير كلمة المرور",
+
+  "adminLabel": "مشرف",
+  "companyGroupLabel": "الشركة",
+  "departmentGroupLabel": "القسم",
+  "logProjectGroupDeleted": "تم حذف مجموعة المشروع",
+  "deleteGroupConfirmTitle": "حذف المجموعة؟",
+  "deleteGroupConfirmMessage": "سيتم حذف هذه المجموعة وجميع رسائلها بشكل نهائي.",
+  "cannotDeleteSystemGroup": "لا يمكن حذف مجموعات النظام."
 }

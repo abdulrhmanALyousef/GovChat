@@ -1987,6 +1987,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Password changed'**
   String get logPasswordChanged;
+
+  /// No description provided for @adminLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get adminLabel;
+
+  /// No description provided for @companyGroupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Company'**
+  String get companyGroupLabel;
+
+  /// No description provided for @departmentGroupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Department'**
+  String get departmentGroupLabel;
+
+  /// No description provided for @logProjectGroupDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Project group deleted'**
+  String get logProjectGroupDeleted;
+
+  /// No description provided for @deleteGroupConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete group?'**
+  String get deleteGroupConfirmTitle;
+
+  /// No description provided for @deleteGroupConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This group and all its messages will be permanently deleted.'**
+  String get deleteGroupConfirmMessage;
+
+  /// No description provided for @cannotDeleteSystemGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'System groups cannot be deleted.'**
+  String get cannotDeleteSystemGroup;
 }
 
 class _AppLocalizationsDelegate
