@@ -919,7 +919,7 @@ class _TextInputRow extends StatelessWidget {
         if (!isEditing) ...[
           _CircleIconButton(
             icon: LucideIcons.paperclip,
-            color: AppColors.textMuted,
+            color: Colors.white,
             backgroundColor: AppColors.cardBackground,
             onTap: () => _showAttachmentSheet(context, controller, l),
           ),
@@ -989,7 +989,7 @@ class _TextInputRow extends StatelessWidget {
                     )
                   : _CircleIconButton(
                       icon: LucideIcons.mic,
-                      color: AppColors.primaryColor,
+                      color: Colors.white,
                       backgroundColor: AppColors.primaryColor.withValues(
                         alpha: 0.15,
                       ),
@@ -1162,7 +1162,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.camera,
                   label: l.takePhotoOption,
-                  color: Colors.black,
+                  color: Colors.white,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.captureAndSendImage();
@@ -1171,7 +1171,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.image,
                   label: l.choosePhotoOption,
-                  color: Colors.black,
+                  color: Colors.white,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.pickAndSendImage();
@@ -1186,7 +1186,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.video,
                   label: l.recordVideoOption,
-                  color: Colors.black,
+                  color: Colors.white,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.captureAndSendVideo();
@@ -1195,7 +1195,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.film,
                   label: l.chooseVideoOption,
-                  color: Colors.black,
+                  color: Colors.white,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.pickAndSendVideo();
@@ -1234,8 +1234,8 @@ class _AttachOption extends StatelessWidget {
           Container(
             width: AppSizes.h56,
             height: AppSizes.h56,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
+            decoration: const BoxDecoration(
+              color: AppColors.sectionBackground,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: AppSizes.sp28),

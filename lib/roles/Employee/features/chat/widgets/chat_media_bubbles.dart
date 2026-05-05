@@ -52,7 +52,7 @@ class ChatImageBubble extends StatelessWidget {
             color: AppColors.cardBackground,
             child: Icon(
               LucideIcons.imageOff,
-              color: AppColors.textMuted,
+              color: Colors.white,
               size: AppSizes.sp32,
             ),
           ),
@@ -98,7 +98,7 @@ class _FullScreenImagePage extends StatelessWidget {
             ),
             errorWidget: (ctx, url, err) => Icon(
               LucideIcons.imageOff,
-              color: AppColors.textMuted,
+              color: Colors.white,
               size: AppSizes.sp64,
             ),
           ),
@@ -139,7 +139,7 @@ class ChatVideoBubble extends StatelessWidget {
               child: Center(
                 child: Icon(
                   LucideIcons.video,
-                  color: Colors.black,
+                  color: Colors.white,
                   size: AppSizes.sp64,
                 ),
               ),
