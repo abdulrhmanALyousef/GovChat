@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../../core/datasource/remote_data/firebase_service.dart';
+import '../../../../../../core/services/activity_log_service.dart';
 import '../../../../../../models/employee_model.dart';
 import '../../../../../../models/organization_model.dart';
 
@@ -194,6 +195,19 @@ class OrganizationsManagementController extends ChangeNotifier {
           });
 
       successMessage = 'Organization updated successfully.';
+
+      final actor = _firebase.auth.currentUser;
+      if (actor != null) {
+        ActivityLogService.instance.log(
+          actionType: ActivityLogService.actionOrgUpdated,
+          userId: actor.uid,
+          email: actor.email ?? '',
+          role: 'primary_admin',
+          organizationId: organizationId,
+          organizationName: name,
+        );
+      }
+
       await loadOrganizations();
       return true;
     } catch (e) {
@@ -265,6 +279,19 @@ class OrganizationsManagementController extends ChangeNotifier {
       }
 
       successMessage = 'Organization deleted safely.';
+
+      final actor = _firebase.auth.currentUser;
+      if (actor != null) {
+        ActivityLogService.instance.log(
+          actionType: ActivityLogService.actionOrgDeleted,
+          userId: actor.uid,
+          email: actor.email ?? '',
+          role: 'primary_admin',
+          organizationId: orgId,
+          organizationName: organization.name,
+        );
+      }
+
       await loadOrganizations();
       return true;
     } catch (e) {
@@ -313,6 +340,19 @@ class OrganizationsManagementController extends ChangeNotifier {
       }
 
       successMessage = 'Employee updated successfully.';
+
+      final actor = _firebase.auth.currentUser;
+      if (actor != null) {
+        ActivityLogService.instance.log(
+          actionType: ActivityLogService.actionEmployeeUpdated,
+          userId: actor.uid,
+          email: actor.email ?? '',
+          role: 'primary_admin',
+          targetId: employeeId,
+          targetEmail: email,
+        );
+      }
+
       _safeNotifyListeners();
       return true;
     } catch (e) {
@@ -368,6 +408,19 @@ class OrganizationsManagementController extends ChangeNotifier {
       }
 
       successMessage = 'Employee removed safely.';
+
+      final actor = _firebase.auth.currentUser;
+      if (actor != null) {
+        ActivityLogService.instance.log(
+          actionType: ActivityLogService.actionEmployeeDeleted,
+          userId: actor.uid,
+          email: actor.email ?? '',
+          role: 'primary_admin',
+          targetId: employeeId,
+          targetEmail: employee.email,
+        );
+      }
+
       _safeNotifyListeners();
       return true;
     } catch (e) {
