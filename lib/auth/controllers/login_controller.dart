@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
+import '../../core/services/activity_log_service.dart';
 import '../../core/services/encryption/e2ee_manager.dart';
 import '../../core/services/logging_service.dart';
 import '../../core/services/session_manager.dart';
@@ -224,6 +225,16 @@ class LoginController extends ChangeNotifier {
           notifyListeners();
           return;
       }
+
+      // Track login activity (fire-and-forget — never block navigation)
+      ActivityLogService.instance.log(
+        actionType: ActivityLogService.actionLogin,
+        userId: uid,
+        email: user.email,
+        role: user.role,
+        organizationId: user.organizationId,
+      );
+      ActivityLogService.instance.updateLoginActivity();
 
       if (!context.mounted) return;
       Navigator.pushAndRemoveUntil(
