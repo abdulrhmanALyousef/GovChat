@@ -891,201 +891,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get deptOperations => 'العمليات';
 
   @override
-  String get deptSecurity => 'الأمن';
+  String get deptSecurity => 'الأمن السيبراني';
 
   @override
   String get deptOther => 'أخرى';
-
-  @override
-  String get auditSystemLogsTitle => 'سجلات التدقيق الشاملة';
-
-  @override
-  String get filtersLabel => 'الفلاتر';
-
-  @override
-  String get clearFiltersButton => 'مسح';
-
-  @override
-  String get applyFiltersButton => 'تطبيق';
-
-  @override
-  String get allOrganizationsFilter => 'جميع المنظمات';
-
-  @override
-  String get allRolesFilter => 'جميع الأدوار';
-
-  @override
-  String get allActionsFilter => 'جميع الإجراءات';
-
-  @override
-  String get searchLogsHint => 'ابحث بالبريد أو المعرف أو الوصف…';
-
-  @override
-  String get noLogsFound => 'لا توجد سجلات تدقيق';
-
-  @override
-  String get noLogsFoundSubtitle => 'لا تتطابق أي سجلات مع الفلاتر الحالية.';
-
-  @override
-  String get logActionLogin => 'تسجيل دخول';
-
-  @override
-  String get logActionLogout => 'تسجيل خروج';
-
-  @override
-  String get logActionOrgCreated => 'إنشاء منظمة';
-
-  @override
-  String get logActionOrgUpdated => 'تحديث منظمة';
-
-  @override
-  String get logActionOrgDeleted => 'حذف منظمة';
-
-  @override
-  String get logActionAdminCreated => 'إنشاء مشرف';
-
-  @override
-  String get logActionEmployeeApproved => 'قبول موظف';
-
-  @override
-  String get logActionEmployeeRejected => 'رفض موظف';
-
-  @override
-  String get logActionEmployeeUpdated => 'تحديث موظف';
-
-  @override
-  String get logActionEmployeeDeleted => 'حذف موظف';
-
-  @override
-  String get logActionPasswordChanged => 'تغيير كلمة المرور';
-
-  @override
-  String get logActionRequestSubmitted => 'تقديم طلب';
-
-  @override
-  String get actorLabel => 'المستخدم';
-
-  @override
-  String get roleAdminLabel => 'مشرف';
-
-  @override
-  String get roleEmployeeLabel => 'موظف';
-
-  @override
-  String get rolePrimaryAdminLabel => 'المشرف الرئيسي';
-
-  @override
-  String get dateFromLabel => 'من';
-
-  @override
-  String get dateToLabel => 'إلى';
-
-  @override
-  String get dateNotSet => 'غير محدد';
-
-  @override
-  String get systemOverviewTitle => 'نظرة عامة على النظام';
-
-  @override
-  String get totalOrganizationsLabel => 'المنظمات';
-
-  @override
-  String get totalAdminsLabel => 'المشرفون';
-
-  @override
-  String get totalEmployeesLabel => 'الموظفون';
-
-  @override
-  String get activeUsersLabel => 'المستخدمون النشطون (آخر 7 أيام)';
-
-  @override
-  String get recentActivityLabel => 'الأحداث (آخر 7 أيام)';
-
-  @override
-  String get weeklyActivityTitle => 'النشاط — آخر 7 أيام';
-
-  @override
-  String get failedToLoadDashboard => 'فشل تحميل لوحة التحكم';
-
-  @override
-  String get noActivityData => 'لا توجد بيانات نشاط';
-
-  @override
-  String get changePasswordSection => 'تغيير كلمة المرور';
-
-  @override
-  String get changePasswordCardDescription =>
-      'تحديث كلمة مرور حسابك لتعزيز الأمان.';
-
-  @override
-  String get currentPasswordLabelField => 'كلمة المرور الحالية';
-
-  @override
-  String get currentPasswordHint => 'أدخل كلمة المرور الحالية';
-
-  @override
-  String get newPasswordLabelProfile => 'كلمة المرور الجديدة';
-
-  @override
-  String get newPasswordHintProfile => 'أدخل كلمة المرور الجديدة';
-
-  @override
-  String get confirmNewPasswordLabel => 'تأكيد كلمة المرور';
-
-  @override
-  String get confirmNewPasswordHint => 'أكد كلمة المرور الجديدة';
-
-  @override
-  String get changePasswordAction => 'تغيير كلمة المرور';
-
-  @override
-  String get passwordChangedSuccessfully => 'تم تغيير كلمة المرور بنجاح.';
-
-  @override
-  String get incorrectCurrentPassword =>
-      'كلمة المرور الحالية غير صحيحة. حاول مرة أخرى.';
-
-  @override
-  String get currentPasswordIsRequired => 'كلمة المرور الحالية مطلوبة';
-
-  @override
-  String get unknownUser => 'غير معروف';
-
-  @override
-  String get logDescLogin => 'تم تسجيل الدخول';
-
-  @override
-  String get logDescLogout => 'تم تسجيل الخروج';
-
-  @override
-  String get logDescOrgCreated => 'تم إنشاء المنظمة';
-
-  @override
-  String get logDescOrgUpdated => 'تم تحديث المنظمة';
-
-  @override
-  String get logDescOrgDeleted => 'تم حذف المنظمة';
-
-  @override
-  String get logDescAdminCreated => 'تم إنشاء حساب المشرف';
-
-  @override
-  String get logDescEmployeeApproved => 'تم قبول الموظف';
-
-  @override
-  String get logDescEmployeeRejected => 'تم رفض الموظف';
-
-  @override
-  String get logDescEmployeeUpdated => 'تم تحديث بيانات الموظف';
-
-  @override
-  String get logDescEmployeeDeleted => 'تم حذف الموظف';
-
-  @override
-  String get logDescPasswordChanged => 'تم تغيير كلمة المرور';
-
-  @override
-  String get logDescRequestSubmitted => 'تم تقديم طلب الوصول';
 
   @override
   String get voiceMessage => 'رسالة صوتية';
@@ -1412,4 +1221,192 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cannotDeleteSystemGroup => 'لا يمكن حذف مجموعات النظام.';
+
+  @override
+  String get auditSystemLogsTitle => 'System Audit Logs';
+
+  @override
+  String get filtersLabel => 'Filters';
+
+  @override
+  String get clearFiltersButton => 'Clear';
+
+  @override
+  String get applyFiltersButton => 'Apply';
+
+  @override
+  String get allOrganizationsFilter => 'All Organizations';
+
+  @override
+  String get allRolesFilter => 'All Roles';
+
+  @override
+  String get allActionsFilter => 'All Actions';
+
+  @override
+  String get searchLogsHint => 'Search email, user ID, description…';
+
+  @override
+  String get noLogsFound => 'No audit logs found';
+
+  @override
+  String get noLogsFoundSubtitle => 'No logs match your current filters.';
+
+  @override
+  String get logActionLogin => 'Login';
+
+  @override
+  String get logActionLogout => 'Logout';
+
+  @override
+  String get logActionOrgCreated => 'Organization Created';
+
+  @override
+  String get logActionOrgUpdated => 'Organization Updated';
+
+  @override
+  String get logActionOrgDeleted => 'Organization Deleted';
+
+  @override
+  String get logActionAdminCreated => 'Admin Created';
+
+  @override
+  String get logActionEmployeeApproved => 'Employee Approved';
+
+  @override
+  String get logActionEmployeeRejected => 'Employee Rejected';
+
+  @override
+  String get logActionEmployeeUpdated => 'Employee Updated';
+
+  @override
+  String get logActionEmployeeDeleted => 'Employee Deleted';
+
+  @override
+  String get logActionPasswordChanged => 'Password Changed';
+
+  @override
+  String get logActionRequestSubmitted => 'Request Submitted';
+
+  @override
+  String get actorLabel => 'Actor';
+
+  @override
+  String get roleAdminLabel => 'Admin';
+
+  @override
+  String get roleEmployeeLabel => 'Employee';
+
+  @override
+  String get rolePrimaryAdminLabel => 'Primary Admin';
+
+  @override
+  String get dateFromLabel => 'From';
+
+  @override
+  String get dateToLabel => 'To';
+
+  @override
+  String get dateNotSet => 'Not set';
+
+  @override
+  String get systemOverviewTitle => 'System Overview';
+
+  @override
+  String get totalOrganizationsLabel => 'Organizations';
+
+  @override
+  String get totalAdminsLabel => 'Admins';
+
+  @override
+  String get totalEmployeesLabel => 'Employees';
+
+  @override
+  String get activeUsersLabel => 'Active Users (Last 7 Days)';
+
+  @override
+  String get recentActivityLabel => 'Events (Last 7 Days)';
+
+  @override
+  String get weeklyActivityTitle => 'Activity — Last 7 Days';
+
+  @override
+  String get failedToLoadDashboard => 'Failed to load dashboard';
+
+  @override
+  String get noActivityData => 'No activity data';
+
+  @override
+  String get changePasswordSection => 'CHANGE PASSWORD';
+
+  @override
+  String get changePasswordCardDescription =>
+      'Update your account password for enhanced security.';
+
+  @override
+  String get currentPasswordLabelField => 'CURRENT PASSWORD';
+
+  @override
+  String get newPasswordLabelProfile => 'NEW PASSWORD';
+
+  @override
+  String get newPasswordHintProfile => 'Enter new password';
+
+  @override
+  String get confirmNewPasswordLabel => 'CONFIRM PASSWORD';
+
+  @override
+  String get confirmNewPasswordHint => 'Confirm new password';
+
+  @override
+  String get changePasswordAction => 'CHANGE PASSWORD';
+
+  @override
+  String get passwordChangedSuccessfully => 'Password changed successfully.';
+
+  @override
+  String get incorrectCurrentPassword =>
+      'Incorrect current password. Please try again.';
+
+  @override
+  String get currentPasswordIsRequired => 'Current password is required';
+
+  @override
+  String get unknownUser => 'Unknown';
+
+  @override
+  String get logDescLogin => 'User logged in';
+
+  @override
+  String get logDescLogout => 'User logged out';
+
+  @override
+  String get logDescOrgCreated => 'Organization created';
+
+  @override
+  String get logDescOrgUpdated => 'Organization updated';
+
+  @override
+  String get logDescOrgDeleted => 'Organization deleted';
+
+  @override
+  String get logDescAdminCreated => 'Admin account created';
+
+  @override
+  String get logDescEmployeeApproved => 'Employee approved';
+
+  @override
+  String get logDescEmployeeRejected => 'Employee rejected';
+
+  @override
+  String get logDescEmployeeUpdated => 'Employee updated';
+
+  @override
+  String get logDescEmployeeDeleted => 'Employee deleted';
+
+  @override
+  String get logDescPasswordChanged => 'Password changed';
+
+  @override
+  String get logDescRequestSubmitted => 'Access request submitted';
 }
