@@ -478,7 +478,7 @@
   "departmentGroupLabel": "Department",
   "deleteGroupConfirmTitle": "Delete group?",
   "deleteGroupConfirmMessage": "This group and all its messages will be permanently deleted.",
-  "cannotDeleteSystemGroup": "System groups cannot be deleted."
+  "cannotDeleteSystemGroup": "System groups cannot be deleted.",
 
   "auditSystemLogsTitle": "System Audit Logs",
   "filtersLabel": "Filters",
@@ -523,7 +523,6 @@
   "changePasswordSection": "CHANGE PASSWORD",
   "changePasswordCardDescription": "Update your account password for enhanced security.",
   "currentPasswordLabelField": "CURRENT PASSWORD",
-  "currentPasswordHint": "Enter current password",
   "newPasswordLabelProfile": "NEW PASSWORD",
   "newPasswordHintProfile": "Enter new password",
   "confirmNewPasswordLabel": "CONFIRM PASSWORD",

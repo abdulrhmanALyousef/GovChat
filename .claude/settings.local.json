@@ -6,12 +6,11 @@
       "Bash(flutter gen-l10n *)",
       "Bash(dart run *)",
       "Bash(flutter pub *)",
-      "Bash(flutter build *)"
-      "Bash(flutter analyze *)",
+      "Bash(flutter build *)",
       "Bash(Get-ChildItem -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Sort-Object)",
-      "Bash(flutter gen-l10n *)"
+      "Bash(Test-Path *)"
     ]
   }
 }
