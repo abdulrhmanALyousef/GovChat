@@ -74,18 +74,4 @@ class ActivityLogService {
     }
   }
 
-  // ── Update lastLoginAt on the user document ─────────────────────────
-  Future<void> updateLoginActivity({String? deviceInfo}) async {
-    final user = FirebaseService.instance.currentUser;
-    if (user == null) return;
-    try {
-      await FirebaseService.instance.firestore
-          .collection('users')
-          .doc(user.uid)
-          .update({
-            'lastLoginAt': FieldValue.serverTimestamp(),
-            if (deviceInfo != null) 'lastDevice': deviceInfo,
-          });
-    } catch (_) {}
-  }
 }
