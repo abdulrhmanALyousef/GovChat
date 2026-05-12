@@ -457,6 +457,25 @@ exports.createEmployeeRequest = onCall(
                 admin.firestore.FieldValue.serverTimestamp(),
             });
 
+        // 2b. Create employees/{uid} (pending) so the mobile app can show
+        //     "account pending approval" immediately after sign-in attempt.
+        //     The admin approval flow will update this to status: "active".
+        await admin.firestore()
+            .collection("employees").doc(uid).set({
+              name: fullName,
+              email: email,
+              nationalId: nationalId,
+              organizationId: orgId,
+              organizationName: orgName,
+              department: department,
+              departmentId: "",
+              displayId: displayId,
+              role: "employee",
+              status: "pending",
+              createdAt:
+                admin.firestore.FieldValue.serverTimestamp(),
+            });
+
         // 3. Save in accessRequests collection
         await admin.firestore()
             .collection("accessRequests").add({

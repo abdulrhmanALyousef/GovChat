@@ -2,25 +2,132 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Organizations collection
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isPrimaryAdmin() {
+      return isAuthenticated() && userRole() == 'primary_admin';
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && userRole() == 'admin';
+    }
+
+    function isEmployee() {
+      return isAuthenticated() && userRole() == 'employee';
+    }
+
+    function isAdminOrAbove() {
+      return isAuthenticated() && (userRole() == 'admin' || userRole() == 'primary_admin');
+    }
+
+    function adminOrgId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.organizationId;
+    }
+
+    // ── Users ─────────────────────────────────────────────────────────────────
+    match /users/{uid} {
+      allow read: if request.auth.uid == uid
+                   || isPrimaryAdmin()
+                   || (isAdmin() && resource.data.organizationId == adminOrgId());
+      allow write: if request.auth.uid == uid
+                    || isPrimaryAdmin()
+                    || (isAdmin() && resource.data.organizationId == adminOrgId());
+      allow create: if isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // ── Organizations ─────────────────────────────────────────────────────────
     match /organizations/{orgId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isPrimaryAdmin();
+
+      // Department messages
+      match /departments/{deptId}/messages/{msgId} {
+        allow read: if isAuthenticated();
+        allow write: if isEmployee() || isAdminOrAbove();
+      }
+
+      // Org-wide chat
+      match /org_chats/{chatId}/messages/{msgId} {
+        allow read: if isAuthenticated();
+        allow write: if isEmployee() || isAdminOrAbove();
+      }
+
+      // Private chats
+      match /private_chats/{chatId}/messages/{msgId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      // E2EE group keys
+      match /{conversationPath=**}/groupKey/{uid} {
+        allow read: if request.auth.uid == uid || isAdminOrAbove();
+        allow write: if isAuthenticated();
+      }
     }
 
-    // Users collection
-    match /users/{userId} {
-      allow read, write: if true;
+    // ── Employees ─────────────────────────────────────────────────────────────
+    match /employees/{uid} {
+      allow read: if request.auth.uid == uid
+                   || isPrimaryAdmin()
+                   || (isAdminOrAbove() && resource.data.organizationId == adminOrgId())
+                   || isEmployee();
+      allow create: if isAuthenticated();
+      allow update: if request.auth.uid == uid
+                     || isPrimaryAdmin()
+                     || (isAdmin() && resource.data.organizationId == adminOrgId());
+      allow delete: if isPrimaryAdmin()
+                     || (isAdmin() && resource.data.organizationId == adminOrgId());
     }
 
-    // Mail collection (for sending emails)
+    // ── Access Requests ───────────────────────────────────────────────────────
+    match /accessRequests/{reqId} {
+      allow read: if isPrimaryAdmin()
+                   || (isAdmin() && resource.data.organizationId == adminOrgId());
+      allow create: if isAuthenticated();
+      allow update: if isPrimaryAdmin()
+                     || (isAdmin() && resource.data.organizationId == adminOrgId());
+    }
+
+    // ── Logs ──────────────────────────────────────────────────────────────────
+    match /logs/{logId} {
+      allow read: if isPrimaryAdmin()
+                   || (isAdmin() && resource.data.organizationId == adminOrgId());
+      allow create: if isAuthenticated();
+    }
+
+    // ── Project Groups ────────────────────────────────────────────────────────
+    match /projectGroups/{groupId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && request.resource.data.organizationId == adminOrgId();
+      allow update: if isAdmin() && resource.data.organizationId == adminOrgId();
+      allow delete: if (isAdmin() && resource.data.organizationId == adminOrgId())
+                     || isPrimaryAdmin();
+
+      match /messages/{msgId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      match /groupKey/{uid} {
+        allow read: if request.auth.uid == uid || isAdminOrAbove();
+        allow write: if isAuthenticated();
+      }
+    }
+
+    // ── Mail (Cloud Functions trigger) ────────────────────────────────────────
     match /mail/{mailId} {
-      allow read, write: if true;
+      allow read, write: if isPrimaryAdmin();
     }
 
-
-    // Default rule for other collections
+    // ── Default: deny all ─────────────────────────────────────────────────────
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

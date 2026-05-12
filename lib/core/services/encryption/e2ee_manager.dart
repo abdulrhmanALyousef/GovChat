@@ -441,23 +441,14 @@ class E2eeManager {
   // ── Public Key Firestore helpers ───────────────────────────────────────────
 
   /// Fetch another user's X25519 public key from Firestore.
+  /// Mobile app is employee-only — all public keys live in employees/{uid}.
   static Future<String?> _getPublicKey(String uid) async {
-    // 1. users/{uid}
-    try {
-      final snap = await _firestore.collection('users').doc(uid).get();
-      final key = snap.data()?['e2eePublicKey'] as String?;
-      if (key != null) return key;
-    } catch (e) {
-      debugPrint('[E2EE] _getPublicKey($uid) users/ error: $e');
-    }
-
-    // 2. employees/{uid}
     try {
       final snap = await _firestore.collection('employees').doc(uid).get();
       final key = snap.data()?['e2eePublicKey'] as String?;
       if (key != null) return key;
     } catch (e) {
-      debugPrint('[E2EE] _getPublicKey($uid) employees/ error: $e');
+      debugPrint('[E2EE] _getPublicKey($uid) error: $e');
     }
 
     debugPrint('[E2EE] no public key found for $uid');
@@ -470,16 +461,9 @@ class E2eeManager {
   ) async {
     bool found = false;
     try {
-      final snap = await _firestore.collection('users').doc(uid).get();
+      final snap = await _firestore.collection('employees').doc(uid).get();
       found = snap.data()?['e2eePublicKey'] != null;
     } catch (_) {}
-
-    if (!found) {
-      try {
-        final snap = await _firestore.collection('employees').doc(uid).get();
-        found = snap.data()?['e2eePublicKey'] != null;
-      } catch (_) {}
-    }
 
     if (!found) {
       await _uploadPublicKey(uid, publicKey);
@@ -493,31 +477,14 @@ class E2eeManager {
       'e2eeKeyUpdatedAt': FieldValue.serverTimestamp(),
     };
 
-    bool wroteAny = false;
-
-    try {
-      await _firestore
-          .collection('users')
-          .doc(uid)
-          .set(payload, SetOptions(merge: true));
-      debugPrint('[E2EE] public key written to users/$uid');
-      wroteAny = true;
-    } catch (e) {
-      debugPrint('[E2EE] users/$uid write failed: $e');
-    }
-
     try {
       await _firestore
           .collection('employees')
           .doc(uid)
           .set(payload, SetOptions(merge: true));
       debugPrint('[E2EE] public key written to employees/$uid');
-      wroteAny = true;
     } catch (e) {
       debugPrint('[E2EE] employees/$uid write failed: $e');
-    }
-
-    if (!wroteAny) {
       throw StateError('[E2EE] Could not write public key for $uid');
     }
   }

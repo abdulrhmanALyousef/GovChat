@@ -23,16 +23,16 @@ class SessionManager {
     final user = FirebaseService.instance.currentUser;
     if (user != null) {
       final orgId = _preferences.getString('organizationId') ?? '';
-      final role = _preferences.getString('role') ?? '';
       final isInactivity = reason != null &&
           (reason.contains('inactivity') || reason.contains('عدم النشاط'));
       if (orgId.isNotEmpty) {
         LoggingService.instance.log(
           organizationId: orgId,
           actionType: isInactivity ? 'auto_logout_inactivity' : 'logout',
-          descriptionKey: isInactivity ? 'logAutoLogoutInactivity' : 'logLogout',
+          descriptionKey:
+              isInactivity ? 'logAutoLogoutInactivity' : 'logLogout',
           performedByUserId: user.uid,
-          performedByRole: role.isNotEmpty ? role : 'employee',
+          performedByRole: 'employee',
           performedByEmail: user.email ?? '',
           performedByName: user.email,
         );
@@ -42,11 +42,12 @@ class SessionManager {
     try {
       await FirebaseService.instance.auth.signOut();
     } catch (_) {
-      error = l?.failedToSignOut ?? 'Failed to sign out. Check your connection and try again.';
+      error = l?.failedToSignOut ??
+          'Failed to sign out. Check your connection and try again.';
     }
 
     await _preferences.clear();
-    E2eeManager.clearCache(); // Evict in-memory key caches
+    E2eeManager.clearCache();
 
     if (!context.mounted) return;
 
@@ -64,6 +65,9 @@ class SessionManager {
     );
   }
 
+  /// Validates the current Firebase user against the employees collection.
+  /// The mobile app is employee-only — presence of an active employees/{uid}
+  /// document is the sole authorization check.
   Future<bool> ensureRole(
     BuildContext context, {
     required List<String> allowedRoles,
@@ -71,14 +75,18 @@ class SessionManager {
   }) async {
     final l = AppLocalizations.of(context);
     final user = FirebaseAuth.instance.currentUser;
+
     if (user == null) {
       if (!context.mounted) return false;
-      await logout(context, reason: l?.sessionExpired ?? 'Session expired. Please sign in again.');
+      await logout(
+        context,
+        reason: l?.sessionExpired ?? 'Session expired. Please sign in again.',
+      );
       return false;
     }
 
     final doc = await FirebaseService.instance.firestore
-        .collection('users')
+        .collection('employees')
         .doc(user.uid)
         .get();
 
@@ -87,21 +95,20 @@ class SessionManager {
     final data = doc.data();
     if (data == null) {
       if (!context.mounted) return false;
-      await logout(context, reason: l?.accountDataMissing ?? 'Account data missing. Please sign in.');
+      await logout(
+        context,
+        reason: l?.accountDataMissing ?? 'Account data missing. Please sign in.',
+      );
       return false;
     }
 
-    final role = (data['role'] ?? '') as String;
-    if (!allowedRoles.contains(role)) {
-      if (!context.mounted) return false;
-      await logout(context, reason: l?.unauthorizedAccess ?? 'Unauthorized access.');
-      return false;
-    }
-
-    final status = (data['status'] ?? 'active') as String;
+    final status = (data['status'] ?? 'pending') as String;
     if (status != 'active') {
       if (!context.mounted) return false;
-      await logout(context, reason: l?.accountStatusMessage(status) ?? 'Account is $status.');
+      await logout(
+        context,
+        reason: l?.accountStatusMessage(status) ?? 'Account is $status.',
+      );
       return false;
     }
 
@@ -109,7 +116,11 @@ class SessionManager {
       final orgId = (data['organizationId'] ?? '') as String;
       if (orgId != expectedOrganizationId) {
         if (!context.mounted) return false;
-        await logout(context, reason: l?.organizationMismatchDetected ?? 'Organization mismatch detected.');
+        await logout(
+          context,
+          reason: l?.organizationMismatchDetected ??
+              'Organization mismatch detected.',
+        );
         return false;
       }
     }

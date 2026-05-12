@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
@@ -7,13 +6,8 @@ import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../core/services/activity_log_service.dart';
 import '../../core/services/encryption/e2ee_manager.dart';
 import '../../core/services/logging_service.dart';
-import '../../core/services/session_manager.dart';
-import '../../models/admin_model.dart';
 import '../../models/employee_model.dart';
-import '../../roles/Admin/features/Main/admin_main_screen.dart';
 import '../../roles/employee/features/main/employee_main_screen.dart';
-import '../../roles/primary Admin/Features/Main/main_screen.dart';
-import '../change_password_screen.dart';
 import '../request_access_screen.dart';
 
 class LoginController extends ChangeNotifier {
@@ -35,7 +29,7 @@ class LoginController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Sign in
+      // 1. Firebase Auth sign-in
       final credential = await FirebaseService.instance.auth
           .signInWithEmailAndPassword(
             email: emailController.text.trim(),
@@ -44,202 +38,166 @@ class LoginController extends ChangeNotifier {
 
       final uid = credential.user!.uid;
 
-      // 2. Get user data from Firestore
-      final doc = await FirebaseService.instance.firestore
-          .collection('users')
+      // 2. Single authoritative check — employees collection only.
+      //    Admin/primary_admin accounts have no employees doc so they are
+      //    rejected immediately with the same generic error as a wrong
+      //    password, preventing role/account-existence leakage.
+      final empDoc = await FirebaseService.instance.firestore
+          .collection('employees')
           .doc(uid)
           .get();
 
-      if (!doc.exists) {
-        // No document found -> create one (primary_admin)
-        await FirebaseService.instance.firestore
-            .collection('users')
-            .doc(uid)
-            .set({
-              'uid': uid,
-              'email': credential.user!.email,
-              'role': 'primary_admin',
-              'firstLogin': false,
-              'mustChangePassword': false,
-              'createdAt': FieldValue.serverTimestamp(),
-            });
-
-        if (!context.mounted) return;
-
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const MainScreen()),
-          (route) => false,
-        );
-        return;
-      }
-
-      final user = AdminModel.fromJson(doc.data()!);
-
-      if (!context.mounted) return;
-
-      // 3. Enforce account status + role-specific checks
-      final status = doc.data()!['status'] ?? 'active';
-      if (user.role == 'employee') {
-        if (status == 'pending') {
-          await FirebaseService.instance.auth.signOut();
-          if ((user.organizationId ?? '').isNotEmpty) {
-            LoggingService.instance.log(
-              organizationId: user.organizationId!,
-              actionType: 'login_failure',
-              descriptionKey: 'logLoginFailure',
-              performedByUserId: uid,
-              performedByRole: 'employee',
-              performedByEmail: user.email,
-              performedByName: user.email,
-              metadata: {'reason': 'account_pending'},
-            );
-          }
-          errorMessage = l.accountPendingApproval;
-          isLoading = false;
-          notifyListeners();
-          return;
-        }
-        if (status == 'rejected') {
-          await FirebaseService.instance.auth.signOut();
-          if ((user.organizationId ?? '').isNotEmpty) {
-            LoggingService.instance.log(
-              organizationId: user.organizationId!,
-              actionType: 'login_failure',
-              descriptionKey: 'logLoginFailure',
-              performedByUserId: uid,
-              performedByRole: 'employee',
-              performedByEmail: user.email,
-              performedByName: user.email,
-              metadata: {'reason': 'account_rejected'},
-            );
-          }
-          errorMessage = l.accessRequestRejected;
-          isLoading = false;
-          notifyListeners();
-          return;
-        }
-      } else if (status != 'active') {
+      if (!empDoc.exists) {
         await FirebaseService.instance.auth.signOut();
-        errorMessage = l.accountIsStatus(status);
+        errorMessage = l.authErrorInvalidCredential;
         isLoading = false;
         notifyListeners();
         return;
       }
 
-      // 4. Initialize E2EE keys (generates X25519 key pair on first login,
-      //    restores public key to Firestore if device was changed).
-      //    Non-blocking: runs in background, does not delay login navigation.
-      E2eeManager.initializeKeys(uid).ignore();
+      final rawData = empDoc.data()!;
 
-      // 5. Save user data in SharedPreferences
-      final prefs = PreferencesManager();
-      await prefs.setString('uid', user.uid);
-      await prefs.setString('email', user.email);
-      await prefs.setString('role', user.role);
-      await prefs.setBool('firstLogin', user.firstLogin);
-      await prefs.setBool('mustChangePassword', user.mustChangePassword);
-      if (user.organizationId != null) {
-        await prefs.setString('organizationId', user.organizationId!);
-      }
-      if (user.organizationName != null) {
-        await prefs.setString('organizationName', user.organizationName!);
+      // Safety guard: only docs with role == 'employee' may proceed.
+      // A missing role field is treated the same as a non-employee role —
+      // no default assumed. This catches admin accounts that somehow have
+      // an employees doc (missing or wrong role) and any corrupted data.
+      final docRole = rawData['role'] as String?;
+      if (docRole != 'employee') {
+        await FirebaseService.instance.auth.signOut();
+        errorMessage = l.authErrorInvalidCredential;
+        isLoading = false;
+        notifyListeners();
+        return;
       }
 
-      // 5. Enforce password rotation for admins
+      final employee = EmployeeModel.fromJson(rawData, id: uid);
+
       if (!context.mounted) return;
-      final mustRotatePassword = user.firstLogin || user.mustChangePassword;
-      if (user.role == 'admin' && mustRotatePassword) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
-          (route) => false,
-        );
-        return;
-      }
-      if (user.role == 'primary_admin' && user.mustChangePassword) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
-          (route) => false,
-        );
-        return;
-      }
 
-      // 6. Navigate based on role
-      Widget destination;
-      switch (user.role) {
-        case 'admin':
-          destination = const AdminMainScreen();
-          // Log admin login (org-scoped)
-          if ((user.organizationId ?? '').isNotEmpty) {
-            LoggingService.instance.log(
-              organizationId: user.organizationId!,
-              actionType: 'login_success',
-              descriptionKey: 'logLoginSuccess',
-              performedByUserId: uid,
-              performedByRole: 'admin',
-              performedByEmail: user.email,
-              performedByName: user.email,
-            );
+      // 3. Enforce account status
+      switch (employee.status) {
+        case 'pending':
+          await FirebaseService.instance.auth.signOut();
+          if (employee.organizationId.isNotEmpty) {
+            LoggingService.instance
+                .log(
+                  organizationId: employee.organizationId,
+                  actionType: 'login_failure',
+                  descriptionKey: 'logLoginFailure',
+                  performedByUserId: uid,
+                  performedByRole: 'employee',
+                  performedByEmail: employee.email,
+                  performedByName: employee.name,
+                  metadata: {'reason': 'account_pending'},
+                )
+                .ignore();
           }
-          break;
-        case 'primary_admin':
-          destination = const MainScreen();
-          break;
-        case 'employee':
-          final employee = await _loadEmployeeProfile(uid, doc.data()!);
-          if (!context.mounted) return;
-          final orgIdFromUser = user.organizationId ?? '';
-          if (orgIdFromUser.isNotEmpty &&
-              employee.organizationId != orgIdFromUser) {
-            await SessionManager.instance.logout(
-              context,
-              reason: l.organizationMismatchSignIn,
-            );
-            return;
+          errorMessage = l.accountPendingApproval;
+          isLoading = false;
+          notifyListeners();
+          return;
+
+        case 'rejected':
+          await FirebaseService.instance.auth.signOut();
+          if (employee.organizationId.isNotEmpty) {
+            LoggingService.instance
+                .log(
+                  organizationId: employee.organizationId,
+                  actionType: 'login_failure',
+                  descriptionKey: 'logLoginFailure',
+                  performedByUserId: uid,
+                  performedByRole: 'employee',
+                  performedByEmail: employee.email,
+                  performedByName: employee.name,
+                  metadata: {'reason': 'account_rejected'},
+                )
+                .ignore();
           }
-          // Prefer employee.organizationId — it is always populated by the
-          // approval flow. user.organizationId may be empty for employees
-          // because the users/{uid} doc is not updated with organizationId
-          // during approval (only employees/{uid} is).
-          final effectiveOrgId = employee.organizationId.isNotEmpty
-              ? employee.organizationId
-              : orgIdFromUser;
-          if (effectiveOrgId.isNotEmpty) {
-            LoggingService.instance.log(
-              organizationId: effectiveOrgId,
-              actionType: 'login_success',
-              descriptionKey: 'logLoginSuccess',
-              performedByUserId: uid,
-              performedByRole: 'employee',
-              performedByEmail: employee.email,
-              performedByName: employee.name,
-            );
-          }
-          destination = EmployeeMainScreen(employee: employee);
+          errorMessage = l.accessRequestRejected;
+          isLoading = false;
+          notifyListeners();
+          return;
+
+        case 'active':
           break;
+
         default:
-          errorMessage = l.unknownRoleError(user.role);
+          await FirebaseService.instance.auth.signOut();
+          errorMessage = l.accountIsStatus(employee.status);
           isLoading = false;
           notifyListeners();
           return;
       }
 
-      // Track login activity (fire-and-forget — never block navigation)
+      // 4. Normalise departmentId (write-back is fire-and-forget)
+      final deptId = employee.departmentId.trim().isNotEmpty
+          ? employee.departmentId.trim()
+          : _slugDepartment(employee.department);
+
+      if (employee.departmentId.isEmpty) {
+        FirebaseService.instance.firestore
+            .collection('employees')
+            .doc(uid)
+            .update({'departmentId': deptId})
+            .ignore();
+      }
+
+      final fullEmployee = EmployeeModel(
+        id: employee.id,
+        name: employee.name,
+        email: employee.email,
+        nationalId: employee.nationalId,
+        organizationId: employee.organizationId,
+        organizationName: employee.organizationName,
+        department: employee.department,
+        departmentId: deptId,
+        displayId: employee.displayId.isNotEmpty
+            ? employee.displayId
+            : 'EMP-${uid.substring(0, 5).toUpperCase()}',
+        status: employee.status,
+        createdAt: employee.createdAt,
+        avatarUrl: employee.avatarUrl,
+      );
+
+      // 5. Init E2EE keys — fire-and-forget, does not delay navigation
+      E2eeManager.initializeKeys(uid).ignore();
+
+      // 6. Persist session
+      final prefs = PreferencesManager();
+      await prefs.setString('uid', uid);
+      await prefs.setString('email', fullEmployee.email);
+      await prefs.setString('role', 'employee');
+      await prefs.setString('organizationId', fullEmployee.organizationId);
+      await prefs.setString('organizationName', fullEmployee.organizationName);
+
+      // 7. Audit logs (fire-and-forget)
+      if (fullEmployee.organizationId.isNotEmpty) {
+        LoggingService.instance
+            .log(
+              organizationId: fullEmployee.organizationId,
+              actionType: 'login_success',
+              descriptionKey: 'logLoginSuccess',
+              performedByUserId: uid,
+              performedByRole: 'employee',
+              performedByEmail: fullEmployee.email,
+              performedByName: fullEmployee.name,
+            )
+            .ignore();
+      }
       ActivityLogService.instance.log(
         actionType: ActivityLogService.actionLogin,
         userId: uid,
-        email: user.email,
-        role: user.role,
-        organizationId: user.organizationId,
+        email: fullEmployee.email,
+        role: 'employee',
+        organizationId: fullEmployee.organizationId,
       );
-      ActivityLogService.instance.updateLoginActivity();
 
       if (!context.mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => destination),
+        MaterialPageRoute(
+          builder: (_) => EmployeeMainScreen(employee: fullEmployee),
+        ),
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
@@ -252,67 +210,9 @@ class LoginController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<EmployeeModel> _loadEmployeeProfile(
-    String uid,
-    Map<String, dynamic> userData,
-  ) async {
-    try {
-      final empDoc = await FirebaseService.instance.firestore
-          .collection('employees')
-          .doc(uid)
-          .get();
-
-      if (empDoc.exists) {
-        final employee = EmployeeModel.fromJson(empDoc.data()!, id: uid);
-        final deptId = employee.departmentId.trim().isNotEmpty
-            ? employee.departmentId.trim()
-            : _slugDepartment(employee.department);
-
-        if (employee.departmentId.isEmpty) {
-          await FirebaseService.instance.firestore
-              .collection('employees')
-              .doc(uid)
-              .update({'departmentId': deptId});
-        }
-
-        return EmployeeModel(
-          id: employee.id,
-          name: employee.name,
-          email: employee.email,
-          nationalId: employee.nationalId,
-          organizationId: employee.organizationId,
-          organizationName: employee.organizationName,
-          department: employee.department,
-          departmentId: deptId,
-          displayId: employee.displayId.isNotEmpty
-              ? employee.displayId
-              : 'EMP-${uid.substring(0, 5).toUpperCase()}',
-          status: employee.status,
-          createdAt: employee.createdAt,
-        );
-      }
-    } catch (_) {}
-
-    final deptId = _slugDepartment(userData['department'] ?? '');
-    return EmployeeModel(
-      id: uid,
-      name: userData['name'] ?? '',
-      email: userData['email'] ?? '',
-      nationalId: userData['nationalId'] ?? '',
-      organizationId: userData['organizationId'] ?? '',
-      organizationName: userData['organizationName'] ?? '',
-      department: userData['department'] ?? '',
-      departmentId: deptId,
-      displayId:
-          userData['displayId'] ?? 'EMP-${uid.substring(0, 5).toUpperCase()}',
-      status: userData['status'] ?? 'active',
-      createdAt: null,
-    );
-  }
-
   String _slugDepartment(String value) {
     if (value.trim().isEmpty) return 'general';
-    return value.trim().replaceAll(' ', '_').toLowerCase();
+    return value.trim().replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_').toLowerCase();
   }
 
   String _mapAuthError(String code, AppLocalizations l) {
