@@ -938,7 +938,6 @@ abstract class AppLocalizations {
   /// **'Edit Name'**
   String get editNameTitle;
 
-
   /// No description provided for @adminSession.
   ///
   /// In en, this message translates to:
@@ -2414,6 +2413,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System groups cannot be deleted.'**
   String get cannotDeleteSystemGroup;
+
   /// No description provided for @auditSystemLogsTitle.
   ///
   /// In en, this message translates to:
@@ -2660,12 +2660,6 @@ abstract class AppLocalizations {
   /// **'CURRENT PASSWORD'**
   String get currentPasswordLabelField;
 
-  /// No description provided for @currentPasswordHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter current password'**
-  String get currentPasswordHint;
-
   /// No description provided for @newPasswordLabelProfile.
   ///
   /// In en, this message translates to:
@@ -2791,7 +2785,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Access request submitted'**
   String get logDescRequestSubmitted;
-
 }
 
 class _AppLocalizationsDelegate

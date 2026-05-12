@@ -899,197 +899,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deptOther => 'Other';
 
   @override
-  String get auditSystemLogsTitle => 'System Audit Logs';
-
-  @override
-  String get filtersLabel => 'Filters';
-
-  @override
-  String get clearFiltersButton => 'Clear';
-
-  @override
-  String get applyFiltersButton => 'Apply';
-
-  @override
-  String get allOrganizationsFilter => 'All Organizations';
-
-  @override
-  String get allRolesFilter => 'All Roles';
-
-  @override
-  String get allActionsFilter => 'All Actions';
-
-  @override
-  String get searchLogsHint => 'Search email, user ID, description…';
-
-  @override
-  String get noLogsFound => 'No audit logs found';
-
-  @override
-  String get noLogsFoundSubtitle => 'No logs match your current filters.';
-
-  @override
-  String get logActionLogin => 'Login';
-
-  @override
-  String get logActionLogout => 'Logout';
-
-  @override
-  String get logActionOrgCreated => 'Organization Created';
-
-  @override
-  String get logActionOrgUpdated => 'Organization Updated';
-
-  @override
-  String get logActionOrgDeleted => 'Organization Deleted';
-
-  @override
-  String get logActionAdminCreated => 'Admin Created';
-
-  @override
-  String get logActionEmployeeApproved => 'Employee Approved';
-
-  @override
-  String get logActionEmployeeRejected => 'Employee Rejected';
-
-  @override
-  String get logActionEmployeeUpdated => 'Employee Updated';
-
-  @override
-  String get logActionEmployeeDeleted => 'Employee Deleted';
-
-  @override
-  String get logActionPasswordChanged => 'Password Changed';
-
-  @override
-  String get logActionRequestSubmitted => 'Request Submitted';
-
-  @override
-  String get actorLabel => 'Actor';
-
-  @override
-  String get roleAdminLabel => 'Admin';
-
-  @override
-  String get roleEmployeeLabel => 'Employee';
-
-  @override
-  String get rolePrimaryAdminLabel => 'Primary Admin';
-
-  @override
-  String get dateFromLabel => 'From';
-
-  @override
-  String get dateToLabel => 'To';
-
-  @override
-  String get dateNotSet => 'Not set';
-
-  @override
-  String get systemOverviewTitle => 'System Overview';
-
-  @override
-  String get totalOrganizationsLabel => 'Organizations';
-
-  @override
-  String get totalAdminsLabel => 'Admins';
-
-  @override
-  String get totalEmployeesLabel => 'Employees';
-
-  @override
-  String get activeUsersLabel => 'Active Users (Last 7 Days)';
-
-  @override
-  String get recentActivityLabel => 'Events (Last 7 Days)';
-
-  @override
-  String get weeklyActivityTitle => 'Activity — Last 7 Days';
-
-  @override
-  String get failedToLoadDashboard => 'Failed to load dashboard';
-
-  @override
-  String get noActivityData => 'No activity data';
-
-  @override
-  String get changePasswordSection => 'CHANGE PASSWORD';
-
-  @override
-  String get changePasswordCardDescription =>
-      'Update your account password for enhanced security.';
-
-  @override
-  String get currentPasswordLabelField => 'CURRENT PASSWORD';
-
-  @override
-  String get currentPasswordHint => 'Enter current password';
-
-  @override
-  String get newPasswordLabelProfile => 'NEW PASSWORD';
-
-  @override
-  String get newPasswordHintProfile => 'Enter new password';
-
-  @override
-  String get confirmNewPasswordLabel => 'CONFIRM PASSWORD';
-
-  @override
-  String get confirmNewPasswordHint => 'Confirm new password';
-
-  @override
-  String get changePasswordAction => 'CHANGE PASSWORD';
-
-  @override
-  String get passwordChangedSuccessfully => 'Password changed successfully.';
-
-  @override
-  String get incorrectCurrentPassword =>
-      'Incorrect current password. Please try again.';
-
-  @override
-  String get currentPasswordIsRequired => 'Current password is required';
-
-  @override
-  String get unknownUser => 'Unknown';
-
-  @override
-  String get logDescLogin => 'User logged in';
-
-  @override
-  String get logDescLogout => 'User logged out';
-
-  @override
-  String get logDescOrgCreated => 'Organization created';
-
-  @override
-  String get logDescOrgUpdated => 'Organization updated';
-
-  @override
-  String get logDescOrgDeleted => 'Organization deleted';
-
-  @override
-  String get logDescAdminCreated => 'Admin account created';
-
-  @override
-  String get logDescEmployeeApproved => 'Employee approved';
-
-  @override
-  String get logDescEmployeeRejected => 'Employee rejected';
-
-  @override
-  String get logDescEmployeeUpdated => 'Employee updated';
-
-  @override
-  String get logDescEmployeeDeleted => 'Employee deleted';
-
-  @override
-  String get logDescPasswordChanged => 'Password changed';
-
-  @override
-  String get logDescRequestSubmitted => 'Access request submitted';
-
-  @override
   String get voiceMessage => 'Voice message';
 
   @override
@@ -1415,4 +1224,192 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cannotDeleteSystemGroup => 'System groups cannot be deleted.';
+
+  @override
+  String get auditSystemLogsTitle => 'System Audit Logs';
+
+  @override
+  String get filtersLabel => 'Filters';
+
+  @override
+  String get clearFiltersButton => 'Clear';
+
+  @override
+  String get applyFiltersButton => 'Apply';
+
+  @override
+  String get allOrganizationsFilter => 'All Organizations';
+
+  @override
+  String get allRolesFilter => 'All Roles';
+
+  @override
+  String get allActionsFilter => 'All Actions';
+
+  @override
+  String get searchLogsHint => 'Search email, user ID, description…';
+
+  @override
+  String get noLogsFound => 'No audit logs found';
+
+  @override
+  String get noLogsFoundSubtitle => 'No logs match your current filters.';
+
+  @override
+  String get logActionLogin => 'Login';
+
+  @override
+  String get logActionLogout => 'Logout';
+
+  @override
+  String get logActionOrgCreated => 'Organization Created';
+
+  @override
+  String get logActionOrgUpdated => 'Organization Updated';
+
+  @override
+  String get logActionOrgDeleted => 'Organization Deleted';
+
+  @override
+  String get logActionAdminCreated => 'Admin Created';
+
+  @override
+  String get logActionEmployeeApproved => 'Employee Approved';
+
+  @override
+  String get logActionEmployeeRejected => 'Employee Rejected';
+
+  @override
+  String get logActionEmployeeUpdated => 'Employee Updated';
+
+  @override
+  String get logActionEmployeeDeleted => 'Employee Deleted';
+
+  @override
+  String get logActionPasswordChanged => 'Password Changed';
+
+  @override
+  String get logActionRequestSubmitted => 'Request Submitted';
+
+  @override
+  String get actorLabel => 'Actor';
+
+  @override
+  String get roleAdminLabel => 'Admin';
+
+  @override
+  String get roleEmployeeLabel => 'Employee';
+
+  @override
+  String get rolePrimaryAdminLabel => 'Primary Admin';
+
+  @override
+  String get dateFromLabel => 'From';
+
+  @override
+  String get dateToLabel => 'To';
+
+  @override
+  String get dateNotSet => 'Not set';
+
+  @override
+  String get systemOverviewTitle => 'System Overview';
+
+  @override
+  String get totalOrganizationsLabel => 'Organizations';
+
+  @override
+  String get totalAdminsLabel => 'Admins';
+
+  @override
+  String get totalEmployeesLabel => 'Employees';
+
+  @override
+  String get activeUsersLabel => 'Active Users (Last 7 Days)';
+
+  @override
+  String get recentActivityLabel => 'Events (Last 7 Days)';
+
+  @override
+  String get weeklyActivityTitle => 'Activity — Last 7 Days';
+
+  @override
+  String get failedToLoadDashboard => 'Failed to load dashboard';
+
+  @override
+  String get noActivityData => 'No activity data';
+
+  @override
+  String get changePasswordSection => 'CHANGE PASSWORD';
+
+  @override
+  String get changePasswordCardDescription =>
+      'Update your account password for enhanced security.';
+
+  @override
+  String get currentPasswordLabelField => 'CURRENT PASSWORD';
+
+  @override
+  String get newPasswordLabelProfile => 'NEW PASSWORD';
+
+  @override
+  String get newPasswordHintProfile => 'Enter new password';
+
+  @override
+  String get confirmNewPasswordLabel => 'CONFIRM PASSWORD';
+
+  @override
+  String get confirmNewPasswordHint => 'Confirm new password';
+
+  @override
+  String get changePasswordAction => 'CHANGE PASSWORD';
+
+  @override
+  String get passwordChangedSuccessfully => 'Password changed successfully.';
+
+  @override
+  String get incorrectCurrentPassword =>
+      'Incorrect current password. Please try again.';
+
+  @override
+  String get currentPasswordIsRequired => 'Current password is required';
+
+  @override
+  String get unknownUser => 'Unknown';
+
+  @override
+  String get logDescLogin => 'User logged in';
+
+  @override
+  String get logDescLogout => 'User logged out';
+
+  @override
+  String get logDescOrgCreated => 'Organization created';
+
+  @override
+  String get logDescOrgUpdated => 'Organization updated';
+
+  @override
+  String get logDescOrgDeleted => 'Organization deleted';
+
+  @override
+  String get logDescAdminCreated => 'Admin account created';
+
+  @override
+  String get logDescEmployeeApproved => 'Employee approved';
+
+  @override
+  String get logDescEmployeeRejected => 'Employee rejected';
+
+  @override
+  String get logDescEmployeeUpdated => 'Employee updated';
+
+  @override
+  String get logDescEmployeeDeleted => 'Employee deleted';
+
+  @override
+  String get logDescPasswordChanged => 'Password changed';
+
+  @override
+  String get logDescRequestSubmitted => 'Access request submitted';
 }
