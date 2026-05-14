@@ -938,7 +938,6 @@ abstract class AppLocalizations {
   /// **'Edit Name'**
   String get editNameTitle;
 
-
   /// No description provided for @adminSession.
   ///
   /// In en, this message translates to:
@@ -2414,6 +2413,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System groups cannot be deleted.'**
   String get cannotDeleteSystemGroup;
+
   /// No description provided for @auditSystemLogsTitle.
   ///
   /// In en, this message translates to:
@@ -2660,12 +2660,6 @@ abstract class AppLocalizations {
   /// **'CURRENT PASSWORD'**
   String get currentPasswordLabelField;
 
-  /// No description provided for @currentPasswordHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter current password'**
-  String get currentPasswordHint;
-
   /// No description provided for @newPasswordLabelProfile.
   ///
   /// In en, this message translates to:
@@ -2792,6 +2786,101 @@ abstract class AppLocalizations {
   /// **'Access request submitted'**
   String get logDescRequestSubmitted;
 
+  /// No description provided for @encryptionKeySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Encryption Key Backup'**
+  String get encryptionKeySection;
+
+  /// No description provided for @encryptionKeyBackupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Securely back up your encryption key to restore your messages on a new device.'**
+  String get encryptionKeyBackupDescription;
+
+  /// No description provided for @backupKeyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'BACKUP ENCRYPTION KEY'**
+  String get backupKeyButton;
+
+  /// No description provided for @backupSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Encryption key backed up successfully'**
+  String get backupSuccessMessage;
+
+  /// No description provided for @backupFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to back up encryption key'**
+  String get backupFailedMessage;
+
+  /// No description provided for @backupKeyPasswordDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Backup Password'**
+  String get backupKeyPasswordDialogTitle;
+
+  /// No description provided for @backupKeyPasswordDialogDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a strong password to protect your encryption key backup. You will need it to restore your messages on another device.'**
+  String get backupKeyPasswordDialogDescription;
+
+  /// No description provided for @backupPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter password'**
+  String get backupPasswordHint;
+
+  /// No description provided for @confirmBackupPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get confirmBackupPasswordHint;
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters'**
+  String get passwordTooShort;
+
+  /// No description provided for @restoreKeyPasswordDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Encryption Key'**
+  String get restoreKeyPasswordDialogTitle;
+
+  /// No description provided for @restoreKeyPasswordDialogDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'An encryption key backup was found for your account. Enter your backup password to restore access to your messages.'**
+  String get restoreKeyPasswordDialogDescription;
+
+  /// No description provided for @restoreFailedWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password. Please try again.'**
+  String get restoreFailedWrongPassword;
+
+  /// No description provided for @restoreFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to restore encryption key'**
+  String get restoreFailedMessage;
+
+  /// No description provided for @skipRestoreButton.
+  ///
+  /// In en, this message translates to:
+  /// **'SKIP'**
+  String get skipRestoreButton;
+
+  /// No description provided for @restoreKeyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'RESTORE'**
+  String get restoreKeyButton;
 }
 
 class _AppLocalizationsDelegate

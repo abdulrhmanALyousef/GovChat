@@ -1,0 +1,457 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:projects/l10n/app_localizations.dart';
+
+import '../constants/app_size.dart';
+import '../services/encryption/e2ee_backup_service.dart';
+import '../theme/App_color.dart';
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
+/// Shows a dialog for creating a key backup.
+///
+/// Returns the user's chosen password on confirmation, or `null` if cancelled.
+Future<String?> showE2eeBackupDialog(BuildContext context) {
+  return showDialog<String>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const _BackupPasswordDialog(),
+  );
+}
+
+/// Shows a dialog for restoring a key from a Firestore backup.
+///
+/// The dialog handles wrong-password retries with inline error messages.
+/// Returns the decrypted private key (base64) on success, or `null` if the
+/// user taps "Skip".
+Future<String?> showE2eeRestoreDialog(BuildContext context, String uid) {
+  return showDialog<String>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => _RestorePasswordDialog(uid: uid),
+  );
+}
+
+// ── Backup Dialog ─────────────────────────────────────────────────────────────
+
+class _BackupPasswordDialog extends StatefulWidget {
+  const _BackupPasswordDialog();
+
+  @override
+  State<_BackupPasswordDialog> createState() => _BackupPasswordDialogState();
+}
+
+class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
+  final _passwordCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+  String? _error;
+  bool _obscure1 = true;
+  bool _obscure2 = true;
+
+  @override
+  void dispose() {
+    _passwordCtrl.dispose();
+    _confirmCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final l = AppLocalizations.of(context)!;
+    final pw = _passwordCtrl.text;
+    final confirm = _confirmCtrl.text;
+
+    if (pw.length < 8) {
+      setState(() => _error = l.passwordTooShort);
+      return;
+    }
+    if (pw != confirm) {
+      setState(() => _error = l.passwordsDoNotMatch);
+      return;
+    }
+    Navigator.pop(context, pw);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
+    return Dialog(
+      backgroundColor: AppColors.cardBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.r20),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(AppSizes.pw24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(AppSizes.ph8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppSizes.r12),
+                  ),
+                  child: Icon(
+                    Icons.lock_outlined,
+                    color: AppColors.primaryColor,
+                    size: AppSizes.sp20,
+                  ),
+                ),
+                SizedBox(width: AppSizes.w12),
+                Expanded(
+                  child: Text(
+                    l.backupKeyPasswordDialogTitle,
+                    style: GoogleFonts.manrope(
+                      color: AppColors.textTitle,
+                      fontWeight: FontWeight.w800,
+                      fontSize: AppSizes.sp16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSizes.h12),
+            Text(
+              l.backupKeyPasswordDialogDescription,
+              style: GoogleFonts.manrope(
+                color: AppColors.textMuted,
+                fontSize: AppSizes.sp12,
+                height: 1.5,
+              ),
+            ),
+            SizedBox(height: AppSizes.h20),
+            // Password field
+            _PasswordField(
+              controller: _passwordCtrl,
+              hint: l.backupPasswordHint,
+              obscure: _obscure1,
+              onToggle: () => setState(() => _obscure1 = !_obscure1),
+              onChanged: (_) => setState(() => _error = null),
+            ),
+            SizedBox(height: AppSizes.h12),
+            // Confirm field
+            _PasswordField(
+              controller: _confirmCtrl,
+              hint: l.confirmBackupPasswordHint,
+              obscure: _obscure2,
+              onToggle: () => setState(() => _obscure2 = !_obscure2),
+              onChanged: (_) => setState(() => _error = null),
+            ),
+            if (_error != null) ...[
+              SizedBox(height: AppSizes.h8),
+              Text(
+                _error!,
+                style: GoogleFonts.manrope(
+                  color: AppColors.error,
+                  fontSize: AppSizes.sp12,
+                ),
+              ),
+            ],
+            SizedBox(height: AppSizes.h24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.inputBorder),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSizes.r12),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
+                    ),
+                    child: Text(
+                      l.cancelButton,
+                      style: GoogleFonts.manrope(
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w600,
+                        fontSize: AppSizes.sp14,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: AppSizes.w12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSizes.r12),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
+                    ),
+                    child: Text(
+                      l.backupKeyButton,
+                      style: GoogleFonts.manrope(
+                        color: AppColors.buttonText,
+                        fontWeight: FontWeight.w700,
+                        fontSize: AppSizes.sp14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Restore Dialog ────────────────────────────────────────────────────────────
+
+class _RestorePasswordDialog extends StatefulWidget {
+  const _RestorePasswordDialog({required this.uid});
+
+  final String uid;
+
+  @override
+  State<_RestorePasswordDialog> createState() => _RestorePasswordDialogState();
+}
+
+class _RestorePasswordDialogState extends State<_RestorePasswordDialog> {
+  final _passwordCtrl = TextEditingController();
+  String? _error;
+  bool _obscure = true;
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final l = AppLocalizations.of(context)!;
+    final pw = _passwordCtrl.text.trim();
+    if (pw.isEmpty) return;
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final privateKeyB64 = await E2eeBackupService.restorePrivateKey(
+        uid: widget.uid,
+        password: pw,
+      );
+      if (mounted) Navigator.pop(context, privateKeyB64);
+    } on E2eeBackupWrongPasswordException {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = l.restoreFailedWrongPassword;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = l.restoreFailedMessage;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
+    return Dialog(
+      backgroundColor: AppColors.cardBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.r20),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(AppSizes.pw24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(AppSizes.ph8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppSizes.r12),
+                  ),
+                  child: Icon(
+                    Icons.restore_outlined,
+                    color: AppColors.primaryColor,
+                    size: AppSizes.sp20,
+                  ),
+                ),
+                SizedBox(width: AppSizes.w12),
+                Expanded(
+                  child: Text(
+                    l.restoreKeyPasswordDialogTitle,
+                    style: GoogleFonts.manrope(
+                      color: AppColors.textTitle,
+                      fontWeight: FontWeight.w800,
+                      fontSize: AppSizes.sp16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSizes.h12),
+            Text(
+              l.restoreKeyPasswordDialogDescription,
+              style: GoogleFonts.manrope(
+                color: AppColors.textMuted,
+                fontSize: AppSizes.sp12,
+                height: 1.5,
+              ),
+            ),
+            SizedBox(height: AppSizes.h20),
+            _PasswordField(
+              controller: _passwordCtrl,
+              hint: l.backupPasswordHint,
+              obscure: _obscure,
+              onToggle: () => setState(() => _obscure = !_obscure),
+              onChanged: (_) => setState(() => _error = null),
+            ),
+            if (_error != null) ...[
+              SizedBox(height: AppSizes.h8),
+              Text(
+                _error!,
+                style: GoogleFonts.manrope(
+                  color: AppColors.error,
+                  fontSize: AppSizes.sp12,
+                ),
+              ),
+            ],
+            SizedBox(height: AppSizes.h24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _loading ? null : () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.inputBorder),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSizes.r12),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
+                    ),
+                    child: Text(
+                      l.skipRestoreButton,
+                      style: GoogleFonts.manrope(
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w600,
+                        fontSize: AppSizes.sp14,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: AppSizes.w12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _loading ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSizes.r12),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
+                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.buttonText,
+                            ),
+                          )
+                        : Text(
+                            l.restoreKeyButton,
+                            style: GoogleFonts.manrope(
+                              color: AppColors.buttonText,
+                              fontWeight: FontWeight.w700,
+                              fontSize: AppSizes.sp14,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Shared Widgets ────────────────────────────────────────────────────────────
+
+class _PasswordField extends StatelessWidget {
+  const _PasswordField({
+    required this.controller,
+    required this.hint,
+    required this.obscure,
+    required this.onToggle,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final bool obscure;
+  final VoidCallback onToggle;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      onChanged: onChanged,
+      style: GoogleFonts.manrope(
+        color: AppColors.textPrimary,
+        fontSize: AppSizes.sp14,
+      ),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: GoogleFonts.manrope(
+          color: AppColors.textMuted,
+          fontSize: AppSizes.sp13,
+        ),
+        filled: true,
+        fillColor: AppColors.sectionBackground,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.r12),
+          borderSide: const BorderSide(color: AppColors.inputBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.r12),
+          borderSide: const BorderSide(color: AppColors.inputBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.r12),
+          borderSide: const BorderSide(color: AppColors.primaryColor),
+        ),
+        suffixIcon: IconButton(
+          onPressed: onToggle,
+          icon: Icon(
+            obscure
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+            color: AppColors.textMuted,
+            size: AppSizes.sp18,
+          ),
+        ),
+      ),
+    );
+  }
+}

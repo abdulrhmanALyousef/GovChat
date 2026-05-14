@@ -5,9 +5,12 @@ import 'package:projects/l10n/app_localizations.dart';
 import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../core/services/activity_log_service.dart';
+import '../../core/services/encryption/e2ee_backup_service.dart';
+import '../../core/services/encryption/e2ee_key_store.dart';
 import '../../core/services/encryption/e2ee_manager.dart';
 import '../../core/services/logging_service.dart';
 import '../../core/services/session_manager.dart';
+import '../../core/Widgets/e2ee_backup_dialogs.dart';
 import '../../models/admin_model.dart';
 import '../../models/employee_model.dart';
 import '../../roles/Admin/features/Main/admin_main_screen.dart';
@@ -127,9 +130,16 @@ class LoginController extends ChangeNotifier {
         return;
       }
 
-      // 4. Initialize E2EE keys (generates X25519 key pair on first login,
-      //    restores public key to Firestore if device was changed).
-      //    Non-blocking: runs in background, does not delay login navigation.
+      // 4. Initialize E2EE keys.
+      //    For employees: if no local key exists and a Firestore backup is
+      //    available, prompt the user to restore before generating a new pair.
+      //    Non-blocking for all other cases.
+      if (user.role == 'employee') {
+        final hasLocalKeys = await E2eeKeyStore.hasKeyPair();
+        if (!hasLocalKeys && context.mounted) {
+          await _tryRestoreE2eeKeys(context, uid);
+        }
+      }
       E2eeManager.initializeKeys(uid).ignore();
 
       // 5. Save user data in SharedPreferences
@@ -250,6 +260,25 @@ class LoginController extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+  }
+
+  /// Check for a Firestore backup and, if found, show the restore dialog.
+  /// On success the private key is saved to secure storage so that
+  /// [E2eeManager.initializeKeys] will find it and skip new-key generation.
+  Future<void> _tryRestoreE2eeKeys(BuildContext context, String uid) async {
+    final backupExists = await E2eeBackupService.hasBackup(uid);
+    if (!backupExists) return;
+    if (!context.mounted) return;
+
+    final privateKeyB64 = await showE2eeRestoreDialog(context, uid);
+    if (privateKeyB64 == null) return; // User chose to skip
+
+    try {
+      await E2eeManager.restoreKeyFromBackup(uid, privateKeyB64);
+      debugPrint('[Login] E2EE keys restored from backup for $uid');
+    } catch (e) {
+      debugPrint('[Login] E2EE restore error: $e');
+    }
   }
 
   Future<EmployeeModel> _loadEmployeeProfile(
