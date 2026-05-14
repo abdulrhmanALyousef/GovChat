@@ -1712,6 +1712,58 @@ class AppLocalizationsAr extends AppLocalizations {
   String get logMediaSharingDisabled => 'تم تعطيل مشاركة الوسائط';
 
   @override
+  String get encryptionKeySection => 'نسخة احتياطية لمفتاح التشفير';
+
+  @override
+  String get encryptionKeyBackupDescription =>
+      'احفظ مفتاح التشفير احتياطيًا لاستعادة رسائلك على جهاز جديد.';
+
+  @override
+  String get backupKeyButton => 'نسخ المفتاح احتياطيًا';
+
+  @override
+  String get backupSuccessMessage => 'تم حفظ مفتاح التشفير احتياطيًا بنجاح';
+
+  @override
+  String get backupFailedMessage => 'فشل حفظ مفتاح التشفير احتياطيًا';
+
+  @override
+  String get backupKeyPasswordDialogTitle => 'ضبط كلمة مرور النسخة الاحتياطية';
+
+  @override
+  String get backupKeyPasswordDialogDescription =>
+      'اختر كلمة مرور قوية لحماية نسخة مفتاح التشفير الاحتياطية. ستحتاجها لاستعادة رسائلك على جهاز آخر.';
+
+  @override
+  String get backupPasswordHint => 'أدخل كلمة المرور';
+
+  @override
+  String get confirmBackupPasswordHint => 'تأكيد كلمة المرور';
+
+  @override
+  String get passwordTooShort => 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل';
+
+  @override
+  String get restoreKeyPasswordDialogTitle => 'استعادة مفتاح التشفير';
+
+  @override
+  String get restoreKeyPasswordDialogDescription =>
+      'تم العثور على نسخة احتياطية لمفتاح التشفير. أدخل كلمة المرور لاستعادة الوصول إلى رسائلك.';
+
+  @override
+  String get restoreFailedWrongPassword =>
+      'كلمة المرور غير صحيحة. يرجى المحاولة مجددًا.';
+
+  @override
+  String get restoreFailedMessage => 'فشل استعادة مفتاح التشفير';
+
+  @override
+  String get skipRestoreButton => 'تخطي';
+
+  @override
+  String get restoreKeyButton => 'استعادة';
+
+  @override
   String get notificationsLabel => 'الإشعارات';
 
   @override

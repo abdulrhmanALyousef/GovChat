@@ -11,8 +11,11 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_size.dart';
 import '../../../../core/datasource/remote_data/firebase_service.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/services/encryption/e2ee_backup_service.dart';
+import '../../../../core/services/encryption/e2ee_key_store.dart';
 import '../../../../core/services/session_manager.dart';
-import '../../../../core/theme/app_color.dart';
+import '../../../../core/theme/App_color.dart';
+import '../../../../core/Widgets/e2ee_backup_dialogs.dart';
 import '../../../../models/employee_model.dart';
 import 'employee_reset_password_screen.dart';
 
@@ -29,6 +32,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
   late String _avatarUrl;
   late String _name;
   bool _uploading = false;
+  bool _backingUp = false;
 
   @override
   void initState() {
@@ -85,6 +89,67 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _backupEncryptionKey() async {
+    final l = AppLocalizations.of(context)!;
+    final uid = widget.employee.id ?? '';
+    if (uid.isEmpty) return;
+
+    final privateKey = await E2eeKeyStore.getPrivateKey();
+    if (privateKey == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l.backupFailedMessage,
+              style: GoogleFonts.manrope(),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    final password = await showE2eeBackupDialog(context);
+    if (password == null || !mounted) return;
+
+    setState(() => _backingUp = true);
+
+    try {
+      await E2eeBackupService.backupPrivateKey(
+        uid: uid,
+        privateKeyB64: privateKey,
+        password: password,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l.backupSuccessMessage,
+              style: GoogleFonts.manrope(color: AppColors.buttonText),
+            ),
+            backgroundColor: AppColors.primaryColor,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l.backupFailedMessage,
+              style: GoogleFonts.manrope(),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _backingUp = false);
     }
   }
 
@@ -551,6 +616,99 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                           l.changePasswordButton,
                           style: GoogleFonts.manrope(
                             color: AppColors.primaryColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: AppSizes.sp13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: AppSizes.ph16),
+
+              // ── Encryption Key Backup Card ──
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(AppSizes.ph16),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  borderRadius: BorderRadius.circular(AppSizes.r16),
+                  border: Border.all(color: AppColors.inputBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.key_outlined,
+                          color: AppColors.primaryColor,
+                          size: AppSizes.sp20,
+                        ),
+                        SizedBox(width: AppSizes.w12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.encryptionKeySection,
+                                style: GoogleFonts.manrope(
+                                  color: AppColors.textTitle,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: AppSizes.sp14,
+                                ),
+                              ),
+                              SizedBox(height: AppSizes.h2),
+                              Text(
+                                l.encryptionKeyBackupDescription,
+                                style: GoogleFonts.manrope(
+                                  color: AppColors.textMuted,
+                                  fontSize: AppSizes.sp11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: AppSizes.ph16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: AppSizes.h44,
+                      child: OutlinedButton.icon(
+                        onPressed: _backingUp ? null : _backupEncryptionKey,
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: _backingUp
+                                ? AppColors.inputBorder
+                                : AppColors.primaryColor,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSizes.r12),
+                          ),
+                        ),
+                        icon: _backingUp
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primaryColor,
+                                ),
+                              )
+                            : Icon(
+                                Icons.backup_outlined,
+                                color: AppColors.primaryColor,
+                                size: AppSizes.sp18,
+                              ),
+                        label: Text(
+                          l.backupKeyButton,
+                          style: GoogleFonts.manrope(
+                            color: _backingUp
+                                ? AppColors.textMuted
+                                : AppColors.primaryColor,
                             fontWeight: FontWeight.w700,
                             fontSize: AppSizes.sp13,
                           ),

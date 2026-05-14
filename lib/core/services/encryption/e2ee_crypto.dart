@@ -64,6 +64,20 @@ class E2eeCrypto {
     return Uint8List.fromList(await derived.extractBytes());
   }
 
+  // ── Public Key Re-derivation ───────────────────────────────────────────────
+
+  /// Re-derive the X25519 public key from a stored private key seed (base64).
+  ///
+  /// Used when restoring a backed-up private key to reconstruct the full pair.
+  static Future<String> derivePublicKeyFromPrivate(
+    String privateKeyB64,
+  ) async {
+    final privateBytes = base64Decode(privateKeyB64);
+    final keyPair = await _x25519.newKeyPairFromSeed(privateBytes);
+    final publicKey = await keyPair.extractPublicKey();
+    return base64Encode(publicKey.bytes);
+  }
+
   // ── AES-256-GCM Key Generation ─────────────────────────────────────────────
 
   /// Generate a random 32-byte AES-256 key for group chats.

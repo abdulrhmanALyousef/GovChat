@@ -1719,6 +1719,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logMediaSharingDisabled => 'Media sharing disabled';
 
   @override
+  String get encryptionKeySection => 'Encryption Key Backup';
+
+  @override
+  String get encryptionKeyBackupDescription =>
+      'Securely back up your encryption key to restore your messages on a new device.';
+
+  @override
+  String get backupKeyButton => 'BACKUP ENCRYPTION KEY';
+
+  @override
+  String get backupSuccessMessage => 'Encryption key backed up successfully';
+
+  @override
+  String get backupFailedMessage => 'Failed to back up encryption key';
+
+  @override
+  String get backupKeyPasswordDialogTitle => 'Set Backup Password';
+
+  @override
+  String get backupKeyPasswordDialogDescription =>
+      'Choose a strong password to protect your encryption key backup. You will need it to restore your messages on another device.';
+
+  @override
+  String get backupPasswordHint => 'Enter password';
+
+  @override
+  String get confirmBackupPasswordHint => 'Confirm password';
+
+  @override
+  String get passwordTooShort => 'Password must be at least 8 characters';
+
+  @override
+  String get restoreKeyPasswordDialogTitle => 'Restore Encryption Key';
+
+  @override
+  String get restoreKeyPasswordDialogDescription =>
+      'An encryption key backup was found for your account. Enter your backup password to restore access to your messages.';
+
+  @override
+  String get restoreFailedWrongPassword =>
+      'Incorrect password. Please try again.';
+
+  @override
+  String get restoreFailedMessage => 'Failed to restore encryption key';
+
+  @override
+  String get skipRestoreButton => 'SKIP';
+
+  @override
+  String get restoreKeyButton => 'RESTORE';
+
+  @override
   String get notificationsLabel => 'NOTIFICATIONS';
 
   @override
