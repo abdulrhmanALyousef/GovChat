@@ -603,5 +603,24 @@
   "notifSystemChannel": "النظام",
   "logNotificationSent": "تم إرسال الإشعار",
   "logNotificationOpened": "تم فتح الإشعار",
-  "logNotificationFailed": "فشل إرسال الإشعار"
+  "logNotificationFailed": "فشل إرسال الإشعار",
+
+  "encryptionKeySection": "نسخة احتياطية لمفتاح التشفير",
+  "encryptionKeyBackupDescription": "احفظ مفتاح التشفير احتياطيًا لاستعادة رسائلك على جهاز جديد.",
+  "backupKeyButton": "نسخ المفتاح احتياطيًا",
+  "backupSuccessMessage": "تم حفظ مفتاح التشفير احتياطيًا بنجاح",
+  "backupFailedMessage": "فشل حفظ مفتاح التشفير احتياطيًا",
+
+  "backupKeyPasswordDialogTitle": "ضبط كلمة مرور النسخة الاحتياطية",
+  "backupKeyPasswordDialogDescription": "اختر كلمة مرور قوية لحماية نسخة مفتاح التشفير الاحتياطية. ستحتاجها لاستعادة رسائلك على جهاز آخر.",
+  "backupPasswordHint": "أدخل كلمة المرور",
+  "confirmBackupPasswordHint": "تأكيد كلمة المرور",
+  "passwordTooShort": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+
+  "restoreKeyPasswordDialogTitle": "استعادة مفتاح التشفير",
+  "restoreKeyPasswordDialogDescription": "تم العثور على نسخة احتياطية لمفتاح التشفير. أدخل كلمة المرور لاستعادة الوصول إلى رسائلك.",
+  "restoreFailedWrongPassword": "كلمة المرور غير صحيحة. يرجى المحاولة مجددًا.",
+  "restoreFailedMessage": "فشل استعادة مفتاح التشفير",
+  "skipRestoreButton": "تخطي",
+  "restoreKeyButton": "استعادة"
 }

@@ -661,6 +661,25 @@
   "logMediaSharingEnabled": "Media sharing enabled",
   "logMediaSharingDisabled": "Media sharing disabled",
 
+  "encryptionKeySection": "Encryption Key Backup",
+  "encryptionKeyBackupDescription": "Securely back up your encryption key to restore your messages on a new device.",
+  "backupKeyButton": "BACKUP ENCRYPTION KEY",
+  "backupSuccessMessage": "Encryption key backed up successfully",
+  "backupFailedMessage": "Failed to back up encryption key",
+
+  "backupKeyPasswordDialogTitle": "Set Backup Password",
+  "backupKeyPasswordDialogDescription": "Choose a strong password to protect your encryption key backup. You will need it to restore your messages on another device.",
+  "backupPasswordHint": "Enter password",
+  "confirmBackupPasswordHint": "Confirm password",
+  "passwordTooShort": "Password must be at least 8 characters",
+
+  "restoreKeyPasswordDialogTitle": "Restore Encryption Key",
+  "restoreKeyPasswordDialogDescription": "An encryption key backup was found for your account. Enter your backup password to restore access to your messages.",
+  "restoreFailedWrongPassword": "Incorrect password. Please try again.",
+  "restoreFailedMessage": "Failed to restore encryption key",
+  "skipRestoreButton": "SKIP",
+  "restoreKeyButton": "RESTORE",
+
   "notificationsLabel": "NOTIFICATIONS",
   "notifNewMessage": "New message",
   "notifNewPrivateMessage": "New private message",

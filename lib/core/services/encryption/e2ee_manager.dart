@@ -432,6 +432,27 @@ class E2eeManager {
     return E2eeCrypto.decrypt(payload, key);
   }
 
+  // ── Key Restore from Backup ───────────────────────────────────────────────
+
+  /// Re-derive the public key from [privateKeyB64], save both to secure
+  /// storage, and publish the public key to Firestore.
+  ///
+  /// Call this after obtaining the decrypted private key from
+  /// [E2eeBackupService.restorePrivateKey].
+  static Future<void> restoreKeyFromBackup(
+    String uid,
+    String privateKeyB64,
+  ) async {
+    final publicKeyB64 =
+        await E2eeCrypto.derivePublicKeyFromPrivate(privateKeyB64);
+    await E2eeKeyStore.saveKeyPair(
+      publicKey: publicKeyB64,
+      privateKey: privateKeyB64,
+    );
+    await _uploadPublicKey(uid, publicKeyB64);
+    debugPrint('[E2EE] Keys restored from backup and published for $uid');
+  }
+
   // ── Logout / Cleanup ───────────────────────────────────────────────────────
 
   /// Clear in-memory caches on logout.  Keys remain in secure storage so
