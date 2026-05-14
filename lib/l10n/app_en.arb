@@ -544,6 +544,47 @@
   "logDescEmployeeUpdated": "Employee updated",
   "logDescEmployeeDeleted": "Employee deleted",
   "logDescPasswordChanged": "Password changed",
-  "logDescRequestSubmitted": "Access request submitted"
+  "logDescRequestSubmitted": "Access request submitted",
+
+  "phoneNumberLabel": "PHONE NUMBER",
+  "phoneNumberHint": "0597123456",
+  "phoneNumberRequired": "Phone number is required",
+  "phoneNumberInvalid": "Enter a valid Saudi mobile number (e.g. 0597123456)",
+  "employeePhoneRequired": "Your account does not have a verified phone number. Please contact your administrator.",
+
+  "otpVerificationTitle": "OTP Verification",
+  "otpVerificationSubtitle": "A 4-digit code has been sent to",
+  "otpLoginTitle": "Two-Factor Authentication",
+  "otpLoginSubtitle": "For your security, enter the OTP sent to your registered phone.",
+  "otpEnterCode": "Enter 4-digit OTP",
+  "otpVerifyButton": "VERIFY OTP",
+  "otpResendButton": "Resend Code",
+  "otpResendIn": "Resend in {seconds}s",
+  "@otpResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "otpSendingCode": "Sending OTP...",
+  "otpVerifying": "Verifying...",
+  "otpInvalidCode": "Invalid OTP. Please try again.",
+  "otpExpiredCode": "OTP expired. Please request a new one.",
+  "otpTooManyAttempts": "Too many failed attempts. Please request a new code.",
+  "otpSendFailed": "Failed to send OTP. Check your phone number and try again.",
+  "otpVerificationFailed": "OTP verification failed. Please try again.",
+  "otpAttemptsLeft": "{count} attempts remaining",
+  "@otpAttemptsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logOtpSent": "OTP sent to phone",
+  "logOtpVerified": "OTP verified successfully",
+  "logOtpFailed": "OTP verification failed",
+  "logPasswordResetViaSms": "Password reset via SMS OTP"
 
 }

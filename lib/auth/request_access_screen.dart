@@ -227,6 +227,26 @@ class _RequestAccessView extends StatelessWidget {
                       ),
                       SizedBox(height: AppSizes.h16),
 
+                      _buildLabel(l.phoneNumberLabel),
+                      SizedBox(height: AppSizes.h8),
+                      TextFieldForLogin(
+                        controller: controller.phoneController,
+                        hintText: l.phoneNumberHint,
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return l.phoneNumberRequired;
+                          }
+                          if (!RegExp(r'^05[0-9]{8}$')
+                              .hasMatch(v.trim())) {
+                            return l.phoneNumberInvalid;
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: AppSizes.h16),
+
                       _buildLabel(l.organizationLabel),
                       SizedBox(height: AppSizes.h8),
                       controller.isLoadingOrgs

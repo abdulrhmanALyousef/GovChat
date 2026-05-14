@@ -1409,4 +1409,87 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get logDescRequestSubmitted => 'Access request submitted';
+
+  @override
+  String get phoneNumberLabel => 'رقم الهاتف';
+
+  @override
+  String get phoneNumberHint => '0597123456';
+
+  @override
+  String get phoneNumberRequired => 'رقم الهاتف مطلوب';
+
+  @override
+  String get phoneNumberInvalid =>
+      'أدخل رقم جوال سعودي صحيح (مثال: 0597123456)';
+
+  @override
+  String get employeePhoneRequired =>
+      'حسابك لا يحتوي على رقم هاتف موثق. يرجى التواصل مع المسؤول.';
+
+  @override
+  String get otpVerificationTitle => 'التحقق بكلمة المرور المؤقتة';
+
+  @override
+  String get otpVerificationSubtitle => 'تم إرسال رمز مكون من 4 أرقام إلى';
+
+  @override
+  String get otpLoginTitle => 'المصادقة الثنائية';
+
+  @override
+  String get otpLoginSubtitle =>
+      'لحماية حسابك، أدخل رمز OTP المرسل إلى هاتفك المسجل.';
+
+  @override
+  String get otpEnterCode => 'أدخل رمز OTP المكون من 4 أرقام';
+
+  @override
+  String get otpVerifyButton => 'تحقق';
+
+  @override
+  String get otpResendButton => 'إعادة إرسال الرمز';
+
+  @override
+  String otpResendIn(int seconds) {
+    return 'إعادة الإرسال خلال $secondsث';
+  }
+
+  @override
+  String get otpSendingCode => 'جار إرسال OTP...';
+
+  @override
+  String get otpVerifying => 'جار التحقق...';
+
+  @override
+  String get otpInvalidCode => 'رمز غير صحيح. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get otpExpiredCode => 'انتهت صلاحية الرمز. يرجى طلب رمز جديد.';
+
+  @override
+  String get otpTooManyAttempts => 'محاولات كثيرة جداً. يرجى طلب رمز جديد.';
+
+  @override
+  String get otpSendFailed => 'فشل إرسال OTP. تحقق من رقم هاتفك وحاول مجدداً.';
+
+  @override
+  String get otpVerificationFailed =>
+      'فشل التحقق من OTP. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String otpAttemptsLeft(int count) {
+    return 'تبقى $count محاولات';
+  }
+
+  @override
+  String get logOtpSent => 'تم إرسال OTP إلى الهاتف';
+
+  @override
+  String get logOtpVerified => 'تم التحقق من OTP بنجاح';
+
+  @override
+  String get logOtpFailed => 'فشل التحقق من OTP';
+
+  @override
+  String get logPasswordResetViaSms => 'إعادة تعيين كلمة المرور عبر OTP';
 }
