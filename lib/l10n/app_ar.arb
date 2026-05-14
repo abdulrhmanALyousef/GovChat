@@ -476,5 +476,15 @@
   "departmentGroupLabel": "القسم",
   "deleteGroupConfirmTitle": "حذف المجموعة؟",
   "deleteGroupConfirmMessage": "سيتم حذف هذه المجموعة وجميع رسائلها بشكل نهائي.",
-  "cannotDeleteSystemGroup": "لا يمكن حذف مجموعات النظام."
+  "cannotDeleteSystemGroup": "لا يمكن حذف مجموعات النظام.",
+
+  "noAnnouncementsDesc": "ستظهر هنا الإعلانات الرسمية من مؤسستك.",
+  "announcementPostedLabel": "نُشر",
+  "announcementExpiresLabel": "ينتهي",
+  "announcementPriorityNormal": "عادي",
+  "announcementPriorityHigh": "مرتفع",
+  "announcementPriorityUrgent": "عاجل",
+  "logAnnouncementCreated": "تم إنشاء إعلان",
+  "logAnnouncementUpdated": "تم تحديث إعلان",
+  "logAnnouncementDeleted": "تم حذف إعلان"
 }

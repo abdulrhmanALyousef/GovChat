@@ -544,6 +544,16 @@
   "logDescEmployeeUpdated": "Employee updated",
   "logDescEmployeeDeleted": "Employee deleted",
   "logDescPasswordChanged": "Password changed",
-  "logDescRequestSubmitted": "Access request submitted"
+  "logDescRequestSubmitted": "Access request submitted",
+
+  "noAnnouncementsDesc": "Official announcements from your organization will appear here.",
+  "announcementPostedLabel": "Posted",
+  "announcementExpiresLabel": "Expires",
+  "announcementPriorityNormal": "Normal",
+  "announcementPriorityHigh": "High",
+  "announcementPriorityUrgent": "Urgent",
+  "logAnnouncementCreated": "Announcement created",
+  "logAnnouncementUpdated": "Announcement updated",
+  "logAnnouncementDeleted": "Announcement deleted"
 
 }

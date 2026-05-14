@@ -1412,4 +1412,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logDescRequestSubmitted => 'Access request submitted';
+
+  @override
+  String get noAnnouncementsDesc =>
+      'Official announcements from your organization will appear here.';
+
+  @override
+  String get announcementPostedLabel => 'Posted';
+
+  @override
+  String get announcementExpiresLabel => 'Expires';
+
+  @override
+  String get announcementPriorityNormal => 'Normal';
+
+  @override
+  String get announcementPriorityHigh => 'High';
+
+  @override
+  String get announcementPriorityUrgent => 'Urgent';
+
+  @override
+  String get logAnnouncementCreated => 'Announcement created';
+
+  @override
+  String get logAnnouncementUpdated => 'Announcement updated';
+
+  @override
+  String get logAnnouncementDeleted => 'Announcement deleted';
 }
