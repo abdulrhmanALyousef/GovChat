@@ -1409,4 +1409,31 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get logDescRequestSubmitted => 'Access request submitted';
+
+  @override
+  String get noAnnouncementsDesc => 'ستظهر هنا الإعلانات الرسمية من مؤسستك.';
+
+  @override
+  String get announcementPostedLabel => 'نُشر';
+
+  @override
+  String get announcementExpiresLabel => 'ينتهي';
+
+  @override
+  String get announcementPriorityNormal => 'عادي';
+
+  @override
+  String get announcementPriorityHigh => 'مرتفع';
+
+  @override
+  String get announcementPriorityUrgent => 'عاجل';
+
+  @override
+  String get logAnnouncementCreated => 'تم إنشاء إعلان';
+
+  @override
+  String get logAnnouncementUpdated => 'تم تحديث إعلان';
+
+  @override
+  String get logAnnouncementDeleted => 'تم حذف إعلان';
 }
