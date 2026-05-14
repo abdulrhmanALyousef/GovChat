@@ -10,7 +10,25 @@
       "Bash(Get-ChildItem -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Sort-Object)",
-      "Bash(Test-Path *)"
+      "Bash(Test-Path *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\govchat-web\" -Recurse -Name)",
+      "Bash(Select-Object -First 200)",
+      "Bash(npm install *)",
+      "Bash(npm list *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(npx next *)",
+      "Bash(curl -s http://localhost:3001/ar)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit -m 'fix: update LinkedIn URLs for all team members *)",
+      "Bash(git commit -m 'fix: correct team photo filenames \\(Abdulrhman.jpg, Abdullah.jpg\\) *)",
+      "Bash(git commit -m 'fix: correct Arabic name for Bassam \\(بسام الهويريني\\) *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(npx --prefix \"C:/Users/bssam/StudioProjects/cargo/govchat-web\" tsc --noEmit)",
+      "Bash(node \"C:/Users/bssam/StudioProjects/cargo/govchat-web/node_modules/.bin/tsc\" --noEmit --project \"C:/Users/bssam/StudioProjects/cargo/govchat-web/tsconfig.json\")"
     ]
   }
 }
