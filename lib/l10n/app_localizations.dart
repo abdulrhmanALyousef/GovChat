@@ -2785,6 +2785,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Access request submitted'**
   String get logDescRequestSubmitted;
+
+  /// No description provided for @noAnnouncementsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Official announcements from your organization will appear here.'**
+  String get noAnnouncementsDesc;
+
+  /// No description provided for @announcementPostedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted'**
+  String get announcementPostedLabel;
+
+  /// No description provided for @announcementExpiresLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires'**
+  String get announcementExpiresLabel;
+
+  /// No description provided for @announcementPriorityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get announcementPriorityNormal;
+
+  /// No description provided for @announcementPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get announcementPriorityHigh;
+
+  /// No description provided for @announcementPriorityUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get announcementPriorityUrgent;
+
+  /// No description provided for @logAnnouncementCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement created'**
+  String get logAnnouncementCreated;
+
+  /// No description provided for @logAnnouncementUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement updated'**
+  String get logAnnouncementUpdated;
+
+  /// No description provided for @logAnnouncementDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement deleted'**
+  String get logAnnouncementDeleted;
 }
 
 class _AppLocalizationsDelegate

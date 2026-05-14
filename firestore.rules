@@ -120,6 +120,20 @@ service cloud.firestore {
       }
     }
 
+    // ── Announcements ─────────────────────────────────────────────────────────
+    match /announcements/{announcementId} {
+      // Primary admin: full access across all orgs
+      // Admin: read + write only for their own org
+      // Employee: read-only (org isolation enforced client-side via organizationId query filter)
+      allow read: if isPrimaryAdmin()
+                   || (isAdmin() && resource.data.organizationId == adminOrgId())
+                   || isEmployee();
+      allow create: if isAdmin()
+                     && request.resource.data.organizationId == adminOrgId();
+      allow update, delete: if (isAdmin() && resource.data.organizationId == adminOrgId())
+                              || isPrimaryAdmin();
+    }
+
     // ── Mail (Cloud Functions trigger) ────────────────────────────────────────
     match /mail/{mailId} {
       allow read, write: if isPrimaryAdmin();
