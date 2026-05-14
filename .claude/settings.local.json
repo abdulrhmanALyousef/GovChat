@@ -10,7 +10,14 @@
       "Bash(Get-ChildItem -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Sort-Object)",
-      "Bash(Test-Path *)"
+      "Bash(Test-Path *)",
+      "Bash(grep -E '\\\\.\\(js|ts\\)$')",
+      "Bash(xargs grep -l \"2FA\\\\|two-factor\\\\|mfa\\\\|MFA\")",
+      "WebFetch(domain:authentica.mintlify.app)",
+      "WebFetch(domain:docs.authentica.sa)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const fs=require\\('fs'\\); const c=fs.readFileSync\\('index.js','utf8'\\); fs.writeFileSync\\('index.js',c.replace\\(/\\\\r\\\\n/g,'\\\\n'\\),'utf8'\\); console.log\\('done'\\);\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const c=fs.readFileSync\\('index.js','utf8'\\); fs.writeFileSync\\('index.js',c.replace\\(/\\\\r\\\\n/g,'\\\\n'\\),'utf8'\\);\")"
     ]
   }
 }

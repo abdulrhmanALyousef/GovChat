@@ -7,6 +7,7 @@ import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../core/services/activity_log_service.dart';
 import '../../core/services/encryption/e2ee_manager.dart';
 import '../../core/services/logging_service.dart';
+import '../../core/services/otp_service.dart';
 import '../../core/services/session_manager.dart';
 import '../../models/admin_model.dart';
 import '../../models/employee_model.dart';
@@ -14,6 +15,7 @@ import '../../roles/Admin/features/Main/admin_main_screen.dart';
 import '../../roles/employee/features/main/employee_main_screen.dart';
 import '../../roles/primary Admin/Features/Main/main_screen.dart';
 import '../change_password_screen.dart';
+import '../otp_verification_screen.dart';
 import '../request_access_screen.dart';
 
 class LoginController extends ChangeNotifier {
@@ -199,6 +201,61 @@ class LoginController extends ChangeNotifier {
             );
             return;
           }
+
+          // ── OTP 2FA (required on EVERY employee login) ─────────────────
+          final phoneNumber = doc.data()!['phoneNumber'] as String? ?? '';
+
+          if (phoneNumber.isEmpty) {
+            // Block login — employee has no phone number registered.
+            // Admin must add/update phone via Firebase Console or admin panel.
+            await FirebaseService.instance.auth.signOut();
+            errorMessage = l.employeePhoneRequired;
+            isLoading = false;
+            notifyListeners();
+            return;
+          }
+
+          isLoading = false;
+          notifyListeners();
+
+          // Send OTP — block login if it fails (security-first).
+          try {
+            await OtpService.instance
+                .sendOtp(phone: phoneNumber, purpose: 'login');
+          } catch (e) {
+            await FirebaseService.instance.auth.signOut();
+            errorMessage = l.otpSendFailed;
+            notifyListeners();
+            return;
+          }
+
+          if (!context.mounted) return;
+
+          final otpVerified = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OtpVerificationScreen(
+                phone: phoneNumber,
+                purpose: 'login',
+                uid: uid,
+              ),
+            ),
+          ) ?? false;
+
+          if (!context.mounted) return;
+
+          if (!otpVerified) {
+            await FirebaseService.instance.auth.signOut();
+            errorMessage = l.otpVerificationFailed;
+            isLoading = false;
+            notifyListeners();
+            return;
+          }
+
+          isLoading = true;
+          notifyListeners();
+          // ───────────────────────────────────────────────────────────────
+
           // Prefer employee.organizationId — it is always populated by the
           // approval flow. user.organizationId may be empty for employees
           // because the users/{uid} doc is not updated with organizationId

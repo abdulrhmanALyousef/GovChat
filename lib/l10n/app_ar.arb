@@ -476,5 +476,46 @@
   "departmentGroupLabel": "القسم",
   "deleteGroupConfirmTitle": "حذف المجموعة؟",
   "deleteGroupConfirmMessage": "سيتم حذف هذه المجموعة وجميع رسائلها بشكل نهائي.",
-  "cannotDeleteSystemGroup": "لا يمكن حذف مجموعات النظام."
+  "cannotDeleteSystemGroup": "لا يمكن حذف مجموعات النظام.",
+
+  "phoneNumberLabel": "رقم الهاتف",
+  "phoneNumberHint": "0597123456",
+  "phoneNumberRequired": "رقم الهاتف مطلوب",
+  "phoneNumberInvalid": "أدخل رقم جوال سعودي صحيح (مثال: 0597123456)",
+  "employeePhoneRequired": "حسابك لا يحتوي على رقم هاتف موثق. يرجى التواصل مع المسؤول.",
+
+  "otpVerificationTitle": "التحقق بكلمة المرور المؤقتة",
+  "otpVerificationSubtitle": "تم إرسال رمز مكون من 4 أرقام إلى",
+  "otpLoginTitle": "المصادقة الثنائية",
+  "otpLoginSubtitle": "لحماية حسابك، أدخل رمز OTP المرسل إلى هاتفك المسجل.",
+  "otpEnterCode": "أدخل رمز OTP المكون من 4 أرقام",
+  "otpVerifyButton": "تحقق",
+  "otpResendButton": "إعادة إرسال الرمز",
+  "otpResendIn": "إعادة الإرسال خلال {seconds}ث",
+  "@otpResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "otpSendingCode": "جار إرسال OTP...",
+  "otpVerifying": "جار التحقق...",
+  "otpInvalidCode": "رمز غير صحيح. يرجى المحاولة مرة أخرى.",
+  "otpExpiredCode": "انتهت صلاحية الرمز. يرجى طلب رمز جديد.",
+  "otpTooManyAttempts": "محاولات كثيرة جداً. يرجى طلب رمز جديد.",
+  "otpSendFailed": "فشل إرسال OTP. تحقق من رقم هاتفك وحاول مجدداً.",
+  "otpVerificationFailed": "فشل التحقق من OTP. يرجى المحاولة مرة أخرى.",
+  "otpAttemptsLeft": "تبقى {count} محاولات",
+  "@otpAttemptsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logOtpSent": "تم إرسال OTP إلى الهاتف",
+  "logOtpVerified": "تم التحقق من OTP بنجاح",
+  "logOtpFailed": "فشل التحقق من OTP",
+  "logPasswordResetViaSms": "إعادة تعيين كلمة المرور عبر OTP"
 }

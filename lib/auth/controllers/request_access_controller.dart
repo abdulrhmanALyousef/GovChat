@@ -2,9 +2,11 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
+import '../../core/services/otp_service.dart';
 import '../../core/theme/app_color.dart';
 import '../../models/organization_model.dart';
 import '../login_screen.dart';
+import '../otp_verification_screen.dart';
 
 class RequestAccessController extends ChangeNotifier {
   final TextEditingController firstNameController = TextEditingController();
@@ -13,6 +15,7 @@ class RequestAccessController extends ChangeNotifier {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController nationalIdController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
@@ -90,12 +93,56 @@ class RequestAccessController extends ChangeNotifier {
       return;
     }
 
+    final localPhone = phoneController.text.trim();
+
+    // Convert from Saudi local format (05XXXXXXXX) to international (+966...)
+    String phone;
+    try {
+      phone = OtpService.formatSaudiPhone(localPhone);
+    } on FormatException catch (e) {
+      errorMessage = e.message;
+      notifyListeners();
+      return;
+    }
+
+    // Step 1: Send OTP to employee phone
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      // Call Cloud Function - creates Auth user + users doc (pending) + accessRequests + notification + email
+      await OtpService.instance.sendOtp(phone: phone, purpose: 'access_request');
+    } on Exception catch (e) {
+      errorMessage = e.toString().replaceFirst('Exception: ', '');
+      isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    isLoading = false;
+    notifyListeners();
+
+    if (!context.mounted) return;
+
+    // Step 2: OTP verification screen
+    final verified = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OtpVerificationScreen(
+          phone: phone,
+          purpose: 'access_request',
+        ),
+      ),
+    ) ?? false;
+
+    if (!verified || !context.mounted) return;
+
+    // Step 3: OTP confirmed — create the employee request
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
       final callable = FirebaseFunctions.instanceFor(
         region: 'us-central1',
       ).httpsCallable('createEmployeeRequest');
@@ -110,6 +157,7 @@ class RequestAccessController extends ChangeNotifier {
         'organizationId': selectedOrganizationId,
         'organizationName': selectedOrganizationName,
         'department': selectedDepartment,
+        'phoneNumber': phone,
       });
 
       if (!context.mounted) return;
@@ -129,6 +177,8 @@ class RequestAccessController extends ChangeNotifier {
     } on FirebaseFunctionsException catch (e) {
       if (e.code == 'already-exists') {
         errorMessage = l.emailAlreadyRegistered;
+      } else if (e.code == 'failed-precondition') {
+        errorMessage = l.otpVerificationFailed;
       } else {
         errorMessage = e.message ?? l.somethingWentWrong;
       }
@@ -152,6 +202,7 @@ class RequestAccessController extends ChangeNotifier {
     emailController.dispose();
     passwordController.dispose();
     nationalIdController.dispose();
+    phoneController.dispose();
     super.dispose();
   }
 }
