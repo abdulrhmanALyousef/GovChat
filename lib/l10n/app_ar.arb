@@ -586,5 +586,6 @@
   "logReminderCreated": "تم إنشاء التذكير",
   "logReminderUpdated": "تم تحديث التذكير",
   "logReminderCompleted": "تم تحديد التذكير كمكتمل",
-  "logReminderDeleted": "تم حذف التذكير"
+  "logReminderDeleted": "تم حذف التذكير",
+  "reminderPastDateError": "يجب أن يكون تاريخ ووقت الاستحقاق في المستقبل. يرجى اختيار تاريخ أو وقت لاحق."
 }

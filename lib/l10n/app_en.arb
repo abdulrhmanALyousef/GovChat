@@ -654,6 +654,7 @@
   "logReminderCreated": "Reminder created",
   "logReminderUpdated": "Reminder updated",
   "logReminderCompleted": "Reminder marked as completed",
-  "logReminderDeleted": "Reminder deleted"
+  "logReminderDeleted": "Reminder deleted",
+  "reminderPastDateError": "Due date and time must be in the future. Please select a later date or time."
 
 }

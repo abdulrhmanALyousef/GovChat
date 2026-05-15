@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../../../../core/services/logging_service.dart';
 import '../../../../../core/services/notification_service.dart';
@@ -10,10 +10,11 @@ import '../data/reminder_repository.dart';
 
 enum ReminderFilter { all, active, overdue, completed, highPriority }
 
-class ReminderController extends ChangeNotifier {
+class ReminderController extends ChangeNotifier with WidgetsBindingObserver {
   final EmployeeModel employee;
 
   ReminderController({required this.employee}) {
+    WidgetsBinding.instance.addObserver(this);
     _init();
   }
 
@@ -26,6 +27,7 @@ class ReminderController extends ChangeNotifier {
   bool _isLoading = true;
   String? _error;
   StreamSubscription<List<ReminderModel>>? _sub;
+  Timer? _overdueTimer;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -88,6 +90,20 @@ class ReminderController extends ChangeNotifier {
             notifyListeners();
           },
         );
+
+    // Re-evaluate overdue status every 30 seconds without hitting Firestore.
+    _overdueTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (_reminders.any((r) => !r.isCompleted)) notifyListeners();
+    });
+  }
+
+  // Re-evaluate overdue badges immediately when the app returns to foreground.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        _reminders.any((r) => !r.isCompleted)) {
+      notifyListeners();
+    }
   }
 
   void setFilter(ReminderFilter f) {
@@ -175,7 +191,9 @@ class ReminderController extends ChangeNotifier {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
+    _overdueTimer?.cancel();
     super.dispose();
   }
 }

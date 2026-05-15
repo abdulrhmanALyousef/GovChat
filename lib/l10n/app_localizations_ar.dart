@@ -1696,4 +1696,8 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get logReminderDeleted => 'تم حذف التذكير';
+
+  @override
+  String get reminderPastDateError =>
+      'يجب أن يكون تاريخ ووقت الاستحقاق في المستقبل. يرجى اختيار تاريخ أو وقت لاحق.';
 }
