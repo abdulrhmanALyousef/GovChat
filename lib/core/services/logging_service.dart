@@ -27,12 +27,19 @@ class LoggingService {
   };
   static const _chatTypes = {'message_sent', 'message_deleted'};
   static const _groupTypes = {'project_group_created', 'group_message_sent', 'project_group_deleted'};
+  static const _reminderTypes = {
+    'reminder_created',
+    'reminder_updated',
+    'reminder_completed',
+    'reminder_deleted',
+  };
 
   String _categoryFor(String actionType) {
     if (_authTypes.contains(actionType)) return 'authentication';
     if (_employeeTypes.contains(actionType)) return 'employee';
     if (_chatTypes.contains(actionType)) return 'chat';
     if (_groupTypes.contains(actionType)) return 'groups';
+    if (_reminderTypes.contains(actionType)) return 'reminders';
     return 'security';
   }
 
