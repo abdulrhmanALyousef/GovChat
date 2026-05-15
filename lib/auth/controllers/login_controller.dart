@@ -5,7 +5,6 @@ import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../core/services/activity_log_service.dart';
 import '../../core/services/encryption/e2ee_backup_service.dart';
-import '../../core/services/encryption/e2ee_key_store.dart';
 import '../../core/services/encryption/e2ee_manager.dart';
 import '../../core/services/logging_service.dart';
 import '../../core/services/otp_service.dart';
@@ -134,15 +133,9 @@ class LoginController extends ChangeNotifier {
       }
 
       // 4. Initialize E2EE keys.
-      //    For employees: if no local key exists and a Firestore backup is
-      //    available, prompt the user to restore before generating a new pair.
-      //    Non-blocking for all other cases.
-      if (user.role == 'employee') {
-        final hasLocalKeys = await E2eeKeyStore.hasKeyPair();
-        if (!hasLocalKeys && context.mounted) {
-          await _tryRestoreE2eeKeys(context, uid);
-        }
-      }
+      //    Always generate a fresh X25519 key pair when none exists locally.
+      //    Backup restore is disabled to prevent stale keys from causing
+      //    MAC failures after reinstall.  Backup *creation* still works.
       E2eeManager.initializeKeys(uid).ignore();
 
       // 4b. Upload FCM device token — fire-and-forget
@@ -251,9 +244,11 @@ class LoginController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Check for a Firestore backup and, if found, show the restore dialog.
-  /// On success the private key is saved to secure storage so that
-  /// [E2eeManager.initializeKeys] will find it and skip new-key generation.
+  /// DISABLED: Auto-restore of old E2EE keys from backup is disabled to
+  /// prevent stale keys causing MAC failures after reinstall.
+  /// The app now always generates a fresh X25519 key pair.
+  /// Kept for future explicit-restore feature if needed.
+  // ignore: unused_element
   Future<void> _tryRestoreE2eeKeys(BuildContext context, String uid) async {
     final backupExists = await E2eeBackupService.hasBackup(uid);
     if (!backupExists) return;
