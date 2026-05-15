@@ -36,6 +36,7 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
   late int _repeatInterval;
   late bool _notifEnabled;
   bool _saving = false;
+  bool _dueDateInPast = false;
 
   bool get _isEdit => widget.existing != null;
 
@@ -62,11 +63,12 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
   }
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: _dueDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+      initialDate: _dueDate.isBefore(now) ? now : _dueDate,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365 * 5)),
       builder: (ctx, child) => _darkPickerTheme(ctx, child),
     );
     if (picked == null) return;
@@ -74,6 +76,7 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
       _dueDate = DateTime(
           picked.year, picked.month, picked.day,
           _dueDate.hour, _dueDate.minute);
+      _dueDateInPast = _dueDate.isBefore(DateTime.now());
     });
   }
 
@@ -88,6 +91,7 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
       _dueDate = DateTime(
           _dueDate.year, _dueDate.month, _dueDate.day,
           picked.hour, picked.minute);
+      _dueDateInPast = _dueDate.isBefore(DateTime.now());
     });
   }
 
@@ -107,6 +111,10 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_dueDate.isBefore(DateTime.now())) {
+      setState(() => _dueDateInPast = true);
+      return;
+    }
     setState(() => _saving = true);
 
     final ctrl = context.read<ReminderController>();
@@ -210,6 +218,7 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
                 label: l.dueDateLabel,
                 value: DateFormat('EEE, d MMM yyyy').format(_dueDate),
                 onTap: _pickDate,
+                hasError: _dueDateInPast,
               ),
               SizedBox(height: AppSizes.h10),
               _DateTimeTile(
@@ -217,7 +226,12 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
                 label: l.dueTimeLabel,
                 value: DateFormat('HH:mm').format(_dueDate),
                 onTap: _pickTime,
+                hasError: _dueDateInPast,
               ),
+              if (_dueDateInPast) ...[
+                SizedBox(height: AppSizes.h8),
+                _PastDateError(message: l.reminderPastDateError),
+              ],
               SizedBox(height: AppSizes.h14),
               _RemindBeforeSelector(
                 value: _remindBeforeMinutes,
@@ -428,11 +442,13 @@ class _DateTimeTile extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onTap,
+    this.hasError = false,
   });
   final IconData icon;
   final String label;
   final String value;
   final VoidCallback onTap;
+  final bool hasError;
 
   @override
   Widget build(BuildContext context) {
@@ -442,13 +458,20 @@ class _DateTimeTile extends StatelessWidget {
         padding: EdgeInsets.symmetric(
             horizontal: AppSizes.pw12, vertical: AppSizes.ph12),
         decoration: BoxDecoration(
-          color: AppColors.sectionBackground,
+          color: hasError
+              ? AppColors.error.withValues(alpha: 0.06)
+              : AppColors.sectionBackground,
           borderRadius: BorderRadius.circular(AppSizes.r8),
-          border: Border.all(color: AppColors.inputBorder),
+          border: Border.all(
+            color: hasError ? AppColors.error : AppColors.inputBorder,
+            width: hasError ? 1.5 : 1.0,
+          ),
         ),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primaryColor, size: AppSizes.sp18),
+            Icon(icon,
+                color: hasError ? AppColors.error : AppColors.primaryColor,
+                size: AppSizes.sp18),
             SizedBox(width: AppSizes.pw12),
             Expanded(
               child: Column(
@@ -457,14 +480,18 @@ class _DateTimeTile extends StatelessWidget {
                   Text(
                     label,
                     style: GoogleFonts.manrope(
-                        color: AppColors.textMuted,
+                        color: hasError
+                            ? AppColors.error
+                            : AppColors.textMuted,
                         fontSize: AppSizes.sp10,
                         letterSpacing: 0.8),
                   ),
                   Text(
                     value,
                     style: GoogleFonts.manrope(
-                      color: AppColors.textTitle,
+                      color: hasError
+                          ? AppColors.error
+                          : AppColors.textTitle,
                       fontSize: AppSizes.sp14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -476,6 +503,41 @@ class _DateTimeTile extends StatelessWidget {
                 color: AppColors.iconMuted, size: AppSizes.sp16),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PastDateError extends StatelessWidget {
+  const _PastDateError({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: AppSizes.pw12, vertical: AppSizes.ph10),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppSizes.r8),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline,
+              color: AppColors.error, size: AppSizes.sp16),
+          SizedBox(width: AppSizes.pw8),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.manrope(
+                color: AppColors.error,
+                fontSize: AppSizes.sp12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

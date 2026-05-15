@@ -6,6 +6,10 @@ import '../../../../../core/constants/app_size.dart';
 import '../../../../../core/theme/app_color.dart';
 import '../../../../../models/reminder_model.dart';
 
+const _kOverdueColor = Color(0xFFEF4444);
+const _kCompleteColor = Color(0xFF4ADE80);
+const _kMediumColor = Color(0xFFF59E0B);
+
 class ReminderCard extends StatelessWidget {
   const ReminderCard({
     super.key,
@@ -20,27 +24,26 @@ class ReminderCard extends StatelessWidget {
   final VoidCallback onToggleComplete;
   final VoidCallback onDelete;
 
-  Color get _priorityColor {
+  // Stripe / accent color: overdue always red, completed always muted
+  Color get _accentColor {
+    if (reminder.isOverdue) return _kOverdueColor;
+    if (reminder.isCompleted) return AppColors.textMuted;
     switch (reminder.priority) {
       case ReminderPriority.high:
-        return const Color(0xFFEF4444);
+        return _kOverdueColor;
       case ReminderPriority.medium:
-        return const Color(0xFFF59E0B);
+        return _kMediumColor;
       case ReminderPriority.low:
-        return const Color(0xFF4ADE80);
+        return _kCompleteColor;
     }
-  }
-
-  Color get _statusColor {
-    if (reminder.isCompleted) return AppColors.textMuted;
-    if (reminder.isOverdue) return const Color(0xFFEF4444);
-    return AppColors.primaryColor;
   }
 
   @override
   Widget build(BuildContext context) {
     final isRtl = Directionality.of(context).index == 0;
     final dateStr = DateFormat('d MMM yyyy · HH:mm').format(reminder.dueDate);
+    final isOverdue = reminder.isOverdue;
+    final isCompleted = reminder.isCompleted;
 
     return Dismissible(
       key: ValueKey(reminder.id),
@@ -49,201 +52,251 @@ class ReminderCard extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: EdgeInsets.only(right: AppSizes.pw20),
         decoration: BoxDecoration(
-          color: AppColors.error.withValues(alpha: 0.15),
+          color: _kOverdueColor.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(AppSizes.r12),
         ),
         child: Icon(Icons.delete_outline,
-            color: AppColors.error, size: AppSizes.sp22),
+            color: _kOverdueColor, size: AppSizes.sp22),
       ),
       confirmDismiss: (_) async => true,
       onDismissed: (_) => onDelete(),
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
           margin: EdgeInsets.symmetric(vertical: AppSizes.h4),
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            // Overdue: subtle red tint on background
+            color: isOverdue
+                ? _kOverdueColor.withValues(alpha: 0.06)
+                : AppColors.cardBackground,
             borderRadius: BorderRadius.circular(AppSizes.r12),
-            border: Border.all(color: AppColors.inputBorder),
+            border: Border.all(
+              color: isOverdue
+                  ? _kOverdueColor.withValues(alpha: 0.5)
+                  : AppColors.inputBorder,
+              width: isOverdue ? 1.5 : 1.0,
+            ),
           ),
           child: IntrinsicHeight(
             child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Priority stripe
-              Container(
-                width: AppSizes.w4,
-                decoration: BoxDecoration(
-                  color: _priorityColor,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(
-                        isRtl ? 0 : AppSizes.r12),
-                    bottomLeft: Radius.circular(
-                        isRtl ? 0 : AppSizes.r12),
-                    topRight: Radius.circular(
-                        isRtl ? AppSizes.r12 : 0),
-                    bottomRight: Radius.circular(
-                        isRtl ? AppSizes.r12 : 0),
-                  ),
-                ),
-              ),
-              // Checkbox
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSizes.pw12),
-                child: GestureDetector(
-                  onTap: onToggleComplete,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: AppSizes.w22,
-                    height: AppSizes.w22,
-                    margin: EdgeInsets.only(top: AppSizes.h16),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: reminder.isCompleted
-                          ? AppColors.primaryColor
-                          : Colors.transparent,
-                      border: Border.all(
-                        color: reminder.isCompleted
-                            ? AppColors.primaryColor
-                            : AppColors.inputBorder,
-                        width: 2,
-                      ),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Priority / status stripe
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: AppSizes.w4,
+                  decoration: BoxDecoration(
+                    color: _accentColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft:
+                          Radius.circular(isRtl ? 0 : AppSizes.r12),
+                      bottomLeft:
+                          Radius.circular(isRtl ? 0 : AppSizes.r12),
+                      topRight:
+                          Radius.circular(isRtl ? AppSizes.r12 : 0),
+                      bottomRight:
+                          Radius.circular(isRtl ? AppSizes.r12 : 0),
                     ),
-                    child: reminder.isCompleted
-                        ? Icon(Icons.check,
-                            size: AppSizes.sp12,
-                            color: AppColors.buttonText)
-                        : null,
                   ),
                 ),
-              ),
-              // Content
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: AppSizes.h14,
-                    horizontal: AppSizes.pw4,
+                // Checkbox
+                Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: AppSizes.pw12),
+                  child: GestureDetector(
+                    onTap: onToggleComplete,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: AppSizes.w22,
+                      height: AppSizes.w22,
+                      margin: EdgeInsets.only(top: AppSizes.h16),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isCompleted
+                            ? _kCompleteColor
+                            : isOverdue
+                                ? _kOverdueColor.withValues(alpha: 0.15)
+                                : Colors.transparent,
+                        border: Border.all(
+                          color: isCompleted
+                              ? _kCompleteColor
+                              : isOverdue
+                                  ? _kOverdueColor
+                                  : AppColors.inputBorder,
+                          width: 2,
+                        ),
+                      ),
+                      child: isCompleted
+                          ? Icon(Icons.check,
+                              size: AppSizes.sp12,
+                              color: AppColors.buttonText)
+                          : null,
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              reminder.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.manrope(
-                                color: reminder.isCompleted
-                                    ? AppColors.textMuted
-                                    : AppColors.textTitle,
-                                fontWeight: FontWeight.w700,
-                                fontSize: AppSizes.sp14,
-                                decoration: reminder.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                decorationColor: AppColors.textMuted,
+                ),
+                // Content
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: AppSizes.h14,
+                      horizontal: AppSizes.pw4,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                reminder.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.manrope(
+                                  color: isCompleted
+                                      ? AppColors.textMuted
+                                      : isOverdue
+                                          ? _kOverdueColor
+                                          : AppColors.textTitle,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: AppSizes.sp14,
+                                  decoration: isCompleted
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                  decorationColor: AppColors.textMuted,
+                                ),
                               ),
                             ),
-                          ),
-                          SizedBox(width: AppSizes.pw8),
-                          _StatusBadge(color: _statusColor, reminder: reminder),
-                        ],
-                      ),
-                      if (reminder.description.isNotEmpty) ...[
-                        SizedBox(height: AppSizes.h4),
-                        Text(
-                          reminder.description,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.manrope(
-                            color: AppColors.textMuted,
-                            fontSize: AppSizes.sp12,
-                          ),
+                            SizedBox(width: AppSizes.pw8),
+                            if (isOverdue) _OverdueBadge(),
+                            if (isCompleted) _CompletedBadge(),
+                          ],
                         ),
-                      ],
-                      SizedBox(height: AppSizes.h8),
-                      Row(
-                        children: [
-                          Icon(Icons.schedule,
-                              size: AppSizes.sp12,
-                              color: _statusColor),
-                          SizedBox(width: AppSizes.pw4),
+                        if (reminder.description.isNotEmpty) ...[
+                          SizedBox(height: AppSizes.h4),
                           Text(
-                            dateStr,
+                            reminder.description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.manrope(
-                              color: _statusColor,
-                              fontSize: AppSizes.sp11,
-                              fontWeight: FontWeight.w600,
+                              color: AppColors.textMuted,
+                              fontSize: AppSizes.sp12,
                             ),
                           ),
-                          if (reminder.repeatType != ReminderRepeatType.none) ...[
-                            SizedBox(width: AppSizes.pw8),
-                            Icon(Icons.repeat,
-                                size: AppSizes.sp12,
-                                color: AppColors.textMuted),
-                          ],
-                          if (reminder.notificationEnabled) ...[
-                            SizedBox(width: AppSizes.pw8),
-                            Icon(Icons.notifications_outlined,
-                                size: AppSizes.sp12,
-                                color: AppColors.textMuted),
-                          ],
                         ],
-                      ),
-                    ],
+                        SizedBox(height: AppSizes.h8),
+                        // Date row
+                        Row(
+                          children: [
+                            Icon(
+                              isOverdue
+                                  ? Icons.warning_amber_rounded
+                                  : Icons.schedule,
+                              size: AppSizes.sp13,
+                              color: isOverdue
+                                  ? _kOverdueColor
+                                  : AppColors.textMuted,
+                            ),
+                            SizedBox(width: AppSizes.pw4),
+                            Text(
+                              dateStr,
+                              style: GoogleFonts.manrope(
+                                color: isOverdue
+                                    ? _kOverdueColor
+                                    : AppColors.textMuted,
+                                fontSize: AppSizes.sp11,
+                                fontWeight: isOverdue
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                            if (reminder.repeatType !=
+                                ReminderRepeatType.none) ...[
+                              SizedBox(width: AppSizes.pw8),
+                              Icon(Icons.repeat,
+                                  size: AppSizes.sp12,
+                                  color: AppColors.textMuted),
+                            ],
+                            if (reminder.notificationEnabled) ...[
+                              SizedBox(width: AppSizes.pw8),
+                              Icon(Icons.notifications_outlined,
+                                  size: AppSizes.sp12,
+                                  color: AppColors.textMuted),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              // Edit icon
-              Padding(
-                padding: EdgeInsets.only(right: AppSizes.pw12),
-                child: Icon(
-                  Icons.chevron_right,
-                  color: AppColors.iconMuted,
-                  size: AppSizes.sp20,
+                // Chevron
+                Padding(
+                  padding: EdgeInsets.only(right: AppSizes.pw12),
+                  child: Icon(
+                    Icons.chevron_right,
+                    color: AppColors.iconMuted,
+                    size: AppSizes.sp20,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          ),   // IntrinsicHeight
         ),
       ),
     );
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.color, required this.reminder});
+// ── Status badges ────────────────────────────────────────────────────────────
 
-  final Color color;
-  final ReminderModel reminder;
-
-  String _label(BuildContext context) {
-    if (reminder.isCompleted) return '✓';
-    if (reminder.isOverdue) return '!';
-    return '';
-  }
-
+class _OverdueBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final label = _label(context);
-    if (label.isEmpty) return const SizedBox.shrink();
+    final l10n = Localizations.localeOf(context).languageCode;
+    final label = l10n == 'ar' ? 'متأخر' : 'OVERDUE';
     return Container(
       padding: EdgeInsets.symmetric(
           horizontal: AppSizes.pw6, vertical: AppSizes.ph2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: _kOverdueColor.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppSizes.r4),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        border: Border.all(color: _kOverdueColor.withValues(alpha: 0.6)),
       ),
       child: Text(
         label,
         style: GoogleFonts.manrope(
-          color: color,
+          color: _kOverdueColor,
           fontSize: AppSizes.sp10,
           fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletedBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = Localizations.localeOf(context).languageCode;
+    final label = l10n == 'ar' ? 'مكتمل' : 'DONE';
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: AppSizes.pw6, vertical: AppSizes.ph2),
+      decoration: BoxDecoration(
+        color: _kCompleteColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppSizes.r4),
+        border:
+            Border.all(color: _kCompleteColor.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.manrope(
+          color: _kCompleteColor,
+          fontSize: AppSizes.sp10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
         ),
       ),
     );

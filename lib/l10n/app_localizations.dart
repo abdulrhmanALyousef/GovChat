@@ -3331,6 +3331,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reminder deleted'**
   String get logReminderDeleted;
+
+  /// No description provided for @reminderPastDateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date and time must be in the future. Please select a later date or time.'**
+  String get reminderPastDateError;
 }
 
 class _AppLocalizationsDelegate

@@ -1703,4 +1703,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logReminderDeleted => 'Reminder deleted';
+
+  @override
+  String get reminderPastDateError =>
+      'Due date and time must be in the future. Please select a later date or time.';
 }
