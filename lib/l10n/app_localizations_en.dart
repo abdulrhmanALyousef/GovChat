@@ -1431,6 +1431,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your account does not have a verified phone number. Please contact your administrator.';
 
   @override
+  String get mobileEmployeeOnly =>
+      'This app is for employees only. Admins must sign in via the GovChat web dashboard.';
+
+  @override
   String get otpVerificationTitle => 'OTP Verification';
 
   @override

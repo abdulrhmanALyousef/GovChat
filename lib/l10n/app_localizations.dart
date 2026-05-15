@@ -2816,6 +2816,12 @@ abstract class AppLocalizations {
   /// **'Your account does not have a verified phone number. Please contact your administrator.'**
   String get employeePhoneRequired;
 
+  /// No description provided for @mobileEmployeeOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This app is for employees only. Admins must sign in via the GovChat web dashboard.'**
+  String get mobileEmployeeOnly;
+
   /// No description provided for @otpVerificationTitle.
   ///
   /// In en, this message translates to:
