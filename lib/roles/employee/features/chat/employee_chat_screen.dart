@@ -8,6 +8,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_size.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/ai_summary_service.dart';
 import '../../../../core/theme/app_color.dart';
 import '../../../../models/chat_summary.dart';
@@ -1614,10 +1615,13 @@ class _SummaryChatSheetState extends State<_SummaryChatSheet> {
     });
 
     try {
+      final langCode =
+          context.read<LocaleProvider>().locale.languageCode;
       final result = await AiSummaryService.instance.summarize(
         messages: widget.messages,
         messagesPath: widget.messagesPath,
         chatTitle: widget.chatTitle,
+        languageCode: langCode,
       );
       if (mounted) {
         setState(() {
@@ -1674,7 +1678,7 @@ class _SummaryChatSheetState extends State<_SummaryChatSheet> {
                   SizedBox(width: AppSizes.w8),
                   Expanded(
                     child: Text(
-                      'AI Chat Summary',
+                      AppLocalizations.of(context)!.aiSummaryTitle,
                       style: GoogleFonts.manrope(
                         color: AppColors.textTitle,
                         fontWeight: FontWeight.w800,
@@ -1693,7 +1697,9 @@ class _SummaryChatSheetState extends State<_SummaryChatSheet> {
                         color: AppColors.primaryColor,
                       ),
                       label: Text(
-                        _summary == null ? 'Generate' : 'Regenerate',
+                        _summary == null
+                            ? AppLocalizations.of(context)!.aiSummaryGenerate
+                            : AppLocalizations.of(context)!.aiSummaryRegenerate,
                         style: GoogleFonts.manrope(
                           color: AppColors.primaryColor,
                           fontWeight: FontWeight.w700,
@@ -1786,7 +1792,7 @@ class _SummaryEmptyState extends StatelessWidget {
             ),
             SizedBox(height: AppSizes.ph16),
             Text(
-              'No summary yet',
+              AppLocalizations.of(context)!.aiSummaryEmptyTitle,
               style: GoogleFonts.manrope(
                 color: AppColors.textTitle,
                 fontWeight: FontWeight.w700,
@@ -1795,7 +1801,7 @@ class _SummaryEmptyState extends StatelessWidget {
             ),
             SizedBox(height: AppSizes.ph8),
             Text(
-              'Tap Generate to create an AI-powered summary of this conversation.',
+              AppLocalizations.of(context)!.aiSummaryEmptySubtitle,
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
                 color: AppColors.textMuted,
@@ -1809,7 +1815,7 @@ class _SummaryEmptyState extends StatelessWidget {
                 onPressed: onGenerate,
                 icon: const Icon(LucideIcons.sparkles, size: 16),
                 label: Text(
-                  'Generate Summary',
+                  AppLocalizations.of(context)!.aiSummaryGenerateButton,
                   style: GoogleFonts.manrope(
                     fontWeight: FontWeight.w700,
                     fontSize: AppSizes.sp14,
@@ -1886,32 +1892,33 @@ class _SummaryContent extends StatelessWidget {
         ],
         _SummarySection(
           icon: LucideIcons.messageSquare,
-          title: 'Main Points',
+          title: AppLocalizations.of(context)!.aiSummaryMainPoints,
           body: summary.mainPoints,
         ),
         _SummarySection(
           icon: LucideIcons.checkCircle,
-          title: 'Important Decisions',
+          title: AppLocalizations.of(context)!.aiSummaryDecisions,
           body: summary.importantDecisions,
         ),
         _SummarySection(
           icon: LucideIcons.clipboardList,
-          title: 'Tasks & Action Items',
+          title: AppLocalizations.of(context)!.aiSummaryTasks,
           body: summary.tasksAndActionItems,
         ),
         _SummarySection(
           icon: LucideIcons.clock,
-          title: 'Deadlines & Commitments',
+          title: AppLocalizations.of(context)!.aiSummaryDeadlines,
           body: summary.deadlinesAndCommitments,
         ),
         _SummarySection(
           icon: LucideIcons.barChart2,
-          title: 'Overall Tone',
+          title: AppLocalizations.of(context)!.aiSummaryTone,
           body: summary.overallTone,
         ),
         SizedBox(height: AppSizes.ph8),
         Text(
-          'Generated ${_formatDate(summary.generatedAt)}',
+          AppLocalizations.of(context)!.aiSummaryGeneratedAt(
+              _formatDate(summary.generatedAt)),
           textAlign: TextAlign.center,
           style: GoogleFonts.manrope(
             color: AppColors.textMuted,

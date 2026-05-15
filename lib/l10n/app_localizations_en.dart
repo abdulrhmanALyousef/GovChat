@@ -1802,4 +1802,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logNotificationFailed => 'Push notification failed';
+
+  @override
+  String get aiSummaryTitle => 'AI Chat Summary';
+
+  @override
+  String get aiSummaryGenerate => 'Generate';
+
+  @override
+  String get aiSummaryRegenerate => 'Regenerate';
+
+  @override
+  String get aiSummaryEmptyTitle => 'No summary yet';
+
+  @override
+  String get aiSummaryEmptySubtitle =>
+      'Tap Generate to create an AI-powered summary of this conversation.';
+
+  @override
+  String get aiSummaryGenerateButton => 'Generate Summary';
+
+  @override
+  String get aiSummaryMainPoints => 'Main Points';
+
+  @override
+  String get aiSummaryDecisions => 'Important Decisions';
+
+  @override
+  String get aiSummaryTasks => 'Tasks & Action Items';
+
+  @override
+  String get aiSummaryDeadlines => 'Deadlines & Commitments';
+
+  @override
+  String get aiSummaryTone => 'Overall Tone';
+
+  @override
+  String aiSummaryGeneratedAt(String date) {
+    return 'Generated $date';
+  }
 }
