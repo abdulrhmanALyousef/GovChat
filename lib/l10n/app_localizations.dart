@@ -1883,8 +1883,14 @@ abstract class AppLocalizations {
   /// No description provided for @changePasswordDescription.
   ///
   /// In en, this message translates to:
-  /// **'Verify your identity via email to update your password.'**
+  /// **'Verify your identity via OTP to update your password.'**
   String get changePasswordDescription;
+
+  /// No description provided for @cpNoPhoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone verification required. Please contact your administrator to add a verified phone number to your account.'**
+  String get cpNoPhoneMessage;
 
   /// No description provided for @verificationCodeTitle.
   ///

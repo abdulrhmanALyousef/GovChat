@@ -240,6 +240,9 @@ class LoginController extends ChangeNotifier {
               : 'EMP-${uid.substring(0, 5).toUpperCase()}',
           status: employee.status,
           createdAt: employee.createdAt,
+          phoneNumber: employee.phoneNumber,
+          phoneVerified: employee.phoneVerified,
+          avatarUrl: employee.avatarUrl,
         );
       }
     } catch (_) {}
@@ -257,6 +260,9 @@ class LoginController extends ChangeNotifier {
       displayId: userData['displayId'] ?? 'EMP-${uid.substring(0, 5).toUpperCase()}',
       status: userData['status'] ?? 'active',
       createdAt: null,
+      phoneNumber: (userData['phoneNumber'] as String? ?? ''),
+      phoneVerified: (userData['phoneVerified'] as bool? ?? false),
+      avatarUrl: (userData['avatarUrl'] as String? ?? ''),
     );
   }
 

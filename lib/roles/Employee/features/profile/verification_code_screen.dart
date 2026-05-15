@@ -260,6 +260,9 @@ class _VerificationCodeView extends StatelessWidget {
                                   MaterialPageRoute(
                                     builder: (_) => EmployeeResetPasswordScreen(
                                       uid: controller.uid,
+                                      email: controller.email,
+                                      phoneNumber: '',
+                                      phoneVerified: false,
                                     ),
                                   ),
                                 );

@@ -14,7 +14,7 @@ import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
 import '../../../../models/employee_model.dart';
-import 'verification_code_screen.dart';
+import 'employee_reset_password_screen.dart';
 
 class EmployeeProfileScreen extends StatefulWidget {
   const EmployeeProfileScreen({super.key, required this.employee});
@@ -527,9 +527,11 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => VerificationCodeScreen(
+                              builder: (_) => EmployeeResetPasswordScreen(
                                 uid: widget.employee.id ?? '',
                                 email: widget.employee.email,
+                                phoneNumber: widget.employee.phoneNumber,
+                                phoneVerified: widget.employee.phoneVerified,
                               ),
                             ),
                           );
