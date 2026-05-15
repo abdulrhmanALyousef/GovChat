@@ -2881,6 +2881,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'RESTORE'**
   String get restoreKeyButton;
+
+  /// No description provided for @aiSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Chat Summary'**
+  String get aiSummaryTitle;
+
+  /// No description provided for @aiSummaryGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate'**
+  String get aiSummaryGenerate;
+
+  /// No description provided for @aiSummaryRegenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerate'**
+  String get aiSummaryRegenerate;
+
+  /// No description provided for @aiSummaryEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No summary yet'**
+  String get aiSummaryEmptyTitle;
+
+  /// No description provided for @aiSummaryEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Generate to create an AI-powered summary of this conversation.'**
+  String get aiSummaryEmptySubtitle;
+
+  /// No description provided for @aiSummaryGenerateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Summary'**
+  String get aiSummaryGenerateButton;
+
+  /// No description provided for @aiSummaryMainPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Main Points'**
+  String get aiSummaryMainPoints;
+
+  /// No description provided for @aiSummaryDecisions.
+  ///
+  /// In en, this message translates to:
+  /// **'Important Decisions'**
+  String get aiSummaryDecisions;
+
+  /// No description provided for @aiSummaryTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks & Action Items'**
+  String get aiSummaryTasks;
+
+  /// No description provided for @aiSummaryDeadlines.
+  ///
+  /// In en, this message translates to:
+  /// **'Deadlines & Commitments'**
+  String get aiSummaryDeadlines;
+
+  /// No description provided for @aiSummaryTone.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall Tone'**
+  String get aiSummaryTone;
+
+  /// No description provided for @aiSummaryGeneratedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated {date}'**
+  String aiSummaryGeneratedAt(String date);
 }
 
 class _AppLocalizationsDelegate

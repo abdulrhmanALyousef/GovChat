@@ -1461,4 +1461,43 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get restoreKeyButton => 'استعادة';
+
+  @override
+  String get aiSummaryTitle => 'ملخص المحادثة بالذكاء الاصطناعي';
+
+  @override
+  String get aiSummaryGenerate => 'إنشاء';
+
+  @override
+  String get aiSummaryRegenerate => 'إعادة الإنشاء';
+
+  @override
+  String get aiSummaryEmptyTitle => 'لا يوجد ملخص بعد';
+
+  @override
+  String get aiSummaryEmptySubtitle =>
+      'اضغط على إنشاء لإنشاء ملخص ذكي لهذه المحادثة.';
+
+  @override
+  String get aiSummaryGenerateButton => 'إنشاء ملخص';
+
+  @override
+  String get aiSummaryMainPoints => 'النقاط الرئيسية';
+
+  @override
+  String get aiSummaryDecisions => 'القرارات المهمة';
+
+  @override
+  String get aiSummaryTasks => 'المهام وبنود العمل';
+
+  @override
+  String get aiSummaryDeadlines => 'المواعيد والالتزامات';
+
+  @override
+  String get aiSummaryTone => 'النبرة العامة';
+
+  @override
+  String aiSummaryGeneratedAt(String date) {
+    return 'تم الإنشاء $date';
+  }
 }

@@ -30,8 +30,35 @@ class AiSummaryService {
   /// Cached model name resolved from the API. Populated once per session.
   String? _resolvedModel;
 
-  static const String _systemPrompt = '''
-You are an AI assistant inside an end-to-end encrypted chat application.
+  static String _systemPrompt(String langCode) {
+    final isArabic = langCode == 'ar';
+
+    final baseRules = isArabic
+        ? '''أنت مساعد ذكاء اصطناعي داخل تطبيق محادثة مشفر من طرف إلى طرف.
+
+لغة الإخراج: العربية — بغض النظر عن لغة الرسائل الأصلية.
+إذا كانت المحادثة بالإنجليزية أو بلغة مختلطة، لخّص المعنى بالعربية بأسلوب طبيعي وسلس.
+
+قواعد مهمة:
+- تم فك تشفير الرسائل محليًا على جهاز المستخدم قبل إرسالها إليك.
+- لا تذكر التشفير أو المفاتيح أو تفاصيل الأمان إلا إذا طُلب ذلك صراحةً.
+- لخّص فقط النص المقدم دون اختلاق رسائل أو سياق غير موجود.
+- تجاهل الرسائل التالفة أو غير القابلة للقراءة.
+- ركّز على: القرارات، المهام، بنود العمل، الأسئلة المعلقة، السياق المهم، المواعيد النهائية، المشكلات التقنية.
+- اكتب بأسلوب عربي طبيعي وواضح — تجنّب الترجمة الحرفية أو الصياغات الآلية.
+- استخدم جملًا مترابطة ومفيدة بدلًا من تكرار عبارات مثل "لم يتم ذكر..." في كل حقل.
+- إذا لم يوجد محتوى لحقل معين، اكتب ملاحظة مختصرة ومختلفة (مثل: "لا يوجد" أو "غير متوفر في المحادثة").
+- حافظ على المعنى التقني الدقيق.
+- إذا كانت المحادثة قصيرة، قدّم ملخصًا قصيرًا وموجزًا.
+- إذا احتوت المحادثة على أكواد أو سجلات، لخّص المشكلة التقنية بدقة.
+- لا تُخرج بيانات وصفية داخلية حساسة.
+- أبقِ الأسماء والمصطلحات التقنية والأكواد بلغتها الأصلية دون ترجمة.
+
+أسلوب المخرجات: واضح، مقروء، موجز، دقيق، منظم عند الحاجة.'''
+        : '''You are an AI assistant inside an end-to-end encrypted chat application.
+
+Output language: English — regardless of the original chat language.
+If the conversation is in Arabic or mixed languages, summarize the meaning in natural English.
 
 Important rules:
 - Messages were decrypted locally on the user's device before being sent to you.
@@ -46,10 +73,13 @@ Important rules:
 - If the chat contains code or logs, summarize the technical issue accurately.
 - Never output sensitive internal metadata.
 - Never include raw IDs, encryption keys, MAC errors, or internal storage paths unless explicitly requested.
+- Keep names, technical terms, and code unchanged — do not translate them.
+- If a field has no relevant content, write a brief varied note (e.g. "None identified" or "Not discussed") instead of repeating the same phrase.
 
-Expected output style: clean, human-readable, concise, accurate, structured when useful.
+Expected output style: clean, human-readable, concise, accurate, structured when useful.''';
 
-The user transcript will be appended after this system prompt.''';
+    return '$baseRules\n\nThe user transcript will be appended after this system prompt.';
+  }
 
   // ── Patterns for sensitive data that must never leave the device ──────────
 
@@ -214,8 +244,10 @@ The user transcript will be appended after this system prompt.''';
     required List<ChatMessage> messages,
     required String messagesPath,
     required String chatTitle,
+    String languageCode = 'en',
   }) async {
     debugPrint('[AI_SUMMARY] started');
+    debugPrint('[AI_SUMMARY] locale=$languageCode');
     debugPrint('[AI_SUMMARY] total messages=${messages.length}');
 
     // ── 1. Pre-filter: keep ONLY text-type messages ─────────────────────
@@ -259,13 +291,36 @@ The user transcript will be appended after this system prompt.''';
     // ── 3. Load API key and build prompt ────────────────────────────────
     final apiKey = await _loadApiKey();
     final transcript = decrypted.join('\n');
+    final isArabic = languageCode == 'ar';
+
+    final jsonHints = isArabic
+        ? '''
+{
+  "mainPoints": "<ملخص من 2-4 جمل للمواضيع الرئيسية التي نوقشت>",
+  "importantDecisions": "<القرارات الرئيسية المتخذة، أو 'لم تُسجَّل قرارات رئيسية'>",
+  "tasksAndActionItems": "<المهام أو بنود العمل المحددة، أو 'لم تُحدَّد مهام معينة'>",
+  "deadlinesAndCommitments": "<التواريخ أو المواعيد النهائية المذكورة، أو 'لم تُذكر مواعيد نهائية'>",
+  "overallTone": "<النبرة العامة للمحادثة، مثل: رسمي، تعاوني، عاجل>"
+}'''
+        : '''
+{
+  "mainPoints": "<2-4 sentence summary of the main topics discussed>",
+  "importantDecisions": "<Key decisions made, or 'No major decisions recorded'>",
+  "tasksAndActionItems": "<Specific tasks or action items assigned, or 'No specific tasks identified'>",
+  "deadlinesAndCommitments": "<Dates, deadlines, or commitments mentioned, or 'No deadlines mentioned'>",
+  "overallTone": "<Overall tone of the conversation, e.g. formal, collaborative, urgent>"
+}''';
+
+    final instruction = isArabic
+        ? 'حلّل المحادثة أدناه وأجب فقط بكائن JSON صالح — بدون علامات markdown. يجب أن تكون جميع القيم باللغة العربية.'
+        : 'Analyze the conversation below and reply ONLY with a valid JSON object — no markdown fences. All values must be in English.';
 
     final prompt = '''
-$_systemPrompt
+${_systemPrompt(languageCode)}
 
 ---
 
-Analyze the conversation below and reply ONLY with a valid JSON object — no markdown fences.
+$instruction
 
 Chat title: "$chatTitle"
 Messages available: ${decrypted.length}
@@ -274,13 +329,7 @@ Transcript:
 $transcript
 
 Required JSON structure:
-{
-  "mainPoints": "<2-4 sentence summary of the main topics discussed>",
-  "importantDecisions": "<Key decisions made, or 'No major decisions recorded'>",
-  "tasksAndActionItems": "<Specific tasks or action items assigned, or 'No specific tasks identified'>",
-  "deadlinesAndCommitments": "<Dates, deadlines, or commitments mentioned, or 'No deadlines mentioned'>",
-  "overallTone": "<Overall tone of the conversation, e.g. formal, collaborative, urgent>"
-}
+$jsonHints
 ''';
 
     // ── 4. Resolve model dynamically and call Gemini v1 stable REST API ──
