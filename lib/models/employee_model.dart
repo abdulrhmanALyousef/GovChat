@@ -13,6 +13,9 @@ class EmployeeModel {
   final String status; // pending, approved, rejected
   final DateTime? createdAt;
   final String avatarUrl;
+  final String phoneNumber;
+  final bool phoneVerified;
+  final DateTime? lastOtpVerificationAt;
 
   EmployeeModel({
     this.id,
@@ -27,6 +30,9 @@ class EmployeeModel {
     this.status = 'pending',
     this.createdAt,
     this.avatarUrl = '',
+    this.phoneNumber = '',
+    this.phoneVerified = false,
+    this.lastOtpVerificationAt,
   });
 
   String get fullName => name;
@@ -48,6 +54,11 @@ class EmployeeModel {
           ? (json['createdAt'] as Timestamp).toDate()
           : null,
       avatarUrl: json['avatarUrl'] ?? '',
+      phoneNumber: json['phoneNumber'] ?? '',
+      phoneVerified: json['phoneVerified'] as bool? ?? false,
+      lastOtpVerificationAt: json['lastOtpVerificationAt'] is Timestamp
+          ? (json['lastOtpVerificationAt'] as Timestamp).toDate()
+          : null,
     );
   }
 

@@ -377,7 +377,8 @@
   "microphonePermissionDenied": "Microphone permission denied",
   "sendVoiceOption": "Voice",
   "changePasswordButton": "Change Password",
-  "changePasswordDescription": "Verify your identity via email to update your password.",
+  "changePasswordDescription": "Verify your identity via OTP to update your password.",
+  "cpNoPhoneMessage": "Phone verification required. Please contact your administrator to add a verified phone number to your account.",
   "verificationCodeTitle": "Verification Code",
   "verificationCodeSubtitle": "A 6-digit code has been sent to your registered email address.",
   "enterCodeHint": "Enter 6-digit code",
@@ -554,6 +555,48 @@
   "announcementPriorityUrgent": "Urgent",
   "logAnnouncementCreated": "Announcement created",
   "logAnnouncementUpdated": "Announcement updated",
-  "logAnnouncementDeleted": "Announcement deleted"
+  "logAnnouncementDeleted": "Announcement deleted",
+
+  "phoneNumberLabel": "PHONE NUMBER",
+  "phoneNumberHint": "0597123456",
+  "phoneNumberRequired": "Phone number is required",
+  "phoneNumberInvalid": "Enter a valid Saudi mobile number (e.g. 0597123456)",
+  "employeePhoneRequired": "Your account does not have a verified phone number. Please contact your administrator.",
+  "mobileEmployeeOnly": "This app is for employees only. Admins must sign in via the GovChat web dashboard.",
+
+  "otpVerificationTitle": "OTP Verification",
+  "otpVerificationSubtitle": "A 4-digit code has been sent to",
+  "otpLoginTitle": "Two-Factor Authentication",
+  "otpLoginSubtitle": "For your security, enter the OTP sent to your registered phone.",
+  "otpEnterCode": "Enter 4-digit OTP",
+  "otpVerifyButton": "VERIFY OTP",
+  "otpResendButton": "Resend Code",
+  "otpResendIn": "Resend in {seconds}s",
+  "@otpResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "otpSendingCode": "Sending OTP...",
+  "otpVerifying": "Verifying...",
+  "otpInvalidCode": "Invalid OTP. Please try again.",
+  "otpExpiredCode": "OTP expired. Please request a new one.",
+  "otpTooManyAttempts": "Too many failed attempts. Please request a new code.",
+  "otpSendFailed": "Failed to send OTP. Check your phone number and try again.",
+  "otpVerificationFailed": "OTP verification failed. Please try again.",
+  "otpAttemptsLeft": "{count} attempts remaining",
+  "@otpAttemptsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logOtpSent": "OTP sent to phone",
+  "logOtpVerified": "OTP verified successfully",
+  "logOtpFailed": "OTP verification failed",
+  "logPasswordResetViaSms": "Password reset via SMS OTP"
 
 }

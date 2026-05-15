@@ -1883,8 +1883,14 @@ abstract class AppLocalizations {
   /// No description provided for @changePasswordDescription.
   ///
   /// In en, this message translates to:
-  /// **'Verify your identity via email to update your password.'**
+  /// **'Verify your identity via OTP to update your password.'**
   String get changePasswordDescription;
+
+  /// No description provided for @cpNoPhoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone verification required. Please contact your administrator to add a verified phone number to your account.'**
+  String get cpNoPhoneMessage;
 
   /// No description provided for @verificationCodeTitle.
   ///
@@ -2839,6 +2845,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Announcement deleted'**
   String get logAnnouncementDeleted;
+
+  /// No description provided for @phoneNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PHONE NUMBER'**
+  String get phoneNumberLabel;
+
+  /// No description provided for @phoneNumberHint.
+  ///
+  /// In en, this message translates to:
+  /// **'0597123456'**
+  String get phoneNumberHint;
+
+  /// No description provided for @phoneNumberRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is required'**
+  String get phoneNumberRequired;
+
+  /// No description provided for @phoneNumberInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid Saudi mobile number (e.g. 0597123456)'**
+  String get phoneNumberInvalid;
+
+  /// No description provided for @employeePhoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account does not have a verified phone number. Please contact your administrator.'**
+  String get employeePhoneRequired;
+
+  /// No description provided for @mobileEmployeeOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This app is for employees only. Admins must sign in via the GovChat web dashboard.'**
+  String get mobileEmployeeOnly;
+
+  /// No description provided for @otpVerificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP Verification'**
+  String get otpVerificationTitle;
+
+  /// No description provided for @otpVerificationSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A 4-digit code has been sent to'**
+  String get otpVerificationSubtitle;
+
+  /// No description provided for @otpLoginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-Factor Authentication'**
+  String get otpLoginTitle;
+
+  /// No description provided for @otpLoginSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'For your security, enter the OTP sent to your registered phone.'**
+  String get otpLoginSubtitle;
+
+  /// No description provided for @otpEnterCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 4-digit OTP'**
+  String get otpEnterCode;
+
+  /// No description provided for @otpVerifyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'VERIFY OTP'**
+  String get otpVerifyButton;
+
+  /// No description provided for @otpResendButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Code'**
+  String get otpResendButton;
+
+  /// No description provided for @otpResendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String otpResendIn(int seconds);
+
+  /// No description provided for @otpSendingCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending OTP...'**
+  String get otpSendingCode;
+
+  /// No description provided for @otpVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying...'**
+  String get otpVerifying;
+
+  /// No description provided for @otpInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid OTP. Please try again.'**
+  String get otpInvalidCode;
+
+  /// No description provided for @otpExpiredCode.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP expired. Please request a new one.'**
+  String get otpExpiredCode;
+
+  /// No description provided for @otpTooManyAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many failed attempts. Please request a new code.'**
+  String get otpTooManyAttempts;
+
+  /// No description provided for @otpSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send OTP. Check your phone number and try again.'**
+  String get otpSendFailed;
+
+  /// No description provided for @otpVerificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP verification failed. Please try again.'**
+  String get otpVerificationFailed;
+
+  /// No description provided for @otpAttemptsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} attempts remaining'**
+  String otpAttemptsLeft(int count);
+
+  /// No description provided for @logOtpSent.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP sent to phone'**
+  String get logOtpSent;
+
+  /// No description provided for @logOtpVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP verified successfully'**
+  String get logOtpVerified;
+
+  /// No description provided for @logOtpFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP verification failed'**
+  String get logOtpFailed;
+
+  /// No description provided for @logPasswordResetViaSms.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset via SMS OTP'**
+  String get logPasswordResetViaSms;
 }
 
 class _AppLocalizationsDelegate

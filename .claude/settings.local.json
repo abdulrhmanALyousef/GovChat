@@ -22,13 +22,19 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(git commit -m 'fix: update LinkedIn URLs for all team members *)",
-      "Bash(git commit -m 'fix: correct team photo filenames \\(Abdulrhman.jpg, Abdullah.jpg\\) *)",
-      "Bash(git commit -m 'fix: correct Arabic name for Bassam \\(بسام الهويريني\\) *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\" -Directory)",
       "Bash(Select-Object Name)",
       "Bash(npx --prefix \"C:/Users/bssam/StudioProjects/cargo/govchat-web\" tsc --noEmit)",
-      "Bash(node \"C:/Users/bssam/StudioProjects/cargo/govchat-web/node_modules/.bin/tsc\" --noEmit --project \"C:/Users/bssam/StudioProjects/cargo/govchat-web/tsconfig.json\")"
+      "Bash(node \"C:/Users/bssam/StudioProjects/cargo/govchat-web/node_modules/.bin/tsc\" --noEmit --project \"C:/Users/bssam/StudioProjects/cargo/govchat-web/tsconfig.json\")",
+      "Bash(grep -E '\\\\.\\(js|ts\\)$')",
+      "Bash(xargs grep -l \"2FA\\\\|two-factor\\\\|mfa\\\\|MFA\")",
+      "WebFetch(domain:authentica.mintlify.app)",
+      "WebFetch(domain:docs.authentica.sa)",
+      "Bash(node -e \"const fs=require\\('fs'\\); const c=fs.readFileSync\\('index.js','utf8'\\); fs.writeFileSync\\('index.js',c.replace\\(/\\\\r\\\\n/g,'\\\\n'\\),'utf8'\\); console.log\\('done'\\);\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const c=fs.readFileSync\\('index.js','utf8'\\); fs.writeFileSync\\('index.js',c.replace\\(/\\\\r\\\\n/g,'\\\\n'\\),'utf8'\\);\")",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\" -Directory | Where-Object { $_.Name -match 'web' })",
+      "Bash(powershell *)",
+      "Bash(xargs grep -l \"functions\\\\|callable\")"
     ]
   }
 }

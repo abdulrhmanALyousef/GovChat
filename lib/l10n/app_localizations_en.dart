@@ -951,7 +951,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get changePasswordDescription =>
-      'Verify your identity via email to update your password.';
+      'Verify your identity via OTP to update your password.';
+
+  @override
+  String get cpNoPhoneMessage =>
+      'Phone verification required. Please contact your administrator to add a verified phone number to your account.';
 
   @override
   String get verificationCodeTitle => 'Verification Code';
@@ -1440,4 +1444,93 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logAnnouncementDeleted => 'Announcement deleted';
+
+  @override
+  String get phoneNumberLabel => 'PHONE NUMBER';
+
+  @override
+  String get phoneNumberHint => '0597123456';
+
+  @override
+  String get phoneNumberRequired => 'Phone number is required';
+
+  @override
+  String get phoneNumberInvalid =>
+      'Enter a valid Saudi mobile number (e.g. 0597123456)';
+
+  @override
+  String get employeePhoneRequired =>
+      'Your account does not have a verified phone number. Please contact your administrator.';
+
+  @override
+  String get mobileEmployeeOnly =>
+      'This app is for employees only. Admins must sign in via the GovChat web dashboard.';
+
+  @override
+  String get otpVerificationTitle => 'OTP Verification';
+
+  @override
+  String get otpVerificationSubtitle => 'A 4-digit code has been sent to';
+
+  @override
+  String get otpLoginTitle => 'Two-Factor Authentication';
+
+  @override
+  String get otpLoginSubtitle =>
+      'For your security, enter the OTP sent to your registered phone.';
+
+  @override
+  String get otpEnterCode => 'Enter 4-digit OTP';
+
+  @override
+  String get otpVerifyButton => 'VERIFY OTP';
+
+  @override
+  String get otpResendButton => 'Resend Code';
+
+  @override
+  String otpResendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get otpSendingCode => 'Sending OTP...';
+
+  @override
+  String get otpVerifying => 'Verifying...';
+
+  @override
+  String get otpInvalidCode => 'Invalid OTP. Please try again.';
+
+  @override
+  String get otpExpiredCode => 'OTP expired. Please request a new one.';
+
+  @override
+  String get otpTooManyAttempts =>
+      'Too many failed attempts. Please request a new code.';
+
+  @override
+  String get otpSendFailed =>
+      'Failed to send OTP. Check your phone number and try again.';
+
+  @override
+  String get otpVerificationFailed =>
+      'OTP verification failed. Please try again.';
+
+  @override
+  String otpAttemptsLeft(int count) {
+    return '$count attempts remaining';
+  }
+
+  @override
+  String get logOtpSent => 'OTP sent to phone';
+
+  @override
+  String get logOtpVerified => 'OTP verified successfully';
+
+  @override
+  String get logOtpFailed => 'OTP verification failed';
+
+  @override
+  String get logPasswordResetViaSms => 'Password reset via SMS OTP';
 }
