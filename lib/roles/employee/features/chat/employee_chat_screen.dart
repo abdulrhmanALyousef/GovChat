@@ -8,8 +8,9 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_size.dart';
-
+import '../../../../core/services/ai_summary_service.dart';
 import '../../../../core/theme/app_color.dart';
+import '../../../../models/chat_summary.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/chat_message.dart'
     show ChatMessage, MessageStatus, MessageType;
@@ -154,6 +155,18 @@ class _ChatView extends StatelessWidget {
                   ),
                 ],
               ),
+        actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.sparkles, color: AppColors.textTitle),
+            tooltip: 'Summarize Chat',
+            onPressed: () => _showSummarizeSheet(
+              context,
+              messages: controller.messages,
+              messagesPath: controller.effectiveMessagesPath,
+              chatTitle: fallbackTitle,
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Container(
@@ -414,6 +427,27 @@ class _MessageItem extends StatelessWidget {
           mediaDuration: message.mediaDuration,
         );
       case MessageType.text:
+        if (message.text.startsWith('[Decryption error:')) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(LucideIcons.lock, size: AppSizes.sp14, color: AppColors.textMuted),
+              SizedBox(width: AppSizes.pw6),
+              Flexible(
+                child: Text(
+                  'This message cannot be decrypted',
+                  textDirection: Directionality.of(context),
+                  style: GoogleFonts.manrope(
+                    color: AppColors.textMuted,
+                    fontSize: AppSizes.sp14,
+                    fontStyle: FontStyle.italic,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
         return Text(
           message.text,
           textDirection: Directionality.of(context),
@@ -1455,6 +1489,444 @@ class _ErrorBanner extends StatelessWidget {
               Icons.close,
               color: AppColors.error,
               size: AppSizes.sp16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── AI Summary sheet ─────────────────────────────────────────────────────────
+
+void _showSummarizeSheet(
+  BuildContext context, {
+  required List<ChatMessage> messages,
+  required String messagesPath,
+  required String chatTitle,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.cardBackground,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r20)),
+    ),
+    builder: (_) => _SummaryChatSheet(
+      messages: messages,
+      messagesPath: messagesPath,
+      chatTitle: chatTitle,
+    ),
+  );
+}
+
+class _SummaryChatSheet extends StatefulWidget {
+  const _SummaryChatSheet({
+    required this.messages,
+    required this.messagesPath,
+    required this.chatTitle,
+  });
+
+  final List<ChatMessage> messages;
+  final String messagesPath;
+  final String chatTitle;
+
+  @override
+  State<_SummaryChatSheet> createState() => _SummaryChatSheetState();
+}
+
+class _SummaryChatSheetState extends State<_SummaryChatSheet> {
+  ChatSummary? _summary;
+  bool _loading = true;
+  bool _generating = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExisting();
+  }
+
+  Future<void> _loadExisting() async {
+    try {
+      final existing =
+          await AiSummaryService.instance.fetchSummary(widget.messagesPath);
+      if (mounted) {
+        setState(() {
+          _summary = existing;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _generate() async {
+    debugPrint('[AI_SUMMARY] summary button pressed — '
+        '${widget.messages.length} messages in view');
+
+    setState(() {
+      _generating = true;
+      _error = null;
+    });
+
+    try {
+      final result = await AiSummaryService.instance.summarize(
+        messages: widget.messages,
+        messagesPath: widget.messagesPath,
+        chatTitle: widget.chatTitle,
+      );
+      if (mounted) {
+        setState(() {
+          _summary = result;
+          _generating = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[AI_SUMMARY] generate error: $e');
+      if (mounted) {
+        setState(() {
+          _generating = false;
+          _error = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.75,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (_, scrollController) {
+        return Column(
+          children: [
+            // Drag handle
+            Padding(
+              padding: EdgeInsets.only(
+                top: AppSizes.ph12,
+                bottom: AppSizes.ph8,
+              ),
+              child: Container(
+                width: AppSizes.w42,
+                height: AppSizes.h4,
+                decoration: BoxDecoration(
+                  color: AppColors.textMuted.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(AppSizes.r4),
+                ),
+              ),
+            ),
+            // Header row
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSizes.pw16),
+              child: Row(
+                children: [
+                  const Icon(
+                    LucideIcons.sparkles,
+                    color: AppColors.primaryColor,
+                    size: 20,
+                  ),
+                  SizedBox(width: AppSizes.w8),
+                  Expanded(
+                    child: Text(
+                      'AI Chat Summary',
+                      style: GoogleFonts.manrope(
+                        color: AppColors.textTitle,
+                        fontWeight: FontWeight.w800,
+                        fontSize: AppSizes.sp16,
+                      ),
+                    ),
+                  ),
+                  if (!_generating)
+                    TextButton.icon(
+                      onPressed: _generate,
+                      icon: Icon(
+                        _summary == null
+                            ? LucideIcons.zap
+                            : LucideIcons.refreshCw,
+                        size: 14,
+                        color: AppColors.primaryColor,
+                      ),
+                      label: Text(
+                        _summary == null ? 'Generate' : 'Regenerate',
+                        style: GoogleFonts.manrope(
+                          color: AppColors.primaryColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: AppSizes.sp12,
+                        ),
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSizes.pw16,
+                      ),
+                      child: SizedBox(
+                        width: AppSizes.w16,
+                        height: AppSizes.h16,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Divider(
+              color: AppColors.inputBorder,
+              height: AppSizes.h2,
+              thickness: 1,
+            ),
+            // Body
+            Expanded(
+              child: _loading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryColor,
+                      ),
+                    )
+                  : _generating
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                color: AppColors.primaryColor,
+                              ),
+                              SizedBox(height: AppSizes.ph16),
+                              Text(
+                                'Analysing conversation…',
+                                style: GoogleFonts.manrope(
+                                  color: AppColors.textMuted,
+                                  fontSize: AppSizes.sp13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _summary == null
+                          ? _SummaryEmptyState(onGenerate: _generate)
+                          : _SummaryContent(
+                              summary: _summary!,
+                              error: _error,
+                              scrollController: scrollController,
+                            ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ── Empty state ────────────────────────────────────────────────────────────────
+
+class _SummaryEmptyState extends StatelessWidget {
+  const _SummaryEmptyState({required this.onGenerate});
+  final VoidCallback onGenerate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: AppSizes.pw24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              LucideIcons.fileText,
+              color: AppColors.textMuted,
+              size: AppSizes.sp40,
+            ),
+            SizedBox(height: AppSizes.ph16),
+            Text(
+              'No summary yet',
+              style: GoogleFonts.manrope(
+                color: AppColors.textTitle,
+                fontWeight: FontWeight.w700,
+                fontSize: AppSizes.sp14,
+              ),
+            ),
+            SizedBox(height: AppSizes.ph8),
+            Text(
+              'Tap Generate to create an AI-powered summary of this conversation.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.manrope(
+                color: AppColors.textMuted,
+                fontSize: AppSizes.sp13,
+              ),
+            ),
+            SizedBox(height: AppSizes.ph24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onGenerate,
+                icon: const Icon(LucideIcons.sparkles, size: 16),
+                label: Text(
+                  'Generate Summary',
+                  style: GoogleFonts.manrope(
+                    fontWeight: FontWeight.w700,
+                    fontSize: AppSizes.sp14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.buttonBackground,
+                  foregroundColor: AppColors.buttonText,
+                  padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.r12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Summary content ────────────────────────────────────────────────────────────
+
+class _SummaryContent extends StatelessWidget {
+  const _SummaryContent({
+    required this.summary,
+    required this.scrollController,
+    this.error,
+  });
+
+  final ChatSummary summary;
+  final ScrollController scrollController;
+  final String? error;
+
+  String _formatDate(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      controller: scrollController,
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.pw16,
+        AppSizes.ph8,
+        AppSizes.pw16,
+        AppSizes.ph24,
+      ),
+      children: [
+        if (error != null) ...[
+          Container(
+            margin: EdgeInsets.only(bottom: AppSizes.ph12),
+            padding: EdgeInsets.all(AppSizes.pw16),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppSizes.r12),
+              border: Border.all(
+                color: AppColors.error.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Text(
+              error!,
+              style: GoogleFonts.manrope(
+                color: AppColors.error,
+                fontSize: AppSizes.sp12,
+              ),
+            ),
+          ),
+        ],
+        _SummarySection(
+          icon: LucideIcons.messageSquare,
+          title: 'Main Points',
+          body: summary.mainPoints,
+        ),
+        _SummarySection(
+          icon: LucideIcons.checkCircle,
+          title: 'Important Decisions',
+          body: summary.importantDecisions,
+        ),
+        _SummarySection(
+          icon: LucideIcons.clipboardList,
+          title: 'Tasks & Action Items',
+          body: summary.tasksAndActionItems,
+        ),
+        _SummarySection(
+          icon: LucideIcons.clock,
+          title: 'Deadlines & Commitments',
+          body: summary.deadlinesAndCommitments,
+        ),
+        _SummarySection(
+          icon: LucideIcons.barChart2,
+          title: 'Overall Tone',
+          body: summary.overallTone,
+        ),
+        SizedBox(height: AppSizes.ph8),
+        Text(
+          'Generated ${_formatDate(summary.generatedAt)}',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.manrope(
+            color: AppColors.textMuted,
+            fontSize: AppSizes.sp11,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummarySection extends StatelessWidget {
+  const _SummarySection({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: AppSizes.ph12),
+      padding: EdgeInsets.all(AppSizes.pw16),
+      decoration: BoxDecoration(
+        color: AppColors.sectionBackground,
+        borderRadius: BorderRadius.circular(AppSizes.r12),
+        border: Border.all(color: AppColors.inputBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppColors.primaryColor, size: AppSizes.sp14),
+              SizedBox(width: AppSizes.w6),
+              Text(
+                title,
+                style: GoogleFonts.manrope(
+                  color: AppColors.primaryColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: AppSizes.sp12,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSizes.ph8),
+          Text(
+            body.isNotEmpty ? body : '—',
+            style: GoogleFonts.manrope(
+              color: AppColors.textPrimary,
+              fontSize: AppSizes.sp13,
+              height: 1.5,
             ),
           ),
         ],

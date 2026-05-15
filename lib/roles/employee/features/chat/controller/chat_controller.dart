@@ -78,6 +78,24 @@ class ChatController extends ChangeNotifier {
 
   bool get isEncryptionReady => _conversationKey != null;
 
+  /// Guards against concurrent [_initEncryption] calls.
+  bool _initEncryptionRunning = false;
+
+  /// Guards against multiple MAC-error recoveries firing from the same
+  /// [Future.wait] batch in [_tryDecrypt].
+  bool _macRecoveryScheduled = false;
+
+  /// Set to `true` after the first auto-recovery attempt.  Prevents an
+  /// infinite loop when the re-derived key is identical to the evicted one
+  /// (common in private chats where the key is deterministic from X25519).
+  bool _recoveryAttempted = false;
+
+  /// Counts how many times [_initEncryption] has been invoked.
+  int _initEncryptionCallCount = 0;
+
+  /// Set in [dispose] to prevent post-dispose crashes from async callbacks.
+  bool _disposed = false;
+
   // ── Internal ───────────────────────────────────────────────────────────────
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
@@ -161,16 +179,25 @@ class ChatController extends ChangeNotifier {
   bool get _isOrgChat =>
       messagesPath != null && messagesPath!.contains('/org_chats/');
 
+  /// Full Firestore path to the messages collection for the current chat.
+  /// Used by [AiSummaryService] to derive where to read/write summaries.
+  String get effectiveMessagesPath => '$_conversationPath/messages';
+
   // ── Encryption init ────────────────────────────────────────────────────────
 
-  Future<void> _initEncryption() async {
-    try {
-      debugPrint('[E2EE] _initEncryption() start — path: $_conversationPath');
+  Future<void> _initEncryption({bool forceRefresh = false}) async {
+    if (_disposed) return;
+    if (_initEncryptionRunning) return;
+    _initEncryptionRunning = true;
+    _initEncryptionCallCount++;
 
-      // ── 1. Resolve the Firebase UID ─────────────────────────────────────────
+    try {
+      debugPrint('[E2EE] _initEncryption #$_initEncryptionCallCount  '
+          'path=$_conversationPath  forceRefresh=$forceRefresh');
+
+      // ── 1. Resolve the Firebase UID ─────────────────────────────────────
       String? uid = E2eeManager.currentUid;
       if (uid == null) {
-        debugPrint('[E2EE] currentUid null — waiting for auth state...');
         try {
           final user = await FirebaseAuth.instance
               .authStateChanges()
@@ -180,61 +207,60 @@ class ChatController extends ChangeNotifier {
           uid = user?.uid;
         } catch (_) {}
       }
+      if (_disposed) return;
 
       if (uid == null) {
-        debugPrint('[E2EE] uid still null — cannot init encryption');
         errorMessage = 'Authentication required for encryption.';
-        notifyListeners();
+        _safeNotify();
         return;
       }
 
-      debugPrint('[E2EE] uid=$uid  path=$_conversationPath');
-
-      // ── 2. Wait for X25519 key initialisation ───────────────────────────────
+      // ── 2. Wait for X25519 key initialisation ──────────────────────────
       await E2eeManager.ensureInitialized();
+      if (_disposed) return;
 
-      // ── 3. Fetch member UIDs ────────────────────────────────────────────────
+      // ── 3. Fetch member UIDs ───────────────────────────────────────────
       final memberUids = await _fetchMemberUids(uid);
-      debugPrint('[E2EE] memberUids (${memberUids.length}): $memberUids');
+      if (_disposed) return;
 
-      // ── 4. Get the conversation AES key ─────────────────────────────────────
+      // ── 4. Get the conversation AES key ────────────────────────────────
       _conversationKey = await E2eeManager.getConversationKey(
         conversationPath: _conversationPath,
         currentUid: uid,
         memberUids: memberUids,
         isPrivateChat: _isPrivateChat,
+        forceRefresh: forceRefresh,
       );
+      if (_disposed) return;
 
       if (_conversationKey == null) {
-        debugPrint(
-          '[E2EE] no conversation key for $uid — '
-          'listening for group key distribution',
-        );
+        debugPrint('[E2EE] no key — listening for distribution');
         _listenForKeyDoc(uid);
         errorMessage =
             'Waiting for encryption key. '
             'Ask the conversation starter to re-open this chat, '
             'then tap Retry.';
       } else {
-        debugPrint(
-          '[E2EE] conversation key ready '
-          '(${_conversationKey!.length} B)',
-        );
+        debugPrint('[E2EE] key ready (${_conversationKey!.length} B)');
         if (errorMessage?.contains('Waiting for encryption key') == true) {
           errorMessage = null;
         }
         if (messages.isNotEmpty) {
-          debugPrint(
-            '[E2EE] re-decrypting ${messages.length} buffered '
-            'messages',
-          );
-          messages = await Future.wait(messages.map(_tryDecrypt));
+          final decrypted = <ChatMessage>[];
+          for (final msg in messages) {
+            if (_disposed) return;
+            decrypted.add(await _tryDecrypt(msg));
+          }
+          messages = decrypted;
         }
       }
 
-      notifyListeners();
+      _safeNotify();
     } catch (e, st) {
-      debugPrint('[E2EE] _initEncryption() error: $e\n$st');
+      debugPrint('[E2EE] _initEncryption error: $e\n$st');
+    } finally {
+      _initEncryptionRunning = false;
+      _macRecoveryScheduled = false;
     }
   }
 
@@ -355,8 +381,12 @@ class ChatController extends ChangeNotifier {
   /// Called by the UI retry button so users can recover without restarting.
   Future<void> retryEncryptionInit() async {
     errorMessage = null;
+    // Reset recovery flags so manual retry is always honoured.
+    _recoveryAttempted = false;
+    _macRecoveryScheduled = false;
     notifyListeners();
-    _encryptionReady = _initEncryption();
+    // forceRefresh=true bypasses all caches and re-fetches keys from server.
+    _encryptionReady = _initEncryption(forceRefresh: true);
     await _encryptionReady;
   }
 
@@ -385,31 +415,48 @@ class ChatController extends ChangeNotifier {
   // ── Decrypt helper ─────────────────────────────────────────────────────────
 
   Future<ChatMessage> _tryDecrypt(ChatMessage msg) async {
-    if (!msg.isEncrypted) return msg;
+    if (!msg.isEncrypted || _disposed) return msg;
 
-    if (_conversationKey == null) {
-      debugPrint('[E2EE][decrypt] key NULL — skipping msg ${msg.id}');
-      return msg;
-    }
+    // Capture the key at the start — never null-out the shared field from
+    // inside a Future.wait batch.  If another message already scheduled
+    // recovery the key will be null here and we skip gracefully.
+    final key = _conversationKey;
+    if (key == null) return msg;
 
     String? decryptedText;
     String? decryptedMediaUrl;
 
+    // ── Text decryption ──────────────────────────────────────────────────
     if (msg.encryptedText != null && msg.iv != null) {
       try {
         decryptedText = await E2eeManager.decryptMessage(
           EncryptedPayload(ciphertext: msg.encryptedText!, nonce: msg.iv!),
-          _conversationKey!,
+          key,
+          messageId: msg.id,
         );
-      } on SecretBoxAuthenticationError catch (e) {
-        debugPrint('[E2EE][decrypt] wrong key for msg=${msg.id}: $e');
+      } on SecretBoxAuthenticationError {
+        // Old messages encrypted with a previous key — skip silently.
+        // Schedule ONE recovery per session so NEW messages can work.
+        if (!_macRecoveryScheduled && !_recoveryAttempted) {
+          debugPrint('[E2EE] MAC error on msg=${msg.id} — '
+              'scheduling deferred recovery');
+          _macRecoveryScheduled = true;
+          _recoveryAttempted = true;
+          // Deferred: do NOT null the key or re-init inside Future.wait.
+          // Recovery runs after the current batch finishes.
+          Future.microtask(() {
+            if (_disposed) return;
+            _conversationKey = null;
+            _encryptionReady = _initEncryption(forceRefresh: true);
+          });
+        }
         decryptedText = '[Decryption error: wrong key or corrupted data]';
       } catch (e) {
-        debugPrint('[E2EE][decrypt] error for msg=${msg.id}: $e');
         decryptedText = '[Decryption error: $e]';
       }
     }
 
+    // ── Media URL decryption ─────────────────────────────────────────────
     if (msg.encryptedMediaUrl != null && msg.mediaIv != null) {
       try {
         decryptedMediaUrl = await E2eeManager.decryptMessage(
@@ -417,11 +464,9 @@ class ChatController extends ChangeNotifier {
             ciphertext: msg.encryptedMediaUrl!,
             nonce: msg.mediaIv!,
           ),
-          _conversationKey!,
+          key,
         );
-      } catch (e) {
-        debugPrint('[E2EE][decrypt] media decrypt error for msg=${msg.id}: $e');
-      }
+      } catch (_) {}
     }
 
     return msg.withDecrypted(
@@ -438,24 +483,34 @@ class ChatController extends ChangeNotifier {
         .snapshots()
         .listen(
           (snapshot) async {
+            if (_disposed) return;
+
             final rawMessages = snapshot.docs
                 .map((doc) => ChatMessage.fromJson(doc.data(), id: doc.id))
                 .where((m) => !m.isDeleted)
                 .toList();
 
             if (_conversationKey != null) {
-              messages = await Future.wait(rawMessages.map(_tryDecrypt));
+              // Decrypt sequentially to avoid flooding the main isolate
+              // with concurrent crypto operations ("Skipped N frames").
+              final decrypted = <ChatMessage>[];
+              for (final msg in rawMessages) {
+                if (_disposed) return;
+                decrypted.add(await _tryDecrypt(msg));
+              }
+              messages = decrypted;
             } else {
               messages = rawMessages;
             }
 
             _markMessagesAsRead(snapshot.docs).ignore();
-            notifyListeners();
+            _safeNotify();
             _scrollToBottom();
           },
           onError: (error) {
+            if (_disposed) return;
             errorMessage = error.toString();
-            notifyListeners();
+            _safeNotify();
           },
         );
   }
@@ -489,7 +544,10 @@ class ChatController extends ChangeNotifier {
         return;
       }
 
-      final enc = await E2eeManager.encryptMessage(text, _conversationKey!);
+      final enc = await E2eeManager.encryptMessage(
+        text, _conversationKey!,
+      );
+
       final ref = await _messagesCollection().add({
         'senderId': displayId,
         'senderUid': employeeUid,
@@ -614,7 +672,9 @@ class ChatController extends ChangeNotifier {
         return;
       }
 
-      final enc = await E2eeManager.encryptMessage(newText, _conversationKey!);
+      final enc = await E2eeManager.encryptMessage(
+        newText, _conversationKey!,
+      );
       await _messagesCollection().doc(msg.id!).update({
         'text': '',
         'isEncrypted': true,
@@ -1025,10 +1085,19 @@ class ChatController extends ChangeNotifier {
   String _sanitize(String value) =>
       value.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_').toLowerCase();
 
+  // ── Safe notify ─────────────────────────────────────────────────────────────
+
+  /// Call instead of [notifyListeners] from async callbacks that may complete
+  /// after [dispose] has been called.
+  void _safeNotify() {
+    if (!_disposed) notifyListeners();
+  }
+
   // ── Dispose ────────────────────────────────────────────────────────────────
 
   @override
   void dispose() {
+    _disposed = true;
     _typingDebounceTimer?.cancel();
     _typingClearTimer?.cancel();
     _recordingTimer?.cancel();

@@ -56,6 +56,8 @@ dependencies:
   cryptography: ^2.0.5
   flutter_secure_storage: ^9.2.2
   lucide_icons: ^0.257.0
+  firebase_remote_config: ^5.1.0
+  http: ^1.2.0
 
 
 dev_dependencies:
