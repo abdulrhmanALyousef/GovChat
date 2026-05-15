@@ -551,6 +551,7 @@
   "phoneNumberRequired": "Phone number is required",
   "phoneNumberInvalid": "Enter a valid Saudi mobile number (e.g. 0597123456)",
   "employeePhoneRequired": "Your account does not have a verified phone number. Please contact your administrator.",
+  "mobileEmployeeOnly": "This app is for employees only. Admins must sign in via the GovChat web dashboard.",
 
   "otpVerificationTitle": "OTP Verification",
   "otpVerificationSubtitle": "A 4-digit code has been sent to",

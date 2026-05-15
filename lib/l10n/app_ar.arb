@@ -483,6 +483,7 @@
   "phoneNumberRequired": "رقم الهاتف مطلوب",
   "phoneNumberInvalid": "أدخل رقم جوال سعودي صحيح (مثال: 0597123456)",
   "employeePhoneRequired": "حسابك لا يحتوي على رقم هاتف موثق. يرجى التواصل مع المسؤول.",
+  "mobileEmployeeOnly": "هذا التطبيق للموظفين فقط. يجب على المسؤولين تسجيل الدخول عبر لوحة تحكم GovChat الإلكترونية.",
 
   "otpVerificationTitle": "التحقق بكلمة المرور المؤقتة",
   "otpVerificationSubtitle": "تم إرسال رمز مكون من 4 أرقام إلى",

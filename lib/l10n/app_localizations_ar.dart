@@ -1428,6 +1428,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'حسابك لا يحتوي على رقم هاتف موثق. يرجى التواصل مع المسؤول.';
 
   @override
+  String get mobileEmployeeOnly =>
+      'هذا التطبيق للموظفين فقط. يجب على المسؤولين تسجيل الدخول عبر لوحة تحكم GovChat الإلكترونية.';
+
+  @override
   String get otpVerificationTitle => 'التحقق بكلمة المرور المؤقتة';
 
   @override

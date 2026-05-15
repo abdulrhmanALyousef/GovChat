@@ -17,7 +17,11 @@
       "WebFetch(domain:docs.authentica.sa)",
       "Bash(npm run *)",
       "Bash(node -e \"const fs=require\\('fs'\\); const c=fs.readFileSync\\('index.js','utf8'\\); fs.writeFileSync\\('index.js',c.replace\\(/\\\\r\\\\n/g,'\\\\n'\\),'utf8'\\); console.log\\('done'\\);\")",
-      "Bash(node -e \"const fs=require\\('fs'\\); const c=fs.readFileSync\\('index.js','utf8'\\); fs.writeFileSync\\('index.js',c.replace\\(/\\\\r\\\\n/g,'\\\\n'\\),'utf8'\\);\")"
+      "Bash(node -e \"const fs=require\\('fs'\\); const c=fs.readFileSync\\('index.js','utf8'\\); fs.writeFileSync\\('index.js',c.replace\\(/\\\\r\\\\n/g,'\\\\n'\\),'utf8'\\);\")",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\" -Directory | Where-Object { $_.Name -match 'web' })",
+      "Bash(npx tsc *)",
+      "Bash(powershell *)",
+      "Bash(xargs grep -l \"functions\\\\|callable\")"
     ]
   }
 }

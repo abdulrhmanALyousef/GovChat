@@ -33,6 +33,17 @@ const OTP_VERIFY_WINDOW_MIN = 10;
 const OTP_VERIFICATION_TTL_MIN = 5;
 
 /**
+ * Converts a department name to a Firestore-safe slug.
+ * Must match the Flutter _slugDepartment() implementation exactly.
+ * @param {string} value
+ * @return {string}
+ */
+function slugDepartment(value) {
+  if (!value || !value.trim()) return "general";
+  return value.trim().replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase();
+}
+
+/**
  * Generates a random 8-digit temporary password
  * @return {string} The generated password
  */
@@ -410,7 +421,8 @@ exports.createEmployeeRequest = onCall(
             "Organization ID is required",
         );
       }
-      if (!data.phoneNumber) {
+      const phoneNumber = (data.phoneNumber || "").trim();
+      if (!phoneNumber) {
         throw new HttpsError(
             "invalid-argument",
             "Phone number is required",
@@ -426,7 +438,6 @@ exports.createEmployeeRequest = onCall(
       const orgName = data.organizationName || "";
       const department = data.department || "";
       const password = data.password;
-      const phoneNumber = data.phoneNumber.trim();
 
       // Validate server-side that phone OTP was verified
       const phoneKey = phoneNumber.replace(/[+\s-]/g, "");
@@ -489,24 +500,21 @@ exports.createEmployeeRequest = onCall(
 
         const displayId = "EMP-" + uid.substring(0, 5).toUpperCase();
 
-        // 2. Save employee in users collection (pending)
+        // 2. Save employee in employees collection (pending)
+        const deptId = slugDepartment(department);
         await admin.firestore()
-            .collection("users").doc(uid).set({
+            .collection("employees").doc(uid).set({
               uid: uid,
               email: email,
-              role: "employee",
-              firstName: firstName,
-              middleName: middleName,
-              lastName: lastName,
-              fullName: fullName,
+              name: fullName,
               nationalId: nationalId,
               organizationId: orgId,
               organizationName: orgName,
               department: department,
+              departmentId: deptId,
               displayId: displayId,
+              role: "employee",
               status: "pending",
-              firstLogin: true,
-              mustChangePassword: false,
               phoneNumber: phoneNumber,
               phoneVerified: true,
               createdAt:
@@ -518,6 +526,7 @@ exports.createEmployeeRequest = onCall(
             .collection("accessRequests").add({
               uid: uid,
               email: email,
+              name: fullName,
               firstName: firstName,
               middleName: middleName,
               lastName: lastName,
@@ -611,6 +620,71 @@ exports.createEmployeeRequest = onCall(
             error.message || "Unexpected error",
         );
       }
+    },
+);
+
+/**
+ * One-time migration — safe to call multiple times.
+ * 1. Backfills phoneNumber + phoneVerified from users/{uid} into
+ *    employees/{uid} for records created before the architecture change.
+ * 2. Normalises status 'approved' → 'active' (canonical status standard).
+ *
+ * Deploy and call once:
+ *   firebase deploy --only functions:migrateEmployees
+ *   (call via Firebase Console or any authenticated client)
+ * Returns {phoneFixed, statusFixed, skipped, errors}.
+ */
+exports.migrateEmployees = onCall(
+    {enforceAppCheck: false, invoker: "public"},
+    async () => {
+      const db = admin.firestore();
+      const employeesSnap = await db.collection("employees").get();
+
+      let phoneFixed = 0;
+      let statusFixed = 0;
+      let skipped = 0;
+      const errors = [];
+
+      for (const empDoc of employeesSnap.docs) {
+        const uid = empDoc.id;
+        const empData = empDoc.data();
+        const updates = {};
+
+        // 1. Backfill missing phoneNumber from users/{uid}
+        if (!empData.phoneNumber || empData.phoneNumber.trim() === "") {
+          try {
+            const userDoc = await db.collection("users").doc(uid).get();
+            if (userDoc.exists) {
+              const phone = (userDoc.data().phoneNumber || "").trim();
+              if (phone) {
+                updates.phoneNumber = phone;
+                updates.phoneVerified = true;
+                phoneFixed++;
+              }
+            }
+          } catch (err) {
+            errors.push({uid, field: "phoneNumber", reason: err.message});
+          }
+        }
+
+        // 2. Normalise status 'approved' → 'active'
+        if (empData.status === "approved") {
+          updates.status = "active";
+          statusFixed++;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          try {
+            await db.collection("employees").doc(uid).update(updates);
+          } catch (err) {
+            errors.push({uid, field: "update", reason: err.message});
+          }
+        } else {
+          skipped++;
+        }
+      }
+
+      return {phoneFixed, statusFixed, skipped, errors};
     },
 );
 
