@@ -78,23 +78,45 @@ class E2eeKeyStore {
     Uint8List key,
   ) async {
     _convKeyCache[conversationPath] = key;
-    await _storage.write(
-      key: _convKeyId(conversationPath),
-      value: base64Encode(key),
-    );
+    final storageKey = _convKeyId(conversationPath);
+    await _storage.write(key: storageKey, value: base64Encode(key));
+
+    // ── DIAG ───────────────────────────────────────────────────────────────
+    debugPrint('[E2EE-DIAG] saveConversationKey()');
+    debugPrint('[E2EE-DIAG]   path       : $conversationPath');
+    debugPrint('[E2EE-DIAG]   storageKey : $storageKey');
+    debugPrint('[E2EE-DIAG]   AES KEY    : ${base64Encode(key)}');
+    // ──────────────────────────────────────────────────────────────────────
   }
 
   /// Load a cached conversation AES-256 key.
   /// Returns null if no key is stored for this conversation.
   static Future<Uint8List?> getConversationKey(String conversationPath) async {
-    final cached = _convKeyCache[conversationPath];
-    if (cached != null) return cached;
+    final storageKey = _convKeyId(conversationPath);
 
-    final stored = await _storage.read(key: _convKeyId(conversationPath));
-    if (stored == null) return null;
+    // ── DIAG ───────────────────────────────────────────────────────────────
+    debugPrint('[E2EE-DIAG] getConversationKey() lookup');
+    debugPrint('[E2EE-DIAG]   path       : $conversationPath');
+    debugPrint('[E2EE-DIAG]   storageKey : $storageKey');
+    // ──────────────────────────────────────────────────────────────────────
+
+    final cached = _convKeyCache[conversationPath];
+    if (cached != null) {
+      debugPrint('[E2EE-DIAG]   result     : MEMORY CACHE HIT');
+      debugPrint('[E2EE-DIAG]   AES KEY    : ${base64Encode(cached)}');
+      return cached;
+    }
+
+    final stored = await _storage.read(key: storageKey);
+    if (stored == null) {
+      debugPrint('[E2EE-DIAG]   result     : MISS (not in memory or storage)');
+      return null;
+    }
 
     final key = base64Decode(stored);
     _convKeyCache[conversationPath] = Uint8List.fromList(key);
+    debugPrint('[E2EE-DIAG]   result     : SECURE STORAGE HIT');
+    debugPrint('[E2EE-DIAG]   AES KEY    : $stored');
     return _convKeyCache[conversationPath];
   }
 
