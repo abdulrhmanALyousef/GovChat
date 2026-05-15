@@ -622,5 +622,25 @@
   "restoreFailedWrongPassword": "كلمة المرور غير صحيحة. يرجى المحاولة مجددًا.",
   "restoreFailedMessage": "فشل استعادة مفتاح التشفير",
   "skipRestoreButton": "تخطي",
-  "restoreKeyButton": "استعادة"
+  "restoreKeyButton": "استعادة",
+
+  "aiSummaryTitle": "ملخص المحادثة بالذكاء الاصطناعي",
+  "aiSummaryGenerate": "إنشاء",
+  "aiSummaryRegenerate": "إعادة الإنشاء",
+  "aiSummaryEmptyTitle": "لا يوجد ملخص بعد",
+  "aiSummaryEmptySubtitle": "اضغط على إنشاء لإنشاء ملخص ذكي لهذه المحادثة.",
+  "aiSummaryGenerateButton": "إنشاء ملخص",
+  "aiSummaryMainPoints": "النقاط الرئيسية",
+  "aiSummaryDecisions": "القرارات المهمة",
+  "aiSummaryTasks": "المهام وبنود العمل",
+  "aiSummaryDeadlines": "المواعيد والالتزامات",
+  "aiSummaryTone": "النبرة العامة",
+  "aiSummaryGeneratedAt": "تم الإنشاء {date}",
+  "@aiSummaryGeneratedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

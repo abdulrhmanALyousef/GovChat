@@ -690,5 +690,25 @@
   "notifSystemChannel": "System",
   "logNotificationSent": "Push notification sent",
   "logNotificationOpened": "Notification opened",
-  "logNotificationFailed": "Push notification failed"
+  "logNotificationFailed": "Push notification failed",
+
+  "aiSummaryTitle": "AI Chat Summary",
+  "aiSummaryGenerate": "Generate",
+  "aiSummaryRegenerate": "Regenerate",
+  "aiSummaryEmptyTitle": "No summary yet",
+  "aiSummaryEmptySubtitle": "Tap Generate to create an AI-powered summary of this conversation.",
+  "aiSummaryGenerateButton": "Generate Summary",
+  "aiSummaryMainPoints": "Main Points",
+  "aiSummaryDecisions": "Important Decisions",
+  "aiSummaryTasks": "Tasks & Action Items",
+  "aiSummaryDeadlines": "Deadlines & Commitments",
+  "aiSummaryTone": "Overall Tone",
+  "aiSummaryGeneratedAt": "Generated {date}",
+  "@aiSummaryGeneratedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }
