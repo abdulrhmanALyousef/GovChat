@@ -949,7 +949,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get changePasswordDescription =>
-      'تحقق من هويتك عبر البريد الإلكتروني لتحديث كلمة المرور.';
+      'تحقق من هويتك عبر رمز OTP لتحديث كلمة المرور.';
+
+  @override
+  String get cpNoPhoneMessage =>
+      'التحقق عبر الهاتف مطلوب. يرجى التواصل مع مسؤولك لإضافة رقم هاتف محقق إلى حسابك.';
 
   @override
   String get verificationCodeTitle => 'رمز التحقق';

@@ -951,7 +951,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get changePasswordDescription =>
-      'Verify your identity via email to update your password.';
+      'Verify your identity via OTP to update your password.';
+
+  @override
+  String get cpNoPhoneMessage =>
+      'Phone verification required. Please contact your administrator to add a verified phone number to your account.';
 
   @override
   String get verificationCodeTitle => 'Verification Code';
