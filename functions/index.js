@@ -1170,6 +1170,88 @@ exports.verifyPasswordResetCode = onCall(
 );
 
 /**
+ * Cloud Function: Reset Password With OTP
+ * Uses Firebase Admin SDK to update the password after confirming that
+ * verifyOtp already stamped lastOtpVerificationAt within the last 10 minutes.
+ * The OTP timestamp is deleted after use to prevent replay.
+ */
+exports.resetPasswordWithOtp = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+    },
+    async (request) => {
+      const data = request.data;
+
+      if (!data.uid || !data.newPassword) {
+        throw new HttpsError(
+            "invalid-argument",
+            "uid and newPassword are required",
+        );
+      }
+
+      const uid = data.uid;
+      const newPassword = data.newPassword;
+
+      if (typeof newPassword !== "string" || newPassword.length < 8) {
+        throw new HttpsError(
+            "invalid-argument",
+            "Password must be at least 8 characters",
+        );
+      }
+
+      // Verify employee exists and is active
+      const empRef = admin.firestore().collection("employees").doc(uid);
+      const empDoc = await empRef.get();
+
+      if (!empDoc.exists) {
+        throw new HttpsError("not-found", "Employee not found");
+      }
+
+      const empData = empDoc.data();
+
+      if (empData.status !== "active") {
+        throw new HttpsError("permission-denied", "Account is not active");
+      }
+
+      // Verify recent OTP — lastOtpVerificationAt must be within 10 minutes
+      const lastOtpAt = empData.lastOtpVerificationAt ?
+          empData.lastOtpVerificationAt.toDate() :
+          null;
+
+      const now = new Date();
+      const OTP_VALIDITY_MS = 10 * 60 * 1000;
+
+      if (!lastOtpAt || (now - lastOtpAt) > OTP_VALIDITY_MS) {
+        throw new HttpsError(
+            "failed-precondition",
+            "OTP verification has expired. Please request a new code.",
+        );
+      }
+
+      // Update password via Admin SDK (no recent-login requirement)
+      await admin.auth().updateUser(uid, {password: newPassword});
+
+      // Delete the OTP timestamp so it cannot be reused
+      await empRef.update({
+        lastOtpVerificationAt: admin.firestore.FieldValue.delete(),
+      });
+
+      // Audit log — fire-and-forget
+      admin.firestore().collection("logs").add({
+        actionType: "password_reset_completed",
+        uid: uid,
+        email: empData.email || "",
+        organizationId: empData.organizationId || "",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      }).catch(() => {});
+
+      return {success: true, message: "Password reset successfully."};
+    },
+);
+
+/**
  * Cloud Function: Send Access Approval Email
  */
 exports.sendAccessApprovedEmail = onCall(

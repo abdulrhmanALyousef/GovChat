@@ -529,5 +529,12 @@
   "logOtpSent": "تم إرسال OTP إلى الهاتف",
   "logOtpVerified": "تم التحقق من OTP بنجاح",
   "logOtpFailed": "فشل التحقق من OTP",
-  "logPasswordResetViaSms": "إعادة تعيين كلمة المرور عبر OTP"
+  "logPasswordResetViaSms": "إعادة تعيين كلمة المرور عبر OTP",
+
+  "fpTitle": "نسيت كلمة المرور",
+  "fpSubtitle": "أدخل بريدك الإلكتروني المسجل. سنرسل رمزاً لمرة واحدة إلى رقم هاتفك الموثق.",
+  "fpIdentifyButton": "إرسال رمز OTP",
+  "fpEmployeeNotFound": "لم يتم العثور على حساب موظف نشط بهذا البريد الإلكتروني.",
+  "fpPasswordResetSuccess": "تمت إعادة تعيين كلمة المرور بنجاح! يرجى تسجيل الدخول باستخدام كلمة المرور الجديدة.",
+  "fpResetPasswordButton": "إعادة تعيين كلمة المرور"
 }

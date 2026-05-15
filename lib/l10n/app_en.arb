@@ -597,6 +597,13 @@
   "logOtpSent": "OTP sent to phone",
   "logOtpVerified": "OTP verified successfully",
   "logOtpFailed": "OTP verification failed",
-  "logPasswordResetViaSms": "Password reset via SMS OTP"
+  "logPasswordResetViaSms": "Password reset via SMS OTP",
+
+  "fpTitle": "Forgot Password",
+  "fpSubtitle": "Enter your registered email address. We'll send a one-time code to your verified phone number.",
+  "fpIdentifyButton": "SEND OTP",
+  "fpEmployeeNotFound": "No active employee account found with this email address.",
+  "fpPasswordResetSuccess": "Password reset successfully! Please sign in with your new password.",
+  "fpResetPasswordButton": "RESET PASSWORD"
 
 }

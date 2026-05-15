@@ -1527,4 +1527,25 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get logPasswordResetViaSms => 'إعادة تعيين كلمة المرور عبر OTP';
+
+  @override
+  String get fpTitle => 'نسيت كلمة المرور';
+
+  @override
+  String get fpSubtitle =>
+      'أدخل بريدك الإلكتروني المسجل. سنرسل رمزاً لمرة واحدة إلى رقم هاتفك الموثق.';
+
+  @override
+  String get fpIdentifyButton => 'إرسال رمز OTP';
+
+  @override
+  String get fpEmployeeNotFound =>
+      'لم يتم العثور على حساب موظف نشط بهذا البريد الإلكتروني.';
+
+  @override
+  String get fpPasswordResetSuccess =>
+      'تمت إعادة تعيين كلمة المرور بنجاح! يرجى تسجيل الدخول باستخدام كلمة المرور الجديدة.';
+
+  @override
+  String get fpResetPasswordButton => 'إعادة تعيين كلمة المرور';
 }

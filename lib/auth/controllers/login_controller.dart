@@ -10,6 +10,7 @@ import '../../core/services/otp_service.dart';
 import '../../models/employee_model.dart';
 import '../../roles/employee/features/main/employee_main_screen.dart';
 import '../otp_verification_screen.dart';
+import '../forgot_password_screen.dart';
 import '../request_access_screen.dart';
 
 class LoginController extends ChangeNotifier {
@@ -329,8 +330,11 @@ class LoginController extends ChangeNotifier {
     );
   }
 
-  void forgotPassword() {
-    // TODO: navigate to forgot password screen
+  void forgotPassword(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+    );
   }
 
   void clearError() {

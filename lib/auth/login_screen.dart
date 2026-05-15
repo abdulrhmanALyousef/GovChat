@@ -304,7 +304,7 @@ class _LoginView extends StatelessWidget {
                       // ── Forgot Password ──
                       Center(
                         child: TextButton(
-                          onPressed: controller.forgotPassword,
+                          onPressed: () => controller.forgotPassword(context),
                           child: Text(
                             l.forgotPasswordButton,
                             style: GoogleFonts.manrope(
