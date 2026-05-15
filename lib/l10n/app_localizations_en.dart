@@ -1533,4 +1533,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logPasswordResetViaSms => 'Password reset via SMS OTP';
+
+  @override
+  String get fpTitle => 'Forgot Password';
+
+  @override
+  String get fpSubtitle =>
+      'Enter your registered email address. We\'ll send a one-time code to your verified phone number.';
+
+  @override
+  String get fpIdentifyButton => 'SEND OTP';
+
+  @override
+  String get fpEmployeeNotFound =>
+      'No active employee account found with this email address.';
+
+  @override
+  String get fpPasswordResetSuccess =>
+      'Password reset successfully! Please sign in with your new password.';
+
+  @override
+  String get fpResetPasswordButton => 'RESET PASSWORD';
 }

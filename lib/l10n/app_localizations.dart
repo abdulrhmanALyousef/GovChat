@@ -3001,6 +3001,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Password reset via SMS OTP'**
   String get logPasswordResetViaSms;
+
+  /// No description provided for @fpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot Password'**
+  String get fpTitle;
+
+  /// No description provided for @fpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your registered email address. We\'ll send a one-time code to your verified phone number.'**
+  String get fpSubtitle;
+
+  /// No description provided for @fpIdentifyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'SEND OTP'**
+  String get fpIdentifyButton;
+
+  /// No description provided for @fpEmployeeNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No active employee account found with this email address.'**
+  String get fpEmployeeNotFound;
+
+  /// No description provided for @fpPasswordResetSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset successfully! Please sign in with your new password.'**
+  String get fpPasswordResetSuccess;
+
+  /// No description provided for @fpResetPasswordButton.
+  ///
+  /// In en, this message translates to:
+  /// **'RESET PASSWORD'**
+  String get fpResetPasswordButton;
 }
 
 class _AppLocalizationsDelegate
