@@ -3037,6 +3037,300 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'RESET PASSWORD'**
   String get fpResetPasswordButton;
+
+  /// No description provided for @newReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New Reminder'**
+  String get newReminderTitle;
+
+  /// No description provided for @editReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Reminder'**
+  String get editReminderTitle;
+
+  /// No description provided for @reminderDetailsSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'REMINDER DETAILS'**
+  String get reminderDetailsSectionLabel;
+
+  /// No description provided for @reminderTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'TITLE'**
+  String get reminderTitleLabel;
+
+  /// No description provided for @reminderTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder title'**
+  String get reminderTitleHint;
+
+  /// No description provided for @reminderDescLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DESCRIPTION (OPTIONAL)'**
+  String get reminderDescLabel;
+
+  /// No description provided for @reminderDescHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more details…'**
+  String get reminderDescHint;
+
+  /// No description provided for @priorityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PRIORITY'**
+  String get priorityLabel;
+
+  /// No description provided for @priorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get priorityLow;
+
+  /// No description provided for @priorityMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get priorityMedium;
+
+  /// No description provided for @priorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get priorityHigh;
+
+  /// No description provided for @scheduleSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SCHEDULE'**
+  String get scheduleSectionLabel;
+
+  /// No description provided for @dueDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DUE DATE'**
+  String get dueDateLabel;
+
+  /// No description provided for @dueTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DUE TIME'**
+  String get dueTimeLabel;
+
+  /// No description provided for @remindBeforeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'REMIND BEFORE'**
+  String get remindBeforeLabel;
+
+  /// No description provided for @remindAtTime.
+  ///
+  /// In en, this message translates to:
+  /// **'At time'**
+  String get remindAtTime;
+
+  /// No description provided for @remind15Min.
+  ///
+  /// In en, this message translates to:
+  /// **'15 min'**
+  String get remind15Min;
+
+  /// No description provided for @remind1Hour.
+  ///
+  /// In en, this message translates to:
+  /// **'1 hour'**
+  String get remind1Hour;
+
+  /// No description provided for @remind1Day.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day'**
+  String get remind1Day;
+
+  /// No description provided for @remind2Days.
+  ///
+  /// In en, this message translates to:
+  /// **'2 days'**
+  String get remind2Days;
+
+  /// No description provided for @repeatSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'REPEAT'**
+  String get repeatSectionLabel;
+
+  /// No description provided for @repeatNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get repeatNone;
+
+  /// No description provided for @repeatDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get repeatDaily;
+
+  /// No description provided for @repeatWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get repeatWeekly;
+
+  /// No description provided for @repeatMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get repeatMonthly;
+
+  /// No description provided for @repeatCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get repeatCustom;
+
+  /// No description provided for @repeatEveryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Every'**
+  String get repeatEveryLabel;
+
+  /// No description provided for @repeatDaysLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'day(s)'**
+  String get repeatDaysLabel;
+
+  /// No description provided for @notificationSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'NOTIFICATION'**
+  String get notificationSectionLabel;
+
+  /// No description provided for @notificationEnabledLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable notification'**
+  String get notificationEnabledLabel;
+
+  /// No description provided for @notificationEnabledDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'You will be notified at the scheduled time.'**
+  String get notificationEnabledDesc;
+
+  /// No description provided for @notificationDisabledDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'No notification will be sent.'**
+  String get notificationDisabledDesc;
+
+  /// No description provided for @createReminderButton.
+  ///
+  /// In en, this message translates to:
+  /// **'CREATE REMINDER'**
+  String get createReminderButton;
+
+  /// No description provided for @deleteReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Reminder'**
+  String get deleteReminderTitle;
+
+  /// No description provided for @deleteReminderConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This reminder will be permanently deleted. This action cannot be undone.'**
+  String get deleteReminderConfirm;
+
+  /// No description provided for @searchRemindersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search reminders…'**
+  String get searchRemindersHint;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get filterActive;
+
+  /// No description provided for @filterOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get filterOverdue;
+
+  /// No description provided for @filterCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get filterCompleted;
+
+  /// No description provided for @filterHighPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'High Priority'**
+  String get filterHighPriority;
+
+  /// No description provided for @noRemindersYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No reminders yet'**
+  String get noRemindersYet;
+
+  /// No description provided for @noRemindersDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + to create your first reminder.'**
+  String get noRemindersDesc;
+
+  /// No description provided for @noSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get noSearchResults;
+
+  /// No description provided for @noSearchResultsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different search term or filter.'**
+  String get noSearchResultsDesc;
+
+  /// No description provided for @logReminderCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder created'**
+  String get logReminderCreated;
+
+  /// No description provided for @logReminderUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder updated'**
+  String get logReminderUpdated;
+
+  /// No description provided for @logReminderCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder marked as completed'**
+  String get logReminderCompleted;
+
+  /// No description provided for @logReminderDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder deleted'**
+  String get logReminderDeleted;
 }
 
 class _AppLocalizationsDelegate

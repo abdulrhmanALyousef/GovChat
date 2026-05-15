@@ -1548,4 +1548,152 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get fpResetPasswordButton => 'إعادة تعيين كلمة المرور';
+
+  @override
+  String get newReminderTitle => 'تذكير جديد';
+
+  @override
+  String get editReminderTitle => 'تعديل التذكير';
+
+  @override
+  String get reminderDetailsSectionLabel => 'تفاصيل التذكير';
+
+  @override
+  String get reminderTitleLabel => 'العنوان';
+
+  @override
+  String get reminderTitleHint => 'عنوان التذكير';
+
+  @override
+  String get reminderDescLabel => 'الوصف (اختياري)';
+
+  @override
+  String get reminderDescHint => 'أضف المزيد من التفاصيل…';
+
+  @override
+  String get priorityLabel => 'الأولوية';
+
+  @override
+  String get priorityLow => 'منخفضة';
+
+  @override
+  String get priorityMedium => 'متوسطة';
+
+  @override
+  String get priorityHigh => 'عالية';
+
+  @override
+  String get scheduleSectionLabel => 'الجدولة';
+
+  @override
+  String get dueDateLabel => 'تاريخ الاستحقاق';
+
+  @override
+  String get dueTimeLabel => 'وقت الاستحقاق';
+
+  @override
+  String get remindBeforeLabel => 'التذكير قبل';
+
+  @override
+  String get remindAtTime => 'عند الوقت';
+
+  @override
+  String get remind15Min => '١٥ دقيقة';
+
+  @override
+  String get remind1Hour => 'ساعة واحدة';
+
+  @override
+  String get remind1Day => 'يوم واحد';
+
+  @override
+  String get remind2Days => 'يومان';
+
+  @override
+  String get repeatSectionLabel => 'التكرار';
+
+  @override
+  String get repeatNone => 'بدون تكرار';
+
+  @override
+  String get repeatDaily => 'يومياً';
+
+  @override
+  String get repeatWeekly => 'أسبوعياً';
+
+  @override
+  String get repeatMonthly => 'شهرياً';
+
+  @override
+  String get repeatCustom => 'مخصص';
+
+  @override
+  String get repeatEveryLabel => 'كل';
+
+  @override
+  String get repeatDaysLabel => 'يوم';
+
+  @override
+  String get notificationSectionLabel => 'الإشعارات';
+
+  @override
+  String get notificationEnabledLabel => 'تفعيل الإشعار';
+
+  @override
+  String get notificationEnabledDesc => 'ستتلقى إشعاراً في الوقت المحدد.';
+
+  @override
+  String get notificationDisabledDesc => 'لن يتم إرسال أي إشعار.';
+
+  @override
+  String get createReminderButton => 'إنشاء التذكير';
+
+  @override
+  String get deleteReminderTitle => 'حذف التذكير';
+
+  @override
+  String get deleteReminderConfirm =>
+      'سيتم حذف هذا التذكير نهائياً. لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get searchRemindersHint => 'البحث في التذكيرات…';
+
+  @override
+  String get filterAll => 'الكل';
+
+  @override
+  String get filterActive => 'نشط';
+
+  @override
+  String get filterOverdue => 'متأخر';
+
+  @override
+  String get filterCompleted => 'مكتمل';
+
+  @override
+  String get filterHighPriority => 'أولوية عالية';
+
+  @override
+  String get noRemindersYet => 'لا توجد تذكيرات بعد';
+
+  @override
+  String get noRemindersDesc => 'اضغط + لإنشاء أول تذكير.';
+
+  @override
+  String get noSearchResults => 'لا توجد نتائج';
+
+  @override
+  String get noSearchResultsDesc => 'جرب كلمة بحث أو فلتراً مختلفاً.';
+
+  @override
+  String get logReminderCreated => 'تم إنشاء التذكير';
+
+  @override
+  String get logReminderUpdated => 'تم تحديث التذكير';
+
+  @override
+  String get logReminderCompleted => 'تم تحديد التذكير كمكتمل';
+
+  @override
+  String get logReminderDeleted => 'تم حذف التذكير';
 }

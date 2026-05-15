@@ -1554,4 +1554,153 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fpResetPasswordButton => 'RESET PASSWORD';
+
+  @override
+  String get newReminderTitle => 'New Reminder';
+
+  @override
+  String get editReminderTitle => 'Edit Reminder';
+
+  @override
+  String get reminderDetailsSectionLabel => 'REMINDER DETAILS';
+
+  @override
+  String get reminderTitleLabel => 'TITLE';
+
+  @override
+  String get reminderTitleHint => 'Reminder title';
+
+  @override
+  String get reminderDescLabel => 'DESCRIPTION (OPTIONAL)';
+
+  @override
+  String get reminderDescHint => 'Add more details…';
+
+  @override
+  String get priorityLabel => 'PRIORITY';
+
+  @override
+  String get priorityLow => 'Low';
+
+  @override
+  String get priorityMedium => 'Medium';
+
+  @override
+  String get priorityHigh => 'High';
+
+  @override
+  String get scheduleSectionLabel => 'SCHEDULE';
+
+  @override
+  String get dueDateLabel => 'DUE DATE';
+
+  @override
+  String get dueTimeLabel => 'DUE TIME';
+
+  @override
+  String get remindBeforeLabel => 'REMIND BEFORE';
+
+  @override
+  String get remindAtTime => 'At time';
+
+  @override
+  String get remind15Min => '15 min';
+
+  @override
+  String get remind1Hour => '1 hour';
+
+  @override
+  String get remind1Day => '1 day';
+
+  @override
+  String get remind2Days => '2 days';
+
+  @override
+  String get repeatSectionLabel => 'REPEAT';
+
+  @override
+  String get repeatNone => 'None';
+
+  @override
+  String get repeatDaily => 'Daily';
+
+  @override
+  String get repeatWeekly => 'Weekly';
+
+  @override
+  String get repeatMonthly => 'Monthly';
+
+  @override
+  String get repeatCustom => 'Custom';
+
+  @override
+  String get repeatEveryLabel => 'Every';
+
+  @override
+  String get repeatDaysLabel => 'day(s)';
+
+  @override
+  String get notificationSectionLabel => 'NOTIFICATION';
+
+  @override
+  String get notificationEnabledLabel => 'Enable notification';
+
+  @override
+  String get notificationEnabledDesc =>
+      'You will be notified at the scheduled time.';
+
+  @override
+  String get notificationDisabledDesc => 'No notification will be sent.';
+
+  @override
+  String get createReminderButton => 'CREATE REMINDER';
+
+  @override
+  String get deleteReminderTitle => 'Delete Reminder';
+
+  @override
+  String get deleteReminderConfirm =>
+      'This reminder will be permanently deleted. This action cannot be undone.';
+
+  @override
+  String get searchRemindersHint => 'Search reminders…';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get filterActive => 'Active';
+
+  @override
+  String get filterOverdue => 'Overdue';
+
+  @override
+  String get filterCompleted => 'Completed';
+
+  @override
+  String get filterHighPriority => 'High Priority';
+
+  @override
+  String get noRemindersYet => 'No reminders yet';
+
+  @override
+  String get noRemindersDesc => 'Tap + to create your first reminder.';
+
+  @override
+  String get noSearchResults => 'No results found';
+
+  @override
+  String get noSearchResultsDesc => 'Try a different search term or filter.';
+
+  @override
+  String get logReminderCreated => 'Reminder created';
+
+  @override
+  String get logReminderUpdated => 'Reminder updated';
+
+  @override
+  String get logReminderCompleted => 'Reminder marked as completed';
+
+  @override
+  String get logReminderDeleted => 'Reminder deleted';
 }

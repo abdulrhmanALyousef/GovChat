@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'core/datasource/local_data/preferences_manager.dart';
+import 'core/services/notification_service.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/services/session_manager.dart';
 import 'core/theme/theme_data.dart';
@@ -17,6 +18,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await PreferencesManager().init();
+  await NotificationService.instance.initialize();
   runApp(
     ChangeNotifierProvider(
       create: (_) => LocaleProvider(),

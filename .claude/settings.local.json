@@ -36,7 +36,10 @@
       "Bash(powershell *)",
       "Bash(xargs grep -l \"functions\\\\|callable\")",
       "Bash(node -e \"const fs=require\\('fs'\\);const content=fs.readFileSync\\('index.js','utf8'\\);fs.writeFileSync\\('index.js',content.replace\\(/\\\\r\\\\n/g,'\\\\n'\\),'utf8'\\);console.log\\('Converted to LF'\\);\")",
-      "Bash(firebase deploy *)"
+      "Bash(firebase deploy *)",
+      "Bash(xargs ls -1)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat\\\\lib\\\\roles\\\\employee\\\\features\\\\chat\" -Recurse -File)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }
