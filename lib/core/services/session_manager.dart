@@ -85,30 +85,54 @@ class SessionManager {
       return false;
     }
 
-    final doc = await FirebaseService.instance.firestore
+    // Mobile app is employee-only. Validate ONLY from employees collection.
+    final empDoc = await FirebaseService.instance.firestore
         .collection('employees')
         .doc(user.uid)
         .get();
 
     if (!context.mounted) return false;
 
-    final data = doc.data();
+    final data = empDoc.data();
     if (data == null) {
-      if (!context.mounted) return false;
-      await logout(
-        context,
-        reason: l?.accountDataMissing ?? 'Account data missing. Please sign in.',
-      );
+      await logout(context, reason: l?.accountDataMissing ?? 'Account data missing. Please sign in.');
       return false;
     }
 
-    final status = (data['status'] ?? 'pending') as String;
+    final role = (data['role'] ?? '') as String;
+    if (!allowedRoles.contains(role)) {
+      if (!context.mounted) return false;
+      await logout(context, reason: l?.unauthorizedAccess ?? 'Unauthorized access.');
+      return false;
+    }
+
+    // Normalise 'approved' → 'active' written during the transition period.
+    String status = (data['status'] ?? 'active') as String;
+    if (status == 'approved') {
+      status = 'active';
+      FirebaseService.instance.firestore
+          .collection('employees')
+          .doc(user.uid)
+          .update({'status': 'active'})
+          .ignore();
+    }
+
     if (status != 'active') {
       if (!context.mounted) return false;
       await logout(
         context,
         reason: l?.accountStatusMessage(status) ?? 'Account is $status.',
       );
+      return false;
+    }
+
+    // phoneVerified must be true — set during access-request OTP flow.
+    // Defaults to true for legacy records that pre-date the field (run
+    // migrateEmployees Cloud Function to backfill those docs).
+    final phoneVerified = (data['phoneVerified'] ?? true) as bool;
+    if (!phoneVerified) {
+      if (!context.mounted) return false;
+      await logout(context, reason: l?.employeePhoneRequired ?? 'Phone verification required.');
       return false;
     }
 

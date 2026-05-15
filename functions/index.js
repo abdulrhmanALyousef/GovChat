@@ -18,6 +18,31 @@ setGlobalOptions({maxInstances: 10, region: "us-central1"});
 // Resend API key from Firebase Secret Manager
 const resendApiKey = defineSecret("RESEND_API_KEY");
 
+// Authentica.sa API key from Firebase Secret Manager
+const authenticaApiKey = defineSecret("AUTHENTICA_API_KEY");
+
+// Authentica.sa API base URL
+const AUTHENTICA_BASE = "https://api.authentica.sa/api/v2";
+
+// OTP rate-limiting constants
+const OTP_SEND_COOLDOWN_SEC = 60;
+const OTP_SEND_MAX_PER_WINDOW = 5;
+const OTP_SEND_WINDOW_MIN = 10;
+const OTP_VERIFY_MAX_ATTEMPTS = 5;
+const OTP_VERIFY_WINDOW_MIN = 10;
+const OTP_VERIFICATION_TTL_MIN = 5;
+
+/**
+ * Converts a department name to a Firestore-safe slug.
+ * Must match the Flutter _slugDepartment() implementation exactly.
+ * @param {string} value
+ * @return {string}
+ */
+function slugDepartment(value) {
+  if (!value || !value.trim()) return "general";
+  return value.trim().replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase();
+}
+
 /**
  * Generates a random 8-digit temporary password
  * @return {string} The generated password
@@ -396,6 +421,13 @@ exports.createEmployeeRequest = onCall(
             "Organization ID is required",
         );
       }
+      const phoneNumber = (data.phoneNumber || "").trim();
+      if (!phoneNumber) {
+        throw new HttpsError(
+            "invalid-argument",
+            "Phone number is required",
+        );
+      }
 
       const email = data.email;
       const firstName = data.firstName;
@@ -406,6 +438,39 @@ exports.createEmployeeRequest = onCall(
       const orgName = data.organizationName || "";
       const department = data.department || "";
       const password = data.password;
+
+      // Validate server-side that phone OTP was verified
+      const phoneKey = phoneNumber.replace(/[+\s-]/g, "");
+      const otpVerRef = admin.firestore()
+          .collection("otpVerifications").doc(phoneKey);
+      const otpVerDoc = await otpVerRef.get();
+
+      if (!otpVerDoc.exists) {
+        throw new HttpsError(
+            "failed-precondition",
+            "Phone not verified. Complete OTP verification first.",
+        );
+      }
+
+      const otpVerData = otpVerDoc.data();
+      const otpExpiresAt = otpVerData.expiresAt.toDate();
+      if (new Date() > otpExpiresAt) {
+        await otpVerRef.delete().catch(() => {});
+        throw new HttpsError(
+            "failed-precondition",
+            "OTP verification expired. Please verify your phone again.",
+        );
+      }
+
+      if (otpVerData.purpose !== "access_request") {
+        throw new HttpsError(
+            "failed-precondition",
+            "Invalid OTP verification context.",
+        );
+      }
+
+      // Consume the verification token (one-time use)
+      await otpVerRef.delete();
 
       const fullName = middleName ?
         firstName + " " + middleName + " " + lastName :
@@ -435,24 +500,23 @@ exports.createEmployeeRequest = onCall(
 
         const displayId = "EMP-" + uid.substring(0, 5).toUpperCase();
 
-        // 2. Save employee in users collection (pending)
+        // 2. Save employee in employees collection (pending)
+        const deptId = slugDepartment(department);
         await admin.firestore()
-            .collection("users").doc(uid).set({
+            .collection("employees").doc(uid).set({
               uid: uid,
               email: email,
-              role: "employee",
-              firstName: firstName,
-              middleName: middleName,
-              lastName: lastName,
-              fullName: fullName,
+              name: fullName,
               nationalId: nationalId,
               organizationId: orgId,
               organizationName: orgName,
               department: department,
+              departmentId: deptId,
               displayId: displayId,
+              role: "employee",
               status: "pending",
-              firstLogin: true,
-              mustChangePassword: false,
+              phoneNumber: phoneNumber,
+              phoneVerified: true,
               createdAt:
                 admin.firestore.FieldValue.serverTimestamp(),
             });
@@ -481,6 +545,7 @@ exports.createEmployeeRequest = onCall(
             .collection("accessRequests").add({
               uid: uid,
               email: email,
+              name: fullName,
               firstName: firstName,
               middleName: middleName,
               lastName: lastName,
@@ -492,6 +557,8 @@ exports.createEmployeeRequest = onCall(
               role: "employee",
               displayId: displayId,
               status: "pending",
+              phoneNumber: phoneNumber,
+              phoneVerified: true,
               createdAt:
                 admin.firestore.FieldValue.serverTimestamp(),
             });
@@ -572,6 +639,351 @@ exports.createEmployeeRequest = onCall(
             error.message || "Unexpected error",
         );
       }
+    },
+);
+
+/**
+ * One-time migration — safe to call multiple times.
+ * 1. Backfills phoneNumber + phoneVerified from users/{uid} into
+ *    employees/{uid} for records created before the architecture change.
+ * 2. Normalises status 'approved' → 'active' (canonical status standard).
+ *
+ * Deploy and call once:
+ *   firebase deploy --only functions:migrateEmployees
+ *   (call via Firebase Console or any authenticated client)
+ * Returns {phoneFixed, statusFixed, skipped, errors}.
+ */
+exports.migrateEmployees = onCall(
+    {enforceAppCheck: false, invoker: "public"},
+    async () => {
+      const db = admin.firestore();
+      const employeesSnap = await db.collection("employees").get();
+
+      let phoneFixed = 0;
+      let statusFixed = 0;
+      let skipped = 0;
+      const errors = [];
+
+      for (const empDoc of employeesSnap.docs) {
+        const uid = empDoc.id;
+        const empData = empDoc.data();
+        const updates = {};
+
+        // 1. Backfill missing phoneNumber from users/{uid}
+        if (!empData.phoneNumber || empData.phoneNumber.trim() === "") {
+          try {
+            const userDoc = await db.collection("users").doc(uid).get();
+            if (userDoc.exists) {
+              const phone = (userDoc.data().phoneNumber || "").trim();
+              if (phone) {
+                updates.phoneNumber = phone;
+                updates.phoneVerified = true;
+                phoneFixed++;
+              }
+            }
+          } catch (err) {
+            errors.push({uid, field: "phoneNumber", reason: err.message});
+          }
+        }
+
+        // 2. Normalise status 'approved' → 'active'
+        if (empData.status === "approved") {
+          updates.status = "active";
+          statusFixed++;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          try {
+            await db.collection("employees").doc(uid).update(updates);
+          } catch (err) {
+            errors.push({uid, field: "update", reason: err.message});
+          }
+        } else {
+          skipped++;
+        }
+      }
+
+      return {phoneFixed, statusFixed, skipped, errors};
+    },
+);
+
+/**
+ * Cloud Function: Send OTP via Authentica.sa SMS
+ * Rate-limited: 60 s cooldown, max 5 per 10-minute window.
+ * purpose: "access_request" | "login" | "password_reset"
+ */
+exports.sendOtp = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+      secrets: [authenticaApiKey],
+    },
+    async (request) => {
+      const data = request.data;
+
+      if (!data.phone || !data.purpose) {
+        throw new HttpsError(
+            "invalid-argument",
+            "phone and purpose are required",
+        );
+      }
+
+      const phone = data.phone.trim();
+      const purpose = data.purpose;
+      const phoneKey = phone.replace(/[+\s-]/g, "");
+      const now = new Date();
+
+      // Rate limiting: purpose-namespaced to avoid login blocking resend.
+      // Login: no per-send cooldown (user may retry immediately after going
+      // back), but capped at 10 sends per 10-minute window.
+      // Other purposes: 60-second cooldown + 5 sends per window.
+      const isLogin = purpose === "login";
+      const maxPerWindow = isLogin ? 10 : OTP_SEND_MAX_PER_WINDOW;
+      const attemptKey = `${purpose}_${phoneKey}`;
+      const attemptRef = admin.firestore()
+          .collection("otpAttempts").doc(attemptKey);
+      const attemptDoc = await attemptRef.get();
+
+      if (attemptDoc.exists) {
+        const att = attemptDoc.data();
+        const windowStart = att.windowStart.toDate();
+        const windowEnd = new Date(
+            windowStart.getTime() + OTP_SEND_WINDOW_MIN * 60 * 1000);
+        const lastSent = att.lastSentAt ? att.lastSentAt.toDate() : null;
+
+        if (now < windowEnd && att.count >= maxPerWindow) {
+          throw new HttpsError(
+              "resource-exhausted",
+              "Too many OTP requests. Please try again later.",
+          );
+        }
+
+        // 60-second cooldown only for non-login purposes (resend prevention)
+        if (!isLogin && lastSent) {
+          const cooldownEnd = new Date(
+              lastSent.getTime() + OTP_SEND_COOLDOWN_SEC * 1000);
+          if (now < cooldownEnd) {
+            const remainSec = Math.ceil((cooldownEnd - now) / 1000);
+            throw new HttpsError(
+                "resource-exhausted",
+                `Please wait ${remainSec}s before requesting a new code.`,
+            );
+          }
+        }
+
+        if (now >= windowEnd) {
+          await attemptRef.set({
+            count: 1,
+            windowStart: admin.firestore.Timestamp.fromDate(now),
+            lastSentAt: admin.firestore.Timestamp.fromDate(now),
+          });
+        } else {
+          await attemptRef.update({
+            count: admin.firestore.FieldValue.increment(1),
+            lastSentAt: admin.firestore.Timestamp.fromDate(now),
+          });
+        }
+      } else {
+        await attemptRef.set({
+          count: 1,
+          windowStart: admin.firestore.Timestamp.fromDate(now),
+          lastSentAt: admin.firestore.Timestamp.fromDate(now),
+        });
+      }
+
+      // Call Authentica.sa API (Node 24 built-in fetch)
+      let response;
+      try {
+        response = await fetch(`${AUTHENTICA_BASE}/send-otp`, {
+          method: "POST",
+          headers: {
+            "X-Authorization": authenticaApiKey.value(),
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({method: "sms", phone: phone}),
+        });
+      } catch (networkErr) {
+        console.error("Authentica network error:", networkErr);
+        throw new HttpsError("internal", "Failed to reach OTP service.");
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (_) {
+        result = {};
+      }
+
+      if (!response.ok || result.success !== true) {
+        console.error("Authentica sendOtp error:",
+            response.status, JSON.stringify(result));
+        throw new HttpsError(
+            "internal",
+            "Failed to send OTP. Please try again.",
+        );
+      }
+
+      // Log the OTP send (fire-and-forget, best-effort)
+      admin.firestore().collection("logs").add({
+        actionType: "otp_sent",
+        phone: phoneKey,
+        purpose: purpose,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      }).catch(() => {});
+
+      return {success: true, message: "OTP sent successfully."};
+    },
+);
+
+/**
+ * Cloud Function: Verify OTP via Authentica.sa
+ * Prevents brute-force with per-phone attempt tracking.
+ * For purpose "access_request": writes a short-lived verification token
+ * that createEmployeeRequest validates server-side.
+ */
+exports.verifyOtp = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+      secrets: [authenticaApiKey],
+    },
+    async (request) => {
+      const data = request.data;
+
+      if (!data.phone || !data.otp || !data.purpose) {
+        throw new HttpsError(
+            "invalid-argument",
+            "phone, otp, and purpose are required",
+        );
+      }
+
+      const phone = data.phone.trim();
+      const otp = data.otp.toString().trim();
+      const purpose = data.purpose;
+      const uid = data.uid || null;
+      const phoneKey = phone.replace(/[+\s-]/g, "");
+      const now = new Date();
+
+      // Brute-force check: verify attempts
+      const verifyRef = admin.firestore()
+          .collection("otpVerifyAttempts").doc(phoneKey);
+      const verifyDoc = await verifyRef.get();
+
+      if (verifyDoc.exists) {
+        const vAtt = verifyDoc.data();
+        const windowStart = vAtt.windowStart.toDate();
+        const windowEnd = new Date(
+            windowStart.getTime() + OTP_VERIFY_WINDOW_MIN * 60 * 1000);
+
+        if (now < windowEnd && vAtt.count >= OTP_VERIFY_MAX_ATTEMPTS) {
+          throw new HttpsError(
+              "resource-exhausted",
+              "Too many failed attempts. Please request a new OTP.",
+          );
+        }
+
+        if (now >= windowEnd) {
+          await verifyRef.delete().catch(() => {});
+        }
+      }
+
+      // Call Authentica.sa verify API
+      let response;
+      try {
+        response = await fetch(`${AUTHENTICA_BASE}/verify-otp`, {
+          method: "POST",
+          headers: {
+            "X-Authorization": authenticaApiKey.value(),
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({otp: otp, phone: phone}),
+        });
+      } catch (networkErr) {
+        console.error("Authentica network error:", networkErr);
+        throw new HttpsError("internal", "Failed to reach OTP service.");
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (_) {
+        result = {};
+      }
+
+      const verified = response.ok && result.status === true;
+
+      if (!verified) {
+        // Track failed attempt
+        const freshDoc = await verifyRef.get();
+        if (freshDoc.exists) {
+          const vAtt = freshDoc.data();
+          const windowStart = vAtt.windowStart.toDate();
+          const windowEnd = new Date(
+              windowStart.getTime() + OTP_VERIFY_WINDOW_MIN * 60 * 1000);
+          if (now < windowEnd) {
+            await verifyRef.update({
+              count: admin.firestore.FieldValue.increment(1),
+            });
+          } else {
+            await verifyRef.set({
+              count: 1,
+              windowStart: admin.firestore.Timestamp.fromDate(now),
+            });
+          }
+        } else {
+          await verifyRef.set({
+            count: 1,
+            windowStart: admin.firestore.Timestamp.fromDate(now),
+          });
+        }
+
+        admin.firestore().collection("logs").add({
+          actionType: "otp_failed",
+          phone: phoneKey,
+          purpose: purpose,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        }).catch(() => {});
+
+        return {success: false, message: "Invalid or expired OTP."};
+      }
+
+      // OTP verified — clear attempt counter
+      await verifyRef.delete().catch(() => {});
+
+      // For access_request: write a short-lived server-side verification token
+      // that createEmployeeRequest reads to confirm phone was verified.
+      if (purpose === "access_request") {
+        const expiresAt = new Date(
+            now.getTime() + OTP_VERIFICATION_TTL_MIN * 60 * 1000);
+        await admin.firestore()
+            .collection("otpVerifications").doc(phoneKey).set({
+              phone: phone,
+              purpose: purpose,
+              verifiedAt: admin.firestore.Timestamp.fromDate(now),
+              expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+            });
+      }
+
+      // For login/password_reset: stamp lastOtpVerificationAt if uid provided
+      if (uid && (purpose === "login" || purpose === "password_reset")) {
+        admin.firestore().collection("employees").doc(uid).update({
+          lastOtpVerificationAt: admin.firestore.Timestamp.fromDate(now),
+        }).catch(() => {});
+      }
+
+      admin.firestore().collection("logs").add({
+        actionType: "otp_verified",
+        phone: phoneKey,
+        purpose: purpose,
+        uid: uid,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      }).catch(() => {});
+
+      return {success: true, message: "OTP verified successfully."};
     },
 );
 
