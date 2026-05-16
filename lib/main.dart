@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'core/datasource/local_data/preferences_manager.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/push_notification_service.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/services/session_manager.dart';
 import 'core/theme/theme_data.dart';
@@ -16,9 +18,12 @@ import 'package:projects/l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Register background handler before Firebase.initializeApp
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await PreferencesManager().init();
   await NotificationService.instance.initialize();
+  await PushNotificationService.instance.initialize();
   runApp(
     ChangeNotifierProvider(
       create: (_) => LocaleProvider(),

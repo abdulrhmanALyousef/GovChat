@@ -1710,4 +1710,37 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get logMediaSharingDisabled => 'تم تعطيل مشاركة الوسائط';
+
+  @override
+  String get notificationsLabel => 'الإشعارات';
+
+  @override
+  String get notifNewMessage => 'رسالة جديدة';
+
+  @override
+  String get notifNewPrivateMessage => 'رسالة خاصة جديدة';
+
+  @override
+  String get notifNewAnnouncement => 'إعلان جديد';
+
+  @override
+  String get notifViewAnnouncement => 'عرض الإعلان';
+
+  @override
+  String get notifChatChannel => 'الرسائل';
+
+  @override
+  String get notifAnnouncementChannel => 'الإعلانات';
+
+  @override
+  String get notifSystemChannel => 'النظام';
+
+  @override
+  String get logNotificationSent => 'تم إرسال الإشعار';
+
+  @override
+  String get logNotificationOpened => 'تم فتح الإشعار';
+
+  @override
+  String get logNotificationFailed => 'فشل إرسال الإشعار';
 }

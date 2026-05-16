@@ -7,6 +7,7 @@ import '../datasource/local_data/preferences_manager.dart';
 import '../datasource/remote_data/firebase_service.dart';
 import 'encryption/e2ee_manager.dart';
 import 'logging_service.dart';
+import 'push_notification_service.dart';
 
 class SessionManager {
   SessionManager._();
@@ -39,6 +40,12 @@ class SessionManager {
           metadata: isInactivity ? {'reason': 'session_inactivity_timeout'} : const {},
         );
       }
+    }
+
+    // Delete FCM token before signing out while we still have the uid
+    final currentUser = FirebaseService.instance.currentUser;
+    if (currentUser != null) {
+      PushNotificationService.instance.deleteToken(currentUser.uid).ignore();
     }
 
     try {

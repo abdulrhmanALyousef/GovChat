@@ -659,6 +659,17 @@
 
   "mediaSharingDisabledMessage": "Media sharing is disabled by your organization administrator.",
   "logMediaSharingEnabled": "Media sharing enabled",
-  "logMediaSharingDisabled": "Media sharing disabled"
+  "logMediaSharingDisabled": "Media sharing disabled",
 
+  "notificationsLabel": "NOTIFICATIONS",
+  "notifNewMessage": "New message",
+  "notifNewPrivateMessage": "New private message",
+  "notifNewAnnouncement": "New Announcement",
+  "notifViewAnnouncement": "View announcement",
+  "notifChatChannel": "Messages",
+  "notifAnnouncementChannel": "Announcements",
+  "notifSystemChannel": "System",
+  "logNotificationSent": "Push notification sent",
+  "logNotificationOpened": "Notification opened",
+  "logNotificationFailed": "Push notification failed"
 }
