@@ -3337,6 +3337,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Due date and time must be in the future. Please select a later date or time.'**
   String get reminderPastDateError;
+
+  /// No description provided for @mediaSharingDisabledMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Media sharing is disabled by your organization administrator.'**
+  String get mediaSharingDisabledMessage;
+
+  /// No description provided for @logMediaSharingEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Media sharing enabled'**
+  String get logMediaSharingEnabled;
+
+  /// No description provided for @logMediaSharingDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Media sharing disabled'**
+  String get logMediaSharingDisabled;
 }
 
 class _AppLocalizationsDelegate

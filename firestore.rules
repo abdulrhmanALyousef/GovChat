@@ -48,6 +48,12 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create, update, delete: if isPrimaryAdmin();
 
+      // Organization settings — admin can manage settings for their own org
+      match /settings/{settingDoc} {
+        allow read: if isAuthenticated();
+        allow write: if (isAdmin() && adminOrgId() == orgId) || isPrimaryAdmin();
+      }
+
       // Department messages
       match /departments/{deptId}/messages/{msgId} {
         allow read: if isAuthenticated();

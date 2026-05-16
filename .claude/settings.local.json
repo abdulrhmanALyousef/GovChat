@@ -39,7 +39,12 @@
       "Bash(firebase deploy *)",
       "Bash(xargs ls -1)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat\\\\lib\\\\roles\\\\employee\\\\features\\\\chat\" -Recurse -File)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat\" -Recurse -Directory -Name)",
+      "Bash(Select-Object -First 50)",
+      "Bash(\"C:/Users/bssam/StudioProjects/cargo/govchat-web/node_modules/.bin/tsc\" --noEmit --project \"C:/Users/bssam/StudioProjects/cargo/govchat-web/tsconfig.json\")",
+      "Bash(python -c \"import os; path='C:/Users/bssam/AppData/Local/Pub/Cache/hosted/pub.dev/lucide_icons-0.257.0/lib/lucide_icons.dart'; lines=[l for l in open\\(path\\).readlines\\(\\) if 'micOff' in l or \\\\\"  lock\\\\\" in l.lower\\(\\)]; print\\('\\\\n'.join\\(lines[:10]\\)\\)\")",
+      "Bash(dart \"C:/Users/bssam/StudioProjects/cargo/GovChat\" -e \"import 'package:lucide_icons/lucide_icons.dart'; void main\\(\\) { print\\(LucideIcons.lock\\); print\\(LucideIcons.micOff\\); }\")"
     ]
   }
 }
