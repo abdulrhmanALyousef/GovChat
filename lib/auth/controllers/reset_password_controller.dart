@@ -2,7 +2,6 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 
-import '../../core/services/activity_log_service.dart';
 import '../../core/services/logging_service.dart';
 
 class ResetPasswordController extends ChangeNotifier {
@@ -64,27 +63,18 @@ class ResetPasswordController extends ChangeNotifier {
         return false;
       }
 
-      // Audit logs — fire-and-forget
+      // Audit log — fire-and-forget
       if (organizationId.isNotEmpty) {
         LoggingService.instance
             .log(
               organizationId: organizationId,
               actionType: 'password_reset_completed',
-              descriptionKey: 'logPasswordResetViaSms',
               performedByUserId: uid,
               performedByRole: 'employee',
               performedByEmail: email,
-              performedByName: '',
             )
             .ignore();
       }
-
-      ActivityLogService.instance.log(
-        actionType: ActivityLogService.actionPasswordChanged,
-        userId: uid,
-        email: email,
-        role: 'employee',
-      );
 
       isLoading = false;
       notifyListeners();
