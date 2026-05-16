@@ -30,6 +30,7 @@ class ChatController extends ChangeNotifier {
     _listenForMessages();
     _listenToTyping();
     _listenToEmployeeProfiles();
+    _listenToOrgSettings();
     // Store the future so every send path can await it if the key is not
     // ready yet when the user taps Send.
     _encryptionReady = _initEncryption();
@@ -70,6 +71,9 @@ class ChatController extends ChangeNotifier {
   int recordingSeconds = 0;
   bool isUploadingMedia = false;
 
+  // ── Org settings ───────────────────────────────────────────────────────────
+  bool mediaSharingEnabled = true;
+
   // ── E2EE ──────────────────────────────────────────────────────────────────
   Uint8List? _conversationKey;
 
@@ -84,6 +88,8 @@ class ChatController extends ChangeNotifier {
   _typingSubscription;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
   _keyDocSubscription;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
+  _orgSettingsSubscription;
 
   Timer? _typingDebounceTimer;
   Timer? _typingClearTimer;
@@ -120,6 +126,27 @@ class ChatController extends ChangeNotifier {
       }
     }
     return (name: senderId, avatarUrl: '');
+  }
+
+  void _listenToOrgSettings() {
+    _orgSettingsSubscription = _firebase.firestore
+        .collection('organizations')
+        .doc(organizationId)
+        .collection('settings')
+        .doc('chat')
+        .snapshots()
+        .listen(
+          (snap) {
+            final enabled = snap.exists
+                ? (snap.data()?['mediaSharingEnabled'] as bool?) ?? true
+                : true;
+            if (enabled != mediaSharingEnabled) {
+              mediaSharingEnabled = enabled;
+              notifyListeners();
+            }
+          },
+          onError: (_) {},
+        );
   }
 
   void _listenToEmployeeProfiles() {
@@ -645,6 +672,11 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> _pickAndSendImage(ImageSource source) async {
+    if (!mediaSharingEnabled) {
+      errorMessage = 'Media sharing is disabled by your organization administrator.';
+      notifyListeners();
+      return;
+    }
     final XFile? xFile = await _imagePicker.pickImage(
       source: source,
       imageQuality: 80,
@@ -676,6 +708,11 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> _pickAndSendVideo(ImageSource source) async {
+    if (!mediaSharingEnabled) {
+      errorMessage = 'Media sharing is disabled by your organization administrator.';
+      notifyListeners();
+      return;
+    }
     final XFile? xFile = await _imagePicker.pickVideo(
       source: source,
       maxDuration: const Duration(minutes: 5),
@@ -697,6 +734,11 @@ class ChatController extends ChangeNotifier {
   }
 
   Future<void> startVoiceRecording() async {
+    if (!mediaSharingEnabled) {
+      errorMessage = 'Media sharing is disabled by your organization administrator.';
+      notifyListeners();
+      return;
+    }
     final hasPermission = await _audioRecorder.hasPermission();
     if (!hasPermission) {
       errorMessage = 'microphonePermissionDenied';
@@ -1036,6 +1078,7 @@ class ChatController extends ChangeNotifier {
     _typingSubscription?.cancel();
     _keyDocSubscription?.cancel();
     _profilesSubscription?.cancel();
+    _orgSettingsSubscription?.cancel();
     _audioRecorder.dispose();
     messageController.dispose();
     scrollController.dispose();

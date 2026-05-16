@@ -1707,4 +1707,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reminderPastDateError =>
       'Due date and time must be in the future. Please select a later date or time.';
+
+  @override
+  String get mediaSharingDisabledMessage =>
+      'Media sharing is disabled by your organization administrator.';
+
+  @override
+  String get logMediaSharingEnabled => 'Media sharing enabled';
+
+  @override
+  String get logMediaSharingDisabled => 'Media sharing disabled';
 }

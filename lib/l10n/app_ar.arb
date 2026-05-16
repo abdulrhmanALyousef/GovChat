@@ -587,5 +587,9 @@
   "logReminderUpdated": "تم تحديث التذكير",
   "logReminderCompleted": "تم تحديد التذكير كمكتمل",
   "logReminderDeleted": "تم حذف التذكير",
-  "reminderPastDateError": "يجب أن يكون تاريخ ووقت الاستحقاق في المستقبل. يرجى اختيار تاريخ أو وقت لاحق."
+  "reminderPastDateError": "يجب أن يكون تاريخ ووقت الاستحقاق في المستقبل. يرجى اختيار تاريخ أو وقت لاحق.",
+
+  "mediaSharingDisabledMessage": "تم تعطيل مشاركة الوسائط من قبل مسؤول المنظمة.",
+  "logMediaSharingEnabled": "تم تفعيل مشاركة الوسائط",
+  "logMediaSharingDisabled": "تم تعطيل مشاركة الوسائط"
 }

@@ -919,16 +919,27 @@ class _TextInputRow extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     final isEditing = controller.isEditing;
 
+    final mediaEnabled = controller.mediaSharingEnabled;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // Attach button (hidden in edit mode)
         if (!isEditing) ...[
-          _CircleIconButton(
-            icon: LucideIcons.paperclip,
-            color: Colors.white,
-            backgroundColor: AppColors.cardBackground,
-            onTap: () => _showAttachmentSheet(context, controller, l),
+          Opacity(
+            opacity: mediaEnabled ? 1.0 : 0.4,
+            child: _CircleIconButton(
+              icon: mediaEnabled ? LucideIcons.paperclip : LucideIcons.lock,
+              color: Colors.white,
+              backgroundColor: AppColors.cardBackground,
+              onTap: () {
+                if (!mediaEnabled) {
+                  _showMediaDisabledSnackBar(context, l);
+                  return;
+                }
+                _showAttachmentSheet(context, controller, l);
+              },
+            ),
           ),
           SizedBox(width: AppSizes.w8),
         ],
@@ -994,13 +1005,22 @@ class _TextInputRow extends StatelessWidget {
                       icon: Icons.send,
                       onTap: controller.sendMessage,
                     )
-                  : _CircleIconButton(
-                      icon: LucideIcons.mic,
-                      color: Colors.white,
-                      backgroundColor: AppColors.primaryColor.withValues(
-                        alpha: 0.15,
+                  : Opacity(
+                      opacity: mediaEnabled ? 1.0 : 0.4,
+                      child: _CircleIconButton(
+                        icon: mediaEnabled ? LucideIcons.mic : LucideIcons.micOff,
+                        color: Colors.white,
+                        backgroundColor: AppColors.primaryColor.withValues(
+                          alpha: 0.15,
+                        ),
+                        onTap: () {
+                          if (!mediaEnabled) {
+                            _showMediaDisabledSnackBar(context, l);
+                            return;
+                          }
+                          controller.startVoiceRecording();
+                        },
                       ),
-                      onTap: controller.startVoiceRecording,
                     );
             },
           ),
@@ -1118,6 +1138,28 @@ class _UploadingBar extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── Media disabled snackbar ──────────────────────────────────────────────────
+
+void _showMediaDisabledSnackBar(BuildContext context, AppLocalizations l) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        l.mediaSharingDisabledMessage,
+        style: GoogleFonts.manrope(
+          color: Colors.white,
+          fontSize: AppSizes.sp13,
+        ),
+      ),
+      backgroundColor: AppColors.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.r12),
+      ),
+      duration: const Duration(seconds: 3),
+    ),
+  );
 }
 
 // ─── Attachment bottom sheet ──────────────────────────────────────────────────

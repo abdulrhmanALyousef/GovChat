@@ -1700,4 +1700,14 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get reminderPastDateError =>
       'يجب أن يكون تاريخ ووقت الاستحقاق في المستقبل. يرجى اختيار تاريخ أو وقت لاحق.';
+
+  @override
+  String get mediaSharingDisabledMessage =>
+      'تم تعطيل مشاركة الوسائط من قبل مسؤول المنظمة.';
+
+  @override
+  String get logMediaSharingEnabled => 'تم تفعيل مشاركة الوسائط';
+
+  @override
+  String get logMediaSharingDisabled => 'تم تعطيل مشاركة الوسائط';
 }
