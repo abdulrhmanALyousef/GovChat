@@ -102,6 +102,9 @@ class ChatController extends ChangeNotifier {
   /// Maps employee UID → {name, avatarUrl, displayId}.
   final Map<String, Map<String, String>> _profileCache = {};
 
+  /// Current employee's display name for audit logs.
+  String get _currentEmployeeName => _profileCache[employeeUid]?['name'] ?? displayId;
+
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
   _profilesSubscription;
 
@@ -532,16 +535,19 @@ class ChatController extends ChangeNotifier {
       LoggingService.instance.log(
         organizationId: organizationId,
         actionType: 'message_sent',
-        descriptionKey: 'logMessageSent',
         performedByUserId: _firebase.currentUser?.uid ?? displayId,
         performedByRole: 'employee',
         performedByEmail: _firebase.currentUser?.email ?? '',
-        performedByName: displayId,
+        performedByName: _currentEmployeeName,
+        performedByEmployeeId: displayId,
+        performedByDepartmentId: _normalizedDepartmentId(),
         targetId: ref.id,
+        targetType: 'message',
         metadata: {
           'chatType': _detectChatType(),
           'departmentId': _normalizedDepartmentId(),
-          'messagePreview': text.length > 50 ? text.substring(0, 50) : text,
+          'departmentName': departmentName,
+          'messagePreview': text.length > 120 ? '${text.substring(0, 120)}…' : text,
         },
       );
 
@@ -567,20 +573,40 @@ class ChatController extends ChangeNotifier {
         'deletedAt': FieldValue.serverTimestamp(),
         'deletedBy': uid,
       });
+
+      // Determine the content to log. message.text is already decrypted
+      // when _conversationKey is available; empty for media-only messages.
+      String deletedContent;
+      if (message.text.isNotEmpty) {
+        deletedContent = message.text.length > 200
+            ? '${message.text.substring(0, 200)}…'
+            : message.text;
+      } else if (message.mediaUrl != null && message.mediaUrl!.isNotEmpty) {
+        deletedContent = '[${message.messageType.name} message]';
+      } else {
+        deletedContent = '[Encrypted — key unavailable at deletion time]';
+      }
+
       LoggingService.instance.log(
         organizationId: organizationId,
         actionType: 'message_deleted',
-        descriptionKey: 'logMessageDeleted',
         performedByUserId: uid,
         performedByRole: 'employee',
         performedByEmail: _firebase.currentUser?.email ?? '',
-        performedByName: displayId,
+        performedByName: _currentEmployeeName,
+        performedByEmployeeId: displayId,
+        performedByDepartmentId: _normalizedDepartmentId(),
         targetId: message.id,
+        targetType: 'message',
         metadata: {
           'chatType': _detectChatType(),
           'departmentId': _normalizedDepartmentId(),
+          'departmentName': departmentName,
           'messageId': message.id,
           'senderId': message.senderId,
+          'senderName': getSenderProfile(message.senderUid, message.senderId).name,
+          'deletedContent': deletedContent,
+          'messageType': message.messageType.name,
         },
       ).ignore();
     } catch (e) {
@@ -641,6 +667,7 @@ class ChatController extends ChangeNotifier {
         return;
       }
 
+      final oldText = msg.text;
       final enc = await E2eeManager.encryptMessage(newText, _conversationKey!);
       await _messagesCollection().doc(msg.id!).update({
         'text': '',
@@ -650,6 +677,27 @@ class ChatController extends ChangeNotifier {
         'isEdited': true,
         'editedAt': FieldValue.serverTimestamp(),
       });
+
+      LoggingService.instance.log(
+        organizationId: organizationId,
+        actionType: 'message_edited',
+        performedByUserId: _firebase.currentUser?.uid ?? displayId,
+        performedByRole: 'employee',
+        performedByEmail: _firebase.currentUser?.email ?? '',
+        performedByName: _currentEmployeeName,
+        performedByEmployeeId: displayId,
+        performedByDepartmentId: _normalizedDepartmentId(),
+        targetId: msg.id,
+        targetType: 'message',
+        metadata: {
+          'chatType': _detectChatType(),
+          'departmentId': _normalizedDepartmentId(),
+          'departmentName': departmentName,
+          'messageId': msg.id,
+          'oldValue': oldText.length > 200 ? '${oldText.substring(0, 200)}…' : oldText,
+          'newValue': newText.length > 200 ? '${newText.substring(0, 200)}…' : newText,
+        },
+      ).ignore();
 
       cancelEditing();
     } catch (e, st) {
@@ -841,7 +889,7 @@ class ChatController extends ChangeNotifier {
       // ── Encrypt Storage URL and write to Firestore ───────────────────────
       final encUrl = await E2eeManager.encryptMessage(url, _conversationKey!);
 
-      await _messagesCollection().add({
+      final mediaRef = await _messagesCollection().add({
         'senderId': displayId,
         'senderUid': employeeUid,
         'organizationId': organizationId,
@@ -857,6 +905,27 @@ class ChatController extends ChangeNotifier {
         // ignore: use_null_aware_elements
         if (mediaFileName != null) 'mediaFileName': mediaFileName,
       });
+
+      LoggingService.instance.log(
+        organizationId: organizationId,
+        actionType: 'media_uploaded',
+        performedByUserId: _firebase.currentUser?.uid ?? displayId,
+        performedByRole: 'employee',
+        performedByEmail: _firebase.currentUser?.email ?? '',
+        performedByName: _currentEmployeeName,
+        performedByEmployeeId: displayId,
+        performedByDepartmentId: _normalizedDepartmentId(),
+        targetId: mediaRef.id,
+        targetType: 'message',
+        metadata: {
+          'chatType': _detectChatType(),
+          'departmentId': _normalizedDepartmentId(),
+          'departmentName': departmentName,
+          'mediaType': messageType.name,
+          // ignore: use_null_aware_elements
+          if (mediaDuration != null) 'mediaDuration': mediaDuration,
+        },
+      ).ignore();
 
       _scrollToBottom();
     } catch (e, st) {

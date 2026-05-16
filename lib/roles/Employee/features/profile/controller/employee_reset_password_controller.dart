@@ -4,7 +4,6 @@ import 'package:projects/l10n/app_localizations.dart';
 
 import '../../../../../core/datasource/local_data/preferences_manager.dart';
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
-import '../../../../../core/services/activity_log_service.dart';
 import '../../../../../core/services/logging_service.dart';
 import '../../../../../core/services/otp_service.dart';
 
@@ -98,16 +97,19 @@ class EmployeeResetPasswordController extends ChangeNotifier {
       return false;
     }
 
-    final orgId = PreferencesManager().getString('organizationId') ?? '';
+    final prefs = PreferencesManager();
+    final orgId = prefs.getString('organizationId') ?? '';
     if (orgId.isNotEmpty) {
+      final name = prefs.getString('name') ?? '';
+      final displayId = prefs.getString('displayId') ?? '';
       LoggingService.instance.log(
         organizationId: orgId,
         actionType: 'password_change_otp_sent',
-        descriptionKey: 'logPasswordChangeOtpSent',
         performedByUserId: uid,
         performedByRole: 'employee',
         performedByEmail: email,
-        performedByName: '',
+        performedByName: name.isNotEmpty ? name : null,
+        performedByEmployeeId: displayId.isNotEmpty ? displayId : null,
       );
     }
 
@@ -135,25 +137,21 @@ class EmployeeResetPasswordController extends ChangeNotifier {
 
       await user.updatePassword(newPasswordController.text.trim());
 
-      final orgId = PreferencesManager().getString('organizationId') ?? '';
-      if (orgId.isNotEmpty) {
+      final prefs2 = PreferencesManager();
+      final orgId2 = prefs2.getString('organizationId') ?? '';
+      if (orgId2.isNotEmpty) {
+        final name2 = prefs2.getString('name') ?? '';
+        final displayId2 = prefs2.getString('displayId') ?? '';
         LoggingService.instance.log(
-          organizationId: orgId,
+          organizationId: orgId2,
           actionType: 'password_changed',
-          descriptionKey: 'logPasswordChanged',
           performedByUserId: uid,
           performedByRole: 'employee',
           performedByEmail: email,
-          performedByName: '',
+          performedByName: name2.isNotEmpty ? name2 : null,
+          performedByEmployeeId: displayId2.isNotEmpty ? displayId2 : null,
         );
       }
-
-      ActivityLogService.instance.log(
-        actionType: ActivityLogService.actionPasswordChanged,
-        userId: uid,
-        email: email,
-        role: 'employee',
-      );
 
       isLoading = false;
       notifyListeners();

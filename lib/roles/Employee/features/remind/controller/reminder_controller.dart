@@ -121,7 +121,8 @@ class ReminderController extends ChangeNotifier with WidgetsBindingObserver {
     try {
       final saved = await _repo.create(reminder);
       await _notif.scheduleReminder(saved);
-      _logReminder('reminder_created', 'logReminderCreated', saved.id);
+      _logReminder('reminder_created', 'logReminderCreated', saved.id,
+          reminderTitle: reminder.title);
     } catch (e) {
       _error = e.toString();
       notifyListeners();
@@ -131,10 +132,10 @@ class ReminderController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> updateReminder(ReminderModel reminder) async {
     try {
       await _repo.update(reminder);
-      // Cancel old notification and reschedule
       await _notif.cancelReminder(reminder.id);
       await _notif.scheduleReminder(reminder);
-      _logReminder('reminder_updated', 'logReminderUpdated', reminder.id);
+      _logReminder('reminder_updated', 'logReminderUpdated', reminder.id,
+          reminderTitle: reminder.title);
     } catch (e) {
       _error = e.toString();
       notifyListeners();
@@ -145,7 +146,8 @@ class ReminderController extends ChangeNotifier with WidgetsBindingObserver {
     try {
       await _notif.cancelReminder(reminder.id);
       await _repo.delete(employee.id ?? '', reminder.id);
-      _logReminder('reminder_deleted', 'logReminderDeleted', reminder.id);
+      _logReminder('reminder_deleted', 'logReminderDeleted', reminder.id,
+          reminderTitle: reminder.title);
     } catch (e) {
       _error = e.toString();
       notifyListeners();
@@ -161,8 +163,8 @@ class ReminderController extends ChangeNotifier with WidgetsBindingObserver {
       await _repo.update(updated);
       if (updated.isCompleted) {
         await _notif.cancelReminder(reminder.id);
-        _logReminder(
-            'reminder_completed', 'logReminderCompleted', reminder.id);
+        _logReminder('reminder_completed', 'logReminderCompleted', reminder.id,
+            reminderTitle: reminder.title);
       } else {
         await _notif.scheduleReminder(updated);
       }
@@ -173,18 +175,25 @@ class ReminderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void _logReminder(
-      String actionType, String descriptionKey, String reminderId) {
+    String actionType,
+    String descriptionKey,
+    String reminderId, {
+    String? reminderTitle,
+  }) {
     if (employee.organizationId.isEmpty) return;
     LoggingService.instance
         .log(
           organizationId: employee.organizationId,
           actionType: actionType,
-          descriptionKey: descriptionKey,
           performedByUserId: employee.id ?? '',
           performedByRole: 'employee',
           performedByEmail: employee.email,
           performedByName: employee.name,
+          performedByEmployeeId: employee.displayId,
+          performedByDepartmentId: employee.departmentId,
           targetId: reminderId,
+          targetType: 'reminder',
+          targetName: reminderTitle,
         )
         .ignore();
   }

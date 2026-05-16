@@ -26,15 +26,17 @@ class SessionManager {
       final isInactivity = reason != null &&
           (reason.contains('inactivity') || reason.contains('عدم النشاط'));
       if (orgId.isNotEmpty) {
+        final name = _preferences.getString('name') ?? '';
+        final displayId = _preferences.getString('displayId') ?? '';
         LoggingService.instance.log(
           organizationId: orgId,
           actionType: isInactivity ? 'auto_logout_inactivity' : 'logout',
-          descriptionKey:
-              isInactivity ? 'logAutoLogoutInactivity' : 'logLogout',
           performedByUserId: user.uid,
           performedByRole: 'employee',
           performedByEmail: user.email ?? '',
-          performedByName: user.email,
+          performedByName: name.isNotEmpty ? name : null,
+          performedByEmployeeId: displayId.isNotEmpty ? displayId : null,
+          metadata: isInactivity ? {'reason': 'session_inactivity_timeout'} : const {},
         );
       }
     }

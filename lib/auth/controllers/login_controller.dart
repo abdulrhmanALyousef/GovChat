@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
-import '../../core/services/activity_log_service.dart';
 import '../../core/services/encryption/e2ee_manager.dart';
 import '../../core/services/logging_service.dart';
 import '../../core/services/otp_service.dart';
@@ -81,12 +80,12 @@ class LoginController extends ChangeNotifier {
                 .log(
                   organizationId: empOrgId,
                   actionType: 'login_failure',
-                  descriptionKey: 'logLoginFailure',
                   performedByUserId: uid,
                   performedByRole: 'employee',
-                  performedByEmail: empData['email'] ?? '',
-                  performedByName: empData['name'] ?? '',
-                  metadata: {'reason': 'account_pending'},
+                  performedByEmail: empData['email'] as String? ?? '',
+                  performedByName: empData['name'] as String? ?? '',
+                  performedByEmployeeId: empData['displayId'] as String? ?? '',
+                  metadata: {'reason': 'account_pending', 'status': 'pending'},
                 )
                 .ignore();
           }
@@ -102,12 +101,12 @@ class LoginController extends ChangeNotifier {
                 .log(
                   organizationId: empOrgId,
                   actionType: 'login_failure',
-                  descriptionKey: 'logLoginFailure',
                   performedByUserId: uid,
                   performedByRole: 'employee',
-                  performedByEmail: empData['email'] ?? '',
-                  performedByName: empData['name'] ?? '',
-                  metadata: {'reason': 'account_rejected'},
+                  performedByEmail: empData['email'] as String? ?? '',
+                  performedByName: empData['name'] as String? ?? '',
+                  performedByEmployeeId: empData['displayId'] as String? ?? '',
+                  metadata: {'reason': 'account_rejected', 'status': 'rejected'},
                 )
                 .ignore();
           }
@@ -144,6 +143,11 @@ class LoginController extends ChangeNotifier {
       if (empOrgName.isNotEmpty) {
         await prefs.setString('organizationName', empOrgName);
       }
+      // Persist actor fields used by SessionManager for audit logging.
+      final empName = empData['name'] as String? ?? '';
+      if (empName.isNotEmpty) await prefs.setString('name', empName);
+      final empDisplayId = empData['displayId'] as String? ?? '';
+      if (empDisplayId.isNotEmpty) await prefs.setString('displayId', empDisplayId);
 
       // 6. OTP 2FA — legacy employees (no phoneNumber or phoneVerified != true) bypass.
       final phoneNumber = empData['phoneNumber'] as String? ?? '';
@@ -200,21 +204,15 @@ class LoginController extends ChangeNotifier {
             .log(
               organizationId: empOrgId,
               actionType: 'login_success',
-              descriptionKey: 'logLoginSuccess',
               performedByUserId: uid,
               performedByRole: 'employee',
               performedByEmail: employee.email,
               performedByName: employee.name,
+              performedByEmployeeId: employee.displayId,
+              performedByDepartmentId: employee.departmentId,
             )
             .ignore();
       }
-      ActivityLogService.instance.log(
-        actionType: ActivityLogService.actionLogin,
-        userId: uid,
-        email: employee.email,
-        role: 'employee',
-        organizationId: empOrgId.isNotEmpty ? empOrgId : null,
-      );
 
       if (!context.mounted) return;
       Navigator.pushAndRemoveUntil(
