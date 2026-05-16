@@ -4,6 +4,7 @@
  */
 
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
+const {onDocumentCreated} = require("firebase-functions/v2/firestore");
 const {setGlobalOptions} = require("firebase-functions/v2");
 const {defineSecret} = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -1334,5 +1335,427 @@ exports.sendAccessApprovedEmail = onCall(
             error.message || "Unexpected error",
         );
       }
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUSH NOTIFICATION HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FCM_COLOR = "#4ADE80";
+
+/**
+ * Send an FCM multicast message to up to 500 tokens per batch.
+ * Automatically removes stale tokens (registration-not-registered) from
+ * Firestore after a failed send.
+ *
+ * @param {string[]} tokens FCM registration tokens
+ * @param {object} payload FCM message payload (tokens key added internally)
+ * @param {Map} tokenToUid token to UID map for stale-token cleanup
+ * @return {Promise<void>}
+ */
+async function sendFcmMulticast(tokens, payload, tokenToUid) {
+  const chunks = [];
+  for (let i = 0; i < tokens.length; i += 500) {
+    chunks.push(tokens.slice(i, i + 500));
+  }
+  for (const chunk of chunks) {
+    try {
+      const msg = Object.assign({}, payload, {tokens: chunk});
+      const response = await admin.messaging().sendEachForMulticast(msg);
+
+      // Remove stale/invalid tokens from Firestore
+      const cleanups = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const errObj = resp.error || {};
+          const code = errObj.code || "";
+          if (
+            code === "messaging/registration-token-not-registered" ||
+            code === "messaging/invalid-registration-token"
+          ) {
+            const uid = tokenToUid && tokenToUid.get(chunk[idx]);
+            if (uid) {
+              cleanups.push(
+                  admin.firestore().collection("employees").doc(uid)
+                      .update({
+                        fcmToken: admin.firestore.FieldValue.delete(),
+                      })
+                      .catch(() => {}),
+              );
+            }
+          }
+        }
+      });
+      if (cleanups.length) await Promise.all(cleanups);
+    } catch (err) {
+      console.error("[FCM] sendEachForMulticast error:", err.message);
+    }
+  }
+}
+
+/**
+ * Standard Android + APNS overrides merged into the FCM payload.
+ * @param {object} payload Base FCM payload object (mutated and returned)
+ * @param {string} channelId Android notification channel ID
+ * @return {object} Payload with platform-specific config merged in
+ */
+function withPlatformConfig(payload, channelId) {
+  payload.android = {
+    priority: "high",
+    notification: {channelId: channelId, color: FCM_COLOR, priority: "high"},
+  };
+  payload.apns = {payload: {aps: {sound: "default", badge: 1}}};
+  return payload;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT NOTIFICATION TRIGGERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Department chat - notify all department members except the sender.
+ * Path: organizations/{orgId}/departments/{deptId}/messages/{msgId}
+ */
+exports.onDeptChatMessageCreated = onDocumentCreated(
+    {
+      document:
+        "organizations/{orgId}/departments/{deptId}/messages/{msgId}",
+      region: "asia-east1",
+    },
+    async (event) => {
+      const snapshot = event.data;
+      const data = snapshot && snapshot.data();
+      if (!data || data.isDeleted) return;
+
+      const orgId = event.params.orgId;
+      const deptId = event.params.deptId;
+      const senderUid = data.senderUid || "";
+      const senderId = data.senderId || "Unknown";
+      const conversationPath =
+        "organizations/" + orgId + "/departments/" + deptId + "/messages";
+
+      let senderName = senderId;
+      if (senderUid) {
+        const doc = await admin.firestore()
+            .collection("employees").doc(senderUid).get();
+        if (doc.exists) {
+          const docData = doc.data();
+          senderName = (docData && docData.name) || senderId;
+        }
+      }
+
+      const snap = await admin.firestore()
+          .collection("employees")
+          .where("organizationId", "==", orgId)
+          .where("departmentId", "==", deptId)
+          .where("status", "==", "active")
+          .get();
+
+      const tokenToUid = new Map();
+      snap.docs
+          .filter((doc) => doc.id !== senderUid)
+          .forEach((doc) => {
+            const token = doc.data().fcmToken;
+            if (token) tokenToUid.set(token, doc.id);
+          });
+
+      if (tokenToUid.size === 0) return;
+
+      await sendFcmMulticast(
+          Array.from(tokenToUid.keys()),
+          withPlatformConfig({
+            notification: {title: senderName, body: "New message"},
+            data: {
+              type: "chat",
+              conversationPath: conversationPath,
+              chatName: deptId,
+              senderDisplayId: senderId,
+              senderName: senderName,
+              organizationId: orgId,
+            },
+          }, "govchat_messages"),
+          tokenToUid,
+      );
+    },
+);
+
+/**
+ * Private (1-to-1) chat - notify the other participant.
+ * Path: organizations/{orgId}/private_chats/{chatId}/messages/{msgId}
+ */
+exports.onPrivateChatMessageCreated = onDocumentCreated(
+    {
+      document:
+        "organizations/{orgId}/private_chats/{chatId}/messages/{msgId}",
+      region: "asia-east1",
+    },
+    async (event) => {
+      const snapshot = event.data;
+      const data = snapshot && snapshot.data();
+      if (!data || data.isDeleted) return;
+
+      const orgId = event.params.orgId;
+      const chatId = event.params.chatId;
+      const senderUid = data.senderUid || "";
+      const senderId = data.senderId || "Unknown";
+      const conversationPath =
+        "organizations/" + orgId + "/private_chats/" + chatId + "/messages";
+
+      // Resolve other participant from the chat doc
+      const chatDoc = await admin.firestore()
+          .collection("organizations").doc(orgId)
+          .collection("private_chats").doc(chatId).get();
+      if (!chatDoc.exists) return;
+
+      const chatData = chatDoc.data() || {};
+      const participants = chatData.participants || [];
+      const recipientUid = participants.find((u) => u !== senderUid);
+      if (!recipientUid) return;
+
+      const recipientDoc = await admin.firestore()
+          .collection("employees").doc(recipientUid).get();
+      if (!recipientDoc.exists) return;
+
+      const recipientData = recipientDoc.data() || {};
+      const token = recipientData.fcmToken;
+      if (!token) return;
+
+      let senderName = senderId;
+      if (senderUid) {
+        const doc = await admin.firestore()
+            .collection("employees").doc(senderUid).get();
+        if (doc.exists) {
+          const docData = doc.data();
+          senderName = (docData && docData.name) || senderId;
+        }
+      }
+
+      const tokenToUid = new Map([[token, recipientUid]]);
+      await sendFcmMulticast(
+          [token],
+          withPlatformConfig({
+            notification: {title: senderName, body: "New private message"},
+            data: {
+              type: "chat",
+              conversationPath: conversationPath,
+              chatName: "Private",
+              senderDisplayId: senderId,
+              senderName: senderName,
+              organizationId: orgId,
+            },
+          }, "govchat_messages"),
+          tokenToUid,
+      );
+    },
+);
+
+/**
+ * Organization-wide chat - notify all org employees except the sender.
+ * Path: organizations/{orgId}/org_chats/{chatId}/messages/{msgId}
+ */
+exports.onOrgChatMessageCreated = onDocumentCreated(
+    {
+      document:
+        "organizations/{orgId}/org_chats/{chatId}/messages/{msgId}",
+      region: "asia-east1",
+    },
+    async (event) => {
+      const snapshot = event.data;
+      const data = snapshot && snapshot.data();
+      if (!data || data.isDeleted) return;
+
+      const orgId = event.params.orgId;
+      const chatId = event.params.chatId;
+      const senderUid = data.senderUid || "";
+      const senderId = data.senderId || "Unknown";
+      const conversationPath =
+        "organizations/" + orgId + "/org_chats/" + chatId + "/messages";
+
+      let senderName = senderId;
+      if (senderUid) {
+        const doc = await admin.firestore()
+            .collection("employees").doc(senderUid).get();
+        if (doc.exists) {
+          const docData = doc.data();
+          senderName = (docData && docData.name) || senderId;
+        }
+      }
+
+      const snap = await admin.firestore()
+          .collection("employees")
+          .where("organizationId", "==", orgId)
+          .where("status", "==", "active")
+          .get();
+
+      const tokenToUid = new Map();
+      snap.docs
+          .filter((doc) => doc.id !== senderUid)
+          .forEach((doc) => {
+            const token = doc.data().fcmToken;
+            if (token) tokenToUid.set(token, doc.id);
+          });
+
+      if (tokenToUid.size === 0) return;
+
+      const orgDoc = await admin.firestore()
+          .collection("organizations").doc(orgId).get();
+      const orgDocData = orgDoc.exists && orgDoc.data();
+      const chatName = (orgDocData && orgDocData.name) || "Org Chat";
+
+      await sendFcmMulticast(
+          Array.from(tokenToUid.keys()),
+          withPlatformConfig({
+            notification: {title: senderName, body: "New message in org chat"},
+            data: {
+              type: "chat",
+              conversationPath: conversationPath,
+              chatName: chatName,
+              senderDisplayId: senderId,
+              senderName: senderName,
+              organizationId: orgId,
+            },
+          }, "govchat_messages"),
+          tokenToUid,
+      );
+    },
+);
+
+/**
+ * Project group chat - notify all group members except the sender.
+ * Path: projectGroups/{groupId}/messages/{msgId}
+ */
+exports.onGroupChatMessageCreated = onDocumentCreated(
+    {
+      document: "projectGroups/{groupId}/messages/{msgId}",
+      region: "asia-east1",
+    },
+    async (event) => {
+      const snapshot = event.data;
+      const data = snapshot && snapshot.data();
+      if (!data || data.isDeleted) return;
+
+      const groupId = event.params.groupId;
+      const senderUid = data.senderUid || "";
+      const senderId = data.senderId || "Unknown";
+      const conversationPath = "projectGroups/" + groupId + "/messages";
+
+      const groupDoc = await admin.firestore()
+          .collection("projectGroups").doc(groupId).get();
+      if (!groupDoc.exists) return;
+
+      const groupData = groupDoc.data() || {};
+      const memberIds = groupData.memberIds || [];
+      const groupName = groupData.name || "Group";
+      const orgId = groupData.organizationId || "";
+
+      let senderName = senderId;
+      if (senderUid) {
+        const doc = await admin.firestore()
+            .collection("employees").doc(senderUid).get();
+        if (doc.exists) {
+          const docData = doc.data();
+          senderName = (docData && docData.name) || senderId;
+        }
+      }
+
+      const recipientUids = memberIds.filter((uid) => uid !== senderUid);
+      if (recipientUids.length === 0) return;
+
+      const empDocs = await Promise.all(
+          recipientUids.map((uid) =>
+            admin.firestore().collection("employees").doc(uid).get(),
+          ),
+      );
+
+      const tokenToUid = new Map();
+      empDocs.forEach((doc) => {
+        if (doc.exists) {
+          const d = doc.data() || {};
+          const token = d.fcmToken;
+          if (token) tokenToUid.set(token, doc.id);
+        }
+      });
+
+      if (tokenToUid.size === 0) return;
+
+      await sendFcmMulticast(
+          Array.from(tokenToUid.keys()),
+          withPlatformConfig({
+            notification: {
+              title: senderName + " · " + groupName,
+              body: "New message",
+            },
+            data: {
+              type: "chat",
+              conversationPath: conversationPath,
+              chatName: groupName,
+              senderDisplayId: senderId,
+              senderName: senderName,
+              organizationId: orgId,
+            },
+          }, "govchat_messages"),
+          tokenToUid,
+      );
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANNOUNCEMENT NOTIFICATION TRIGGER
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * New announcement - notify all active employees in the organization.
+ * Path: announcements/{announcementId}
+ */
+exports.onAnnouncementCreated = onDocumentCreated(
+    {
+      document: "announcements/{announcementId}",
+      region: "asia-east1",
+    },
+    async (event) => {
+      const snapshot = event.data;
+      const data = snapshot && snapshot.data();
+      if (!data || data.isActive === false) return;
+
+      const orgId = data.organizationId || "";
+      if (!orgId) return;
+
+      const announcementId = event.params.announcementId;
+      const title = data.title || "New Announcement";
+      const preview = typeof data.content === "string" ?
+        data.content.substring(0, 120) : "";
+
+      const snap = await admin.firestore()
+          .collection("employees")
+          .where("organizationId", "==", orgId)
+          .where("status", "==", "active")
+          .get();
+
+      const tokenToUid = new Map();
+      snap.docs.forEach((doc) => {
+        const token = doc.data().fcmToken;
+        if (token) tokenToUid.set(token, doc.id);
+      });
+
+      if (tokenToUid.size === 0) return;
+
+      await sendFcmMulticast(
+          Array.from(tokenToUid.keys()),
+          withPlatformConfig({
+            notification: {title: title, body: preview || "View announcement"},
+            data: {
+              type: "announcement",
+              announcementId: announcementId,
+              organizationId: orgId,
+            },
+          }, "govchat_announcements"),
+          tokenToUid,
+      );
+
+      console.log(
+          "[FCM] announcement " + announcementId +
+          " sent to " + tokenToUid.size + " employees in org " + orgId,
+      );
     },
 );

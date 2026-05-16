@@ -16,6 +16,7 @@ import '../../../../../core/datasource/remote_data/firebase_service.dart';
 import '../../../../../core/services/encryption/e2ee_crypto.dart';
 import '../../../../../core/services/encryption/e2ee_manager.dart';
 import '../../../../../core/services/logging_service.dart';
+import '../../../../../core/services/push_notification_service.dart';
 import '../../../../../models/chat_message.dart';
 
 class ChatController extends ChangeNotifier {
@@ -34,6 +35,9 @@ class ChatController extends ChangeNotifier {
     // Store the future so every send path can await it if the key is not
     // ready yet when the user taps Send.
     _encryptionReady = _initEncryption();
+    // Mark this conversation as active so foreground FCM notifications for
+    // it are suppressed while the user is already viewing it.
+    PushNotificationService.activeConversationPath = _activeMessagesPath;
   }
 
   final FirebaseService _firebase = FirebaseService.instance;
@@ -1136,10 +1140,24 @@ class ChatController extends ChangeNotifier {
   String _sanitize(String value) =>
       value.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_').toLowerCase();
 
+  /// The Firestore path for the messages collection in this conversation.
+  /// Used by [PushNotificationService] to suppress foreground notifications
+  /// when the user is already viewing this chat.
+  String get _activeMessagesPath {
+    if (messagesPath != null && messagesPath!.isNotEmpty) {
+      return messagesPath!;
+    }
+    return 'organizations/$organizationId/departments/${_normalizedDepartmentId()}/messages';
+  }
+
   // ── Dispose ────────────────────────────────────────────────────────────────
 
   @override
   void dispose() {
+    // Clear active conversation so foreground notifications resume
+    if (PushNotificationService.activeConversationPath == _activeMessagesPath) {
+      PushNotificationService.activeConversationPath = null;
+    }
     _typingDebounceTimer?.cancel();
     _typingClearTimer?.cancel();
     _recordingTimer?.cancel();

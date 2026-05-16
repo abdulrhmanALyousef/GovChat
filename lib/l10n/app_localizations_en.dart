@@ -1717,4 +1717,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logMediaSharingDisabled => 'Media sharing disabled';
+
+  @override
+  String get notificationsLabel => 'NOTIFICATIONS';
+
+  @override
+  String get notifNewMessage => 'New message';
+
+  @override
+  String get notifNewPrivateMessage => 'New private message';
+
+  @override
+  String get notifNewAnnouncement => 'New Announcement';
+
+  @override
+  String get notifViewAnnouncement => 'View announcement';
+
+  @override
+  String get notifChatChannel => 'Messages';
+
+  @override
+  String get notifAnnouncementChannel => 'Announcements';
+
+  @override
+  String get notifSystemChannel => 'System';
+
+  @override
+  String get logNotificationSent => 'Push notification sent';
+
+  @override
+  String get logNotificationOpened => 'Notification opened';
+
+  @override
+  String get logNotificationFailed => 'Push notification failed';
 }

@@ -6,6 +6,7 @@ import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../core/services/encryption/e2ee_manager.dart';
 import '../../core/services/logging_service.dart';
 import '../../core/services/otp_service.dart';
+import '../../core/services/push_notification_service.dart';
 import '../../models/employee_model.dart';
 import '../../roles/employee/features/main/employee_main_screen.dart';
 import '../otp_verification_screen.dart';
@@ -128,6 +129,9 @@ class LoginController extends ChangeNotifier {
 
       // 4. E2EE init — fire-and-forget, does not block login
       E2eeManager.initializeKeys(uid).ignore();
+
+      // 4b. Upload FCM device token — fire-and-forget
+      PushNotificationService.instance.uploadToken(uid).ignore();
 
       // 5. Persist session
       final prefs = PreferencesManager();

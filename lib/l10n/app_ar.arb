@@ -591,5 +591,17 @@
 
   "mediaSharingDisabledMessage": "تم تعطيل مشاركة الوسائط من قبل مسؤول المنظمة.",
   "logMediaSharingEnabled": "تم تفعيل مشاركة الوسائط",
-  "logMediaSharingDisabled": "تم تعطيل مشاركة الوسائط"
+  "logMediaSharingDisabled": "تم تعطيل مشاركة الوسائط",
+
+  "notificationsLabel": "الإشعارات",
+  "notifNewMessage": "رسالة جديدة",
+  "notifNewPrivateMessage": "رسالة خاصة جديدة",
+  "notifNewAnnouncement": "إعلان جديد",
+  "notifViewAnnouncement": "عرض الإعلان",
+  "notifChatChannel": "الرسائل",
+  "notifAnnouncementChannel": "الإعلانات",
+  "notifSystemChannel": "النظام",
+  "logNotificationSent": "تم إرسال الإشعار",
+  "logNotificationOpened": "تم فتح الإشعار",
+  "logNotificationFailed": "فشل إرسال الإشعار"
 }

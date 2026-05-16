@@ -3355,6 +3355,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Media sharing disabled'**
   String get logMediaSharingDisabled;
+
+  /// No description provided for @notificationsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'NOTIFICATIONS'**
+  String get notificationsLabel;
+
+  /// No description provided for @notifNewMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New message'**
+  String get notifNewMessage;
+
+  /// No description provided for @notifNewPrivateMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New private message'**
+  String get notifNewPrivateMessage;
+
+  /// No description provided for @notifNewAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'New Announcement'**
+  String get notifNewAnnouncement;
+
+  /// No description provided for @notifViewAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'View announcement'**
+  String get notifViewAnnouncement;
+
+  /// No description provided for @notifChatChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get notifChatChannel;
+
+  /// No description provided for @notifAnnouncementChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get notifAnnouncementChannel;
+
+  /// No description provided for @notifSystemChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get notifSystemChannel;
+
+  /// No description provided for @logNotificationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notification sent'**
+  String get logNotificationSent;
+
+  /// No description provided for @logNotificationOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification opened'**
+  String get logNotificationOpened;
+
+  /// No description provided for @logNotificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notification failed'**
+  String get logNotificationFailed;
 }
 
 class _AppLocalizationsDelegate

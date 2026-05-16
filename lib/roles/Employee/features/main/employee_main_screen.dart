@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 
+import '../../../../core/services/push_notification_service.dart';
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
 import '../../../../models/employee_model.dart';
@@ -25,6 +28,7 @@ class _EmployeeMainScreenState extends State<EmployeeMainScreen> {
   bool _authorized = false;
 
   late final List<Widget> _screens;
+  StreamSubscription<Map<String, dynamic>>? _notifSub;
 
   @override
   void initState() {
@@ -47,6 +51,15 @@ class _EmployeeMainScreenState extends State<EmployeeMainScreen> {
         _authorized = allowed;
         _checkingAccess = false;
       });
+
+      if (allowed) {
+        // Subscribe to notification taps for in-app routing
+        _notifSub = PushNotificationService.instance.onNotificationTapped
+            .listen(_handleNotificationTap);
+
+        // Route any notification that opened the app from terminated state
+        PushNotificationService.instance.checkInitialMessage();
+      }
     });
   }
 
@@ -117,6 +130,32 @@ class _EmployeeMainScreenState extends State<EmployeeMainScreen> {
       ),
       body: IndexedStack(index: _currentIndex, children: _screens),
     );
+  }
+
+  @override
+  void dispose() {
+    _notifSub?.cancel();
+    super.dispose();
+  }
+
+  /// Routes a notification tap to the appropriate tab.
+  void _handleNotificationTap(Map<String, dynamic> data) {
+    if (!mounted) return;
+    final type = data['type'] as String? ?? '';
+    switch (type) {
+      case 'chat':
+        setState(() => _currentIndex = 2); // CHAT tab
+        break;
+      case 'announcement':
+        setState(() => _currentIndex = 1); // ANNOUNCE tab
+        break;
+      case 'reminder':
+        setState(() => _currentIndex = 3); // REMIND tab
+        break;
+      default:
+        // Unknown type — go to home
+        setState(() => _currentIndex = 0);
+    }
   }
 
   BottomNavigationBarItem _buildNavItem({
