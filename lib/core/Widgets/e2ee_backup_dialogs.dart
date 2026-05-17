@@ -4,6 +4,7 @@ import 'package:projects/l10n/app_localizations.dart';
 
 import '../constants/app_size.dart';
 import '../services/encryption/e2ee_backup_service.dart';
+import '../services/encryption/e2ee_manager.dart';
 import '../theme/App_color.dart';
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -19,13 +20,13 @@ Future<String?> showE2eeBackupDialog(BuildContext context) {
   );
 }
 
-/// Shows a dialog for restoring a key from a Firestore backup.
+/// Shows a dialog for restoring keys from a Firestore backup.
 ///
 /// The dialog handles wrong-password retries with inline error messages.
-/// Returns the decrypted private key (base64) on success, or `null` if the
-/// user taps "Skip".
-Future<String?> showE2eeRestoreDialog(BuildContext context, String uid) {
-  return showDialog<String>(
+/// Returns a [BackupManifest] on success (contains identity key + all
+/// conversation keys), or `null` if the user taps "Skip".
+Future<BackupManifest?> showE2eeRestoreDialog(BuildContext context, String uid) {
+  return showDialog<BackupManifest>(
     context: context,
     barrierDismissible: false,
     builder: (_) => _RestorePasswordDialog(uid: uid),
@@ -80,7 +81,11 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.r20),
       ),
-      child: Padding(
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: AppSizes.pw24,
+        vertical: AppSizes.ph24,
+      ),
+      child: SingleChildScrollView(
         padding: EdgeInsets.all(AppSizes.pw24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -152,51 +157,64 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
               ),
             ],
             SizedBox(height: AppSizes.h24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.inputBorder),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSizes.r12),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.inputBorder),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppSizes.r12),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppSizes.ph12,
+                          horizontal: AppSizes.pw8,
+                        ),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
-                    ),
-                    child: Text(
-                      l.cancelButton,
-                      style: GoogleFonts.manrope(
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600,
-                        fontSize: AppSizes.sp14,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: AppSizes.w12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSizes.r12),
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
-                    ),
-                    child: Text(
-                      l.backupKeyButton,
-                      style: GoogleFonts.manrope(
-                        color: AppColors.buttonText,
-                        fontWeight: FontWeight.w700,
-                        fontSize: AppSizes.sp14,
+                      child: Text(
+                        l.cancelButton,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w600,
+                          fontSize: AppSizes.sp13,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  SizedBox(width: AppSizes.w12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppSizes.r12),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppSizes.ph12,
+                          horizontal: AppSizes.pw8,
+                        ),
+                      ),
+                      child: Text(
+                        l.backupKeyButton,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.buttonText,
+                          fontWeight: FontWeight.w700,
+                          fontSize: AppSizes.sp13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -239,11 +257,16 @@ class _RestorePasswordDialogState extends State<_RestorePasswordDialog> {
     });
 
     try {
-      final privateKeyB64 = await E2eeBackupService.restorePrivateKey(
+      final manifest = await E2eeBackupService.restoreFromBackup(
         uid: widget.uid,
         password: pw,
       );
-      if (mounted) Navigator.pop(context, privateKeyB64);
+
+      // Cache the password in-memory so the backup can be auto-refreshed
+      // when new conversation keys are derived during this session.
+      E2eeManager.setBackupPassword(pw);
+
+      if (mounted) Navigator.pop(context, manifest);
     } on E2eeBackupWrongPasswordException {
       if (mounted) {
         setState(() {
@@ -270,7 +293,11 @@ class _RestorePasswordDialogState extends State<_RestorePasswordDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.r20),
       ),
-      child: Padding(
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: AppSizes.pw24,
+        vertical: AppSizes.ph24,
+      ),
+      child: SingleChildScrollView(
         padding: EdgeInsets.all(AppSizes.pw24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -332,60 +359,73 @@ class _RestorePasswordDialogState extends State<_RestorePasswordDialog> {
               ),
             ],
             SizedBox(height: AppSizes.h24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _loading ? null : () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.inputBorder),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSizes.r12),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _loading ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.inputBorder),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppSizes.r12),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppSizes.ph12,
+                          horizontal: AppSizes.pw8,
+                        ),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
-                    ),
-                    child: Text(
-                      l.skipRestoreButton,
-                      style: GoogleFonts.manrope(
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600,
-                        fontSize: AppSizes.sp14,
+                      child: Text(
+                        l.skipRestoreButton,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w600,
+                          fontSize: AppSizes.sp13,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                SizedBox(width: AppSizes.w12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _loading ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSizes.r12),
+                  SizedBox(width: AppSizes.w12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _loading ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppSizes.r12),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppSizes.ph12,
+                          horizontal: AppSizes.pw8,
+                        ),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
+                      child: _loading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.buttonText,
+                              ),
+                            )
+                          : Text(
+                              l.restoreKeyButton,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.manrope(
+                                color: AppColors.buttonText,
+                                fontWeight: FontWeight.w700,
+                                fontSize: AppSizes.sp13,
+                              ),
+                            ),
                     ),
-                    child: _loading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.buttonText,
-                            ),
-                          )
-                        : Text(
-                            l.restoreKeyButton,
-                            style: GoogleFonts.manrope(
-                              color: AppColors.buttonText,
-                              fontWeight: FontWeight.w700,
-                              fontSize: AppSizes.sp14,
-                            ),
-                          ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),

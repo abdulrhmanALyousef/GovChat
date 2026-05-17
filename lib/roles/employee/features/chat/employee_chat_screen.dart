@@ -239,18 +239,50 @@ class _MessagesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Extra item at top for loading indicator when paginating.
+    final hasLoadingHeader = controller.isLoadingMore;
+    final totalItems = messages.length + (hasLoadingHeader ? 1 : 0);
+
     return ListView.builder(
       controller: scrollController,
       padding: EdgeInsets.symmetric(horizontal: AppSizes.pw16),
-      itemCount: messages.length,
+      itemCount: totalItems,
+      // Keeps off-screen items alive to avoid rebuild cost.
+      cacheExtent: 500,
+      // Stable keys prevent unnecessary rebuilds when the list shifts.
+      findChildIndexCallback: (key) {
+        if (key is ValueKey<String>) {
+          final idx = messages.indexWhere((m) => m.id == key.value);
+          return idx == -1 ? null : idx + (hasLoadingHeader ? 1 : 0);
+        }
+        return null;
+      },
       itemBuilder: (context, index) {
-        final message = messages[index];
+        // Loading indicator at position 0 when paginating.
+        if (hasLoadingHeader && index == 0) {
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSizes.ph12),
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+            ),
+          );
+        }
+        final msgIndex = hasLoadingHeader ? index - 1 : index;
+        final message = messages[msgIndex];
         final isMine = message.senderId == myDisplayId;
         final profile = controller.getSenderProfile(
           message.senderUid,
           message.senderId,
         );
         return _MessageItem(
+          key: message.id != null ? ValueKey(message.id) : null,
           message: message,
           isMine: isMine,
           status: isMine ? message.statusFor(myDisplayId) : null,
@@ -269,6 +301,7 @@ class _MessagesList extends StatelessWidget {
 
 class _MessageItem extends StatelessWidget {
   const _MessageItem({
+    super.key,
     required this.message,
     required this.isMine,
     required this.onEditTap,
@@ -428,6 +461,28 @@ class _MessageItem extends StatelessWidget {
           mediaDuration: message.mediaDuration,
         );
       case MessageType.text:
+        // Encrypted but not yet decrypted — show lock placeholder.
+        if (message.isEncrypted && message.text.isEmpty) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(LucideIcons.lock, size: AppSizes.sp14, color: AppColors.textMuted),
+              SizedBox(width: AppSizes.pw6),
+              Flexible(
+                child: Text(
+                  'Encrypted message',
+                  textDirection: Directionality.of(context),
+                  style: GoogleFonts.manrope(
+                    color: AppColors.textMuted,
+                    fontSize: AppSizes.sp14,
+                    fontStyle: FontStyle.italic,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
         if (message.text.startsWith('[Decryption error:')) {
           return Row(
             mainAxisSize: MainAxisSize.min,
