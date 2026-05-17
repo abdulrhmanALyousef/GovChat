@@ -3371,7 +3371,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupKeyButton.
   ///
   /// In en, this message translates to:
-  /// **'BACKUP ENCRYPTION KEY'**
+  /// **'Backup Key'**
   String get backupKeyButton;
 
   /// No description provided for @backupSuccessMessage.

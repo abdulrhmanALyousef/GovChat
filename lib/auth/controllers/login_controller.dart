@@ -133,10 +133,13 @@ class LoginController extends ChangeNotifier {
       }
 
       // 4. Initialize E2EE keys.
-      //    Always generate a fresh X25519 key pair when none exists locally.
-      //    Backup restore is disabled to prevent stale keys from causing
-      //    MAC failures after reinstall.  Backup *creation* still works.
-      E2eeManager.initializeKeys(uid).ignore();
+      //    Generates a fresh X25519 key pair when none exists locally.
+      //    Then checks if a backup exists and prompts restore.
+      await E2eeManager.initializeKeys(uid);
+
+      if (E2eeManager.backupAvailable && context.mounted) {
+        await _tryRestoreE2eeKeys(context, uid);
+      }
 
       // 4b. Upload FCM device token — fire-and-forget
       PushNotificationService.instance.uploadToken(uid).ignore();
@@ -244,24 +247,93 @@ class LoginController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// DISABLED: Auto-restore of old E2EE keys from backup is disabled to
-  /// prevent stale keys causing MAC failures after reinstall.
-  /// The app now always generates a fresh X25519 key pair.
-  /// Kept for future explicit-restore feature if needed.
-  // ignore: unused_element
+  /// Prompt the user to restore their E2EE keys from a Firestore backup.
+  ///
+  /// Called after [E2eeManager.initializeKeys] when a backup is detected.
+  /// At this point, NO keys have been generated yet — Firestore still has
+  /// the user's old public key, so group key docs are still unwrappable.
+  ///
+  /// The restore dialog decrypts the backup and returns a [BackupManifest]
+  /// containing both the identity key AND all conversation AES keys.
+  ///
+  /// If the user restores: keys are saved and conversation keys are written
+  /// to secure storage with their original identifiers.
+  /// If the user skips: fresh keys are generated (old messages lost).
   Future<void> _tryRestoreE2eeKeys(BuildContext context, String uid) async {
-    final backupExists = await E2eeBackupService.hasBackup(uid);
-    if (!backupExists) return;
     if (!context.mounted) return;
 
-    final privateKeyB64 = await showE2eeRestoreDialog(context, uid);
-    if (privateKeyB64 == null) return; // User chose to skip
+    final manifest = await showE2eeRestoreDialog(context, uid);
+
+    if (manifest == null) {
+      // User chose to skip — generate fresh keys now.
+      debugPrint('[Login] User skipped restore — generating fresh keys');
+      await E2eeManager.generateFreshKeys(uid);
+      return;
+    }
 
     try {
-      await E2eeManager.restoreKeyFromBackup(uid, privateKeyB64);
-      debugPrint('[Login] E2EE keys restored from backup for $uid');
+      final result = await E2eeManager.restoreFromManifest(uid, manifest);
+      debugPrint('[Login] E2EE restore complete: $result');
+
+      // ── Post-restore validation ──────────────────────────────────────
+      // 1. Verify identity key persisted to secure storage.
+      final diag = await E2eeManager.diagnostics();
+      final hasKeys = diag['hasLocalKeyPair'] == true;
+      if (!hasKeys) {
+        debugPrint('[Login] CRITICAL: Identity key not persisted after restore');
+        await E2eeManager.generateFreshKeys(uid);
+        return;
+      }
+
+      // 2. Verify public key fingerprint matches.
+      if (!result.fingerprintMatch) {
+        debugPrint('[Login] WARNING: Public key fingerprint mismatch after '
+            'restore — backup may be from a different key generation');
+      }
+
+      // 3. Verify Firestore public key matches restored key.
+      final firestorePubKey = await _verifyRestoredKeyInFirestore(uid);
+      if (firestorePubKey != null &&
+          firestorePubKey != result.restoredPublicKey) {
+        debugPrint('[Login] WARNING: Firestore key mismatch — re-publishing');
+      }
+
+      // 4. Verify conversation keys are actually readable.
+      if (result.hasConversationKeys && !result.allKeysVerified) {
+        debugPrint('[Login] WARNING: Some conversation keys failed '
+            'verification — '
+            '${result.conversationKeysVerified}/${result.conversationKeysRestored} '
+            'readable. Old messages may show as encrypted.');
+      }
+
+      // 5. Log restore diagnostics.
+      debugPrint('[Login] Restore diagnostics: '
+          'v${result.manifestVersion} '
+          'convKeys=${result.conversationKeysRestored}/'
+          '${result.conversationKeysInManifest} '
+          'verified=${result.conversationKeysVerified} '
+          'fingerprint=${result.fingerprintMatch ? "match" : "MISMATCH"}');
     } catch (e) {
-      debugPrint('[Login] E2EE restore error: $e');
+      debugPrint('[Login] E2EE restore FAILED: $e');
+      // Restore failed — fall back to generating fresh keys so the user
+      // can at least send new messages.
+      debugPrint('[Login] Falling back to fresh key generation');
+      await E2eeManager.generateFreshKeys(uid);
+    }
+  }
+
+  /// Read back the public key from Firestore to confirm the restore write
+  /// actually persisted.  Returns null on error.
+  Future<String?> _verifyRestoredKeyInFirestore(String uid) async {
+    try {
+      final snap = await FirebaseService.instance.firestore
+          .collection('users')
+          .doc(uid)
+          .get(const GetOptions(source: Source.server));
+      return snap.data()?['e2eePublicKey'] as String?;
+    } catch (e) {
+      debugPrint('[Login] Firestore key verification failed: $e');
+      return null;
     }
   }
 

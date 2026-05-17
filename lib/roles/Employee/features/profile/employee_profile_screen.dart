@@ -11,8 +11,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_size.dart';
 import '../../../../core/datasource/remote_data/firebase_service.dart';
 import '../../../../core/providers/locale_provider.dart';
-import '../../../../core/services/encryption/e2ee_backup_service.dart';
-import '../../../../core/services/encryption/e2ee_key_store.dart';
+import '../../../../core/services/encryption/e2ee_manager.dart';
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/App_color.dart';
 import '../../../../core/Widgets/e2ee_backup_dialogs.dart';
@@ -97,22 +96,6 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
     final uid = widget.employee.id ?? '';
     if (uid.isEmpty) return;
 
-    final privateKey = await E2eeKeyStore.getPrivateKey();
-    if (privateKey == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              l.backupFailedMessage,
-              style: GoogleFonts.manrope(),
-            ),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-      return;
-    }
-
     if (!mounted) return;
     final password = await showE2eeBackupDialog(context);
     if (password == null || !mounted) return;
@@ -120,11 +103,10 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
     setState(() => _backingUp = true);
 
     try {
-      await E2eeBackupService.backupPrivateKey(
-        uid: uid,
-        privateKeyB64: privateKey,
-        password: password,
-      );
+      await E2eeManager.createBackup(uid: uid, password: password);
+      // Cache password so auto-refresh can update the backup when new
+      // conversation keys are derived during this session.
+      E2eeManager.setBackupPassword(password);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

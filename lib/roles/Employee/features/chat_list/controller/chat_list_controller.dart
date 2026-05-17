@@ -293,15 +293,10 @@ class ChatListController extends ChangeNotifier {
         .where('organizationId', isEqualTo: employee.organizationId)
         .where('memberIds', arrayContains: uid)
         .snapshots()
-        .listen(
-          _handleGroupSnapshot,
-          onError: (_) {},
-        );
+        .listen(_handleGroupSnapshot, onError: (_) {});
   }
 
-  void _handleGroupSnapshot(
-    QuerySnapshot<Map<String, dynamic>> snapshot,
-  ) {
+  void _handleGroupSnapshot(QuerySnapshot<Map<String, dynamic>> snapshot) {
     for (final change in snapshot.docChanges) {
       switch (change.type) {
         case DocumentChangeType.added:
@@ -367,7 +362,8 @@ class ChatListController extends ChangeNotifier {
           String? displayText;
           if (messageType == 'text') {
             if (isEncrypted) {
-              displayText = await _decryptLastMessage(data, existing);
+              final msgId = snapshot.docs.first.id;
+              displayText = await _decryptLastMessage(data, existing, msgId);
             }
           }
 
@@ -400,6 +396,7 @@ class ChatListController extends ChangeNotifier {
   Future<String?> _decryptLastMessage(
     Map<String, dynamic> data,
     ConversationModel conv,
+    String messageId,
   ) async {
     final encryptedText = data['encryptedText'] as String?;
     final iv = data['iv'] as String?;
@@ -431,6 +428,10 @@ class ChatListController extends ChangeNotifier {
         EncryptedPayload(ciphertext: encryptedText, nonce: iv),
         key,
       );
+
+      // Store the FULL plaintext in the shared cache so the chat screen
+      // can display it immediately without re-decrypting.
+      E2eeManager.cacheDecryptedText(messageId, decrypted);
 
       // Truncate for preview.
       if (decrypted.length > 80) {
