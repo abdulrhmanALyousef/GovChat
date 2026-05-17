@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter_screenshot_blocker/flutter_screenshot_blocker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_size.dart';
@@ -69,7 +70,7 @@ class EmployeeChatScreen extends StatelessWidget {
 
 // ─── Main view ────────────────────────────────────────────────────────────────
 
-class _ChatView extends StatelessWidget {
+class _ChatView extends StatefulWidget {
   const _ChatView({
     required this.employee,
     this.chatTitle,
@@ -85,13 +86,20 @@ class _ChatView extends StatelessWidget {
   final String? otherUid;
 
   @override
+  State<_ChatView> createState() => _ChatViewState();
+}
+
+class _ChatViewState extends State<_ChatView> {
+  @override
   Widget build(BuildContext context) {
     final controller = context.watch<ChatController>();
     final l = AppLocalizations.of(context)!;
-    final fallbackTitle = chatTitle ?? employee.department;
-    final subtitle = chatSubtitle ?? l.groupChatTitle;
+    final fallbackTitle = widget.chatTitle ?? widget.employee.department;
+    final subtitle = widget.chatSubtitle ?? l.groupChatTitle;
 
-    return Scaffold(
+    return ScreenshotBlockerWidget(
+      detectScreenshots: false,
+      child: Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: AppColors.cardBackground,
@@ -103,11 +111,11 @@ class _ChatView extends StatelessWidget {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: otherUid != null && otherUid!.isNotEmpty
+        title: widget.otherUid != null && widget.otherUid!.isNotEmpty
             ? StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
                     .collection('employees')
-                    .doc(otherUid)
+                    .doc(widget.otherUid)
                     .snapshots(),
                 builder: (context, snapshot) {
                   final name = snapshot.data?.data()?['name'] as String? ?? '';
@@ -194,7 +202,7 @@ class _ChatView extends StatelessWidget {
                   onEditTap: controller.startEditing,
                   onDeleteTap: controller.deleteMessage,
                   controller: controller,
-                  isPrivateChat: isPrivateChat,
+                  isPrivateChat: widget.isPrivateChat,
                 ),
               ),
               if (controller.typingDisplayIds.isNotEmpty)
@@ -212,6 +220,7 @@ class _ChatView extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
