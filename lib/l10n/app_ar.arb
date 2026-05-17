@@ -607,7 +607,7 @@
 
   "encryptionKeySection": "نسخة احتياطية لمفتاح التشفير",
   "encryptionKeyBackupDescription": "احفظ مفتاح التشفير احتياطيًا لاستعادة رسائلك على جهاز جديد.",
-  "backupKeyButton": "نسخ المفتاح احتياطيًا",
+  "backupKeyButton": "نسخ المفتاح",
   "backupSuccessMessage": "تم حفظ مفتاح التشفير احتياطيًا بنجاح",
   "backupFailedMessage": "فشل حفظ مفتاح التشفير احتياطيًا",
 

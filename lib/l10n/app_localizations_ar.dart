@@ -1719,7 +1719,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'احفظ مفتاح التشفير احتياطيًا لاستعادة رسائلك على جهاز جديد.';
 
   @override
-  String get backupKeyButton => 'نسخ المفتاح احتياطيًا';
+  String get backupKeyButton => 'نسخ المفتاح';
 
   @override
   String get backupSuccessMessage => 'تم حفظ مفتاح التشفير احتياطيًا بنجاح';

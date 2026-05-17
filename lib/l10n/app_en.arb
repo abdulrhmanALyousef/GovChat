@@ -663,7 +663,7 @@
 
   "encryptionKeySection": "Encryption Key Backup",
   "encryptionKeyBackupDescription": "Securely back up your encryption key to restore your messages on a new device.",
-  "backupKeyButton": "BACKUP ENCRYPTION KEY",
+  "backupKeyButton": "Backup Key",
   "backupSuccessMessage": "Encryption key backed up successfully",
   "backupFailedMessage": "Failed to back up encryption key",
 

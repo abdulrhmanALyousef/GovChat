@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cryptography/cryptography.dart'
     show SecretBoxAuthenticationError;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -14,10 +14,35 @@ import 'package:record/record.dart';
 
 import '../../../../../core/datasource/remote_data/firebase_service.dart';
 import '../../../../../core/services/encryption/e2ee_crypto.dart';
+import '../../../../../core/services/encryption/e2ee_key_store.dart';
 import '../../../../../core/services/encryption/e2ee_manager.dart';
 import '../../../../../core/services/logging_service.dart';
 import '../../../../../core/services/push_notification_service.dart';
 import '../../../../../models/chat_message.dart';
+
+// ── Isolate-safe decrypt payload ──────────────────────────────────────────────
+
+/// Data class for sending decrypt work to a background isolate.
+/// Must be a top-level class (not a closure) so [compute] can serialize it.
+class _DecryptRequest {
+  final String ciphertext;
+  final String nonce;
+  final Uint8List key;
+  _DecryptRequest(this.ciphertext, this.nonce, this.key);
+}
+
+/// Runs AES-256-GCM decryption in a background isolate via [compute].
+/// Returns the plaintext string, or null on any failure.
+Future<String?> _isolateDecrypt(_DecryptRequest req) async {
+  try {
+    return await E2eeCrypto.decrypt(
+      EncryptedPayload(ciphertext: req.ciphertext, nonce: req.nonce),
+      req.key,
+    );
+  } catch (_) {
+    return null;
+  }
+}
 
 class ChatController extends ChangeNotifier {
   ChatController({
@@ -28,6 +53,16 @@ class ChatController extends ChangeNotifier {
     required this.employeeUid,
     this.messagesPath,
   }) {
+    // ── Synchronous fast-path: if the key is already in memory (e.g.,
+    // the inbox preview just decrypted with it), grab it BEFORE any
+    // stream fires.  This ensures the first Firestore snapshot can
+    // decrypt immediately without waiting for _initEncryption's async path.
+    _conversationKey = E2eeKeyStore.getConversationKeyCached(_conversationPath);
+    if (_conversationKey != null) {
+      debugPrint('[E2EE] constructor: key pre-loaded from memory cache');
+    }
+
+    scrollController.addListener(_onScroll);
     _listenForMessages();
     _listenToTyping();
     _listenToEmployeeProfiles();
@@ -39,6 +74,10 @@ class ChatController extends ChangeNotifier {
     // it are suppressed while the user is already viewing it.
     PushNotificationService.activeConversationPath = _activeMessagesPath;
   }
+
+  // ── Pagination constants ──────────────────────────────────────────────────
+  static const int _pageSize = 50;
+  static const int _decryptBatchSize = 15;
 
   final FirebaseService _firebase = FirebaseService.instance;
   final _imagePicker = ImagePicker();
@@ -60,6 +99,12 @@ class ChatController extends ChangeNotifier {
   // ── Message state ──────────────────────────────────────────────────────────
   List<ChatMessage> messages = [];
   bool isSending = false;
+
+  /// True while loading older messages (scroll-up pagination).
+  bool isLoadingMore = false;
+
+  /// True when all historical messages have been fetched.
+  bool hasReachedEnd = false;
 
   /// Visible error string.  Set by any failed operation; cleared at the start
   /// of the next send attempt.  The screen watches this and shows a banner.
@@ -86,6 +131,31 @@ class ChatController extends ChangeNotifier {
 
   bool get isEncryptionReady => _conversationKey != null;
 
+  /// Per-conversation E2EE diagnostics.  Safe to call from the UI.
+  Map<String, dynamic> get encryptionDiagnostics => {
+    'conversationPath': _conversationPath,
+    'chatType': _detectChatType(),
+    'hasConversationKey': _conversationKey != null,
+    'keyLength': _conversationKey?.length,
+    'initCount': _initEncryptionCallCount,
+    'recoveryAttempted': _recoveryAttempted,
+    'macRecoveryScheduled': _macRecoveryScheduled,
+    'failedDecryptCount': _failedDecryptIds.length,
+    'decryptCacheSize': _decryptedTextCache.length,
+    'mediaCacheSize': _decryptedMediaUrlCache.length,
+    'totalMessages': messages.length,
+    'encryptedMessages': messages.where((m) => m.isEncrypted).length,
+    'pendingDecrypt': messages
+        .where(
+          (m) =>
+              m.isEncrypted &&
+              m.id != null &&
+              !_decryptedTextCache.containsKey(m.id) &&
+              !_failedDecryptIds.contains(m.id),
+        )
+        .length,
+  };
+
   /// Guards against concurrent [_initEncryption] calls.
   bool _initEncryptionRunning = false;
 
@@ -103,6 +173,20 @@ class ChatController extends ChangeNotifier {
 
   /// Set in [dispose] to prevent post-dispose crashes from async callbacks.
   bool _disposed = false;
+
+  // ── Decrypt cache ─────────────────────────────────────────────────────────
+  /// Caches decrypted text by message ID to avoid repeated crypto work.
+  final Map<String, String> _decryptedTextCache = {};
+
+  /// Caches decrypted media URLs by message ID.
+  final Map<String, String> _decryptedMediaUrlCache = {};
+
+  /// Message IDs where decryption has permanently failed (wrong key, corrupt).
+  /// Prevents repeated attempts on every snapshot.
+  final Set<String> _failedDecryptIds = {};
+
+  // ── Pagination state ──────────────────────────────────────────────────────
+  DocumentSnapshot? _oldestDoc;
 
   // ── Internal ───────────────────────────────────────────────────────────────
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
@@ -180,15 +264,23 @@ class ChatController extends ChangeNotifier {
         .where('organizationId', isEqualTo: organizationId)
         .snapshots()
         .listen((snapshot) {
+          var changed = false;
           for (final doc in snapshot.docs) {
             final data = doc.data();
-            _profileCache[doc.id] = {
+            final newProfile = {
               'name': (data['name'] as String?) ?? '',
               'avatarUrl': (data['avatarUrl'] as String?) ?? '',
               'displayId': (data['displayId'] as String?) ?? '',
             };
+            final existing = _profileCache[doc.id];
+            if (existing == null ||
+                existing['name'] != newProfile['name'] ||
+                existing['avatarUrl'] != newProfile['avatarUrl']) {
+              _profileCache[doc.id] = newProfile;
+              changed = true;
+            }
           }
-          notifyListeners();
+          if (changed) _safeNotify();
         }, onError: (_) {});
   }
 
@@ -213,6 +305,9 @@ class ChatController extends ChangeNotifier {
   bool get _isOrgChat =>
       messagesPath != null && messagesPath!.contains('/org_chats/');
 
+  bool get _isProjectGroup =>
+      messagesPath != null && messagesPath!.contains('projectGroups/');
+
   /// Full Firestore path to the messages collection for the current chat.
   /// Used by [AiSummaryService] to derive where to read/write summaries.
   String get effectiveMessagesPath => '$_conversationPath/messages';
@@ -226,8 +321,34 @@ class ChatController extends ChangeNotifier {
     _initEncryptionCallCount++;
 
     try {
-      debugPrint('[E2EE] _initEncryption #$_initEncryptionCallCount  '
-          'path=$_conversationPath  forceRefresh=$forceRefresh');
+      debugPrint(
+        '[E2EE] _initEncryption #$_initEncryptionCallCount  '
+        'path=$_conversationPath  forceRefresh=$forceRefresh',
+      );
+
+      // ── 0. Fast path: try cached key BEFORE any network calls ──────────
+      // This avoids the race where _fetchMemberUids delays key availability
+      // while the snapshot listener has already delivered messages.
+      if (!forceRefresh && _conversationKey == null) {
+        final cachedKey = await E2eeKeyStore.getConversationKey(
+          _conversationPath,
+        );
+        if (cachedKey != null) {
+          debugPrint(
+            '[E2EE] fast-path: key loaded from cache/storage '
+            '(${cachedKey.length} B)',
+          );
+          _conversationKey = cachedKey;
+          _safeNotify();
+          // Trigger decrypt on any messages already in the list.
+          _decryptExistingMessages();
+        } else {
+          debugPrint(
+            '[E2EE] fast-path: no key in cache/storage for '
+            '$_conversationPath',
+          );
+        }
+      }
 
       // ── 1. Resolve the Firebase UID ─────────────────────────────────────
       String? uid = E2eeManager.currentUid;
@@ -249,15 +370,58 @@ class ChatController extends ChangeNotifier {
         return;
       }
 
+      // If we already got the key from cache, skip the full derivation
+      // unless forceRefresh was requested.
+      if (_conversationKey != null && !forceRefresh) {
+        debugPrint(
+          '[E2EE] key already available from fast-path — skipping '
+          'full derivation',
+        );
+        // Still log key diagnostics.
+        final privKey = await E2eeKeyStore.getPrivateKey();
+        final pubKey = await E2eeKeyStore.getPublicKey();
+        final privPrefix = (privKey != null && privKey.length >= 8)
+            ? privKey.substring(0, 8)
+            : privKey ?? 'null';
+        final pubPrefix = (pubKey != null && pubKey.length >= 8)
+            ? pubKey.substring(0, 8)
+            : pubKey ?? 'null';
+        debugPrint('[E2EE] identity: priv=$privPrefix… pub=$pubPrefix…');
+        debugPrint(
+          '[E2EE] convKey: ${_conversationKey!.length} B '
+          'path=$_conversationPath (cached)',
+        );
+        return;
+      }
+
       // ── 2. Wait for X25519 key initialisation ──────────────────────────
+      debugPrint('[E2EE] stage=ensureInitialized');
       await E2eeManager.ensureInitialized();
       if (_disposed) return;
 
+      // Verify identity keys exist after init.
+      final privKeyCheck = await E2eeKeyStore.getPrivateKey();
+      final pubKeyCheck = await E2eeKeyStore.getPublicKey();
+      debugPrint(
+        '[E2EE] stage=identityCheck  '
+        'hasPrivate=${privKeyCheck != null}  '
+        'hasPublic=${pubKeyCheck != null}',
+      );
+
       // ── 3. Fetch member UIDs ───────────────────────────────────────────
+      debugPrint(
+        '[E2EE] stage=fetchMembers  '
+        'isPrivate=$_isPrivateChat  isOrg=$_isOrgChat  '
+        'isGroup=$_isProjectGroup  path=$_conversationPath',
+      );
       final memberUids = await _fetchMemberUids(uid);
       if (_disposed) return;
+      debugPrint(
+        '[E2EE] stage=fetchMembersDone  count=${memberUids.length}',
+      );
 
       // ── 4. Get the conversation AES key ────────────────────────────────
+      debugPrint('[E2EE] stage=getConversationKey  forceRefresh=$forceRefresh');
       _conversationKey = await E2eeManager.getConversationKey(
         conversationPath: _conversationPath,
         currentUid: uid,
@@ -267,31 +431,71 @@ class ChatController extends ChangeNotifier {
       );
       if (_disposed) return;
 
+      // ── 5. Log key fingerprints for diagnostics ─────────────────────
+      {
+        final privKey = await E2eeKeyStore.getPrivateKey();
+        final pubKey = await E2eeKeyStore.getPublicKey();
+        final privPrefix = (privKey != null && privKey.length >= 8)
+            ? privKey.substring(0, 8)
+            : privKey ?? 'null';
+        final pubPrefix = (pubKey != null && pubKey.length >= 8)
+            ? pubKey.substring(0, 8)
+            : pubKey ?? 'null';
+        final convKeyLen = _conversationKey?.length;
+        debugPrint('[E2EE] identity: priv=$privPrefix… pub=$pubPrefix…');
+        debugPrint(
+          '[E2EE] convKey: ${convKeyLen != null ? '$convKeyLen B' : 'null'} '
+          'path=$_conversationPath',
+        );
+      }
+
       if (_conversationKey == null) {
         debugPrint('[E2EE] no key — listening for distribution');
         _listenForKeyDoc(uid);
-        errorMessage =
-            'Waiting for encryption key. '
-            'Ask the conversation starter to re-open this chat, '
-            'then tap Retry.';
+
+        // Auto-retry once with forceRefresh after a short delay.
+        // This handles cases where the key doc exists but the initial
+        // Firestore SDK cache miss prevented a server fetch.
+        if (!forceRefresh && !_recoveryAttempted) {
+          debugPrint('[E2EE] scheduling auto-retry with forceRefresh');
+          _recoveryAttempted = true;
+          Future.delayed(const Duration(seconds: 2), () {
+            if (_disposed || _conversationKey != null) return;
+            _encryptionReady = _initEncryption(forceRefresh: true);
+          });
+        }
+
+        errorMessage = 'Encryption key not ready. Tap Retry to reconnect.';
       } else {
         debugPrint('[E2EE] key ready (${_conversationKey!.length} B)');
-        if (errorMessage?.contains('Waiting for encryption key') == true) {
+        if (errorMessage?.contains('Encryption key') == true) {
           errorMessage = null;
         }
-        if (messages.isNotEmpty) {
-          final decrypted = <ChatMessage>[];
-          for (final msg in messages) {
-            if (_disposed) return;
-            decrypted.add(await _tryDecrypt(msg));
-          }
-          messages = decrypted;
+
+        // After a forceRefresh (MAC recovery), previously failed messages
+        // may now decrypt with the new key.  Clear the failure set so they
+        // are retried, and also drop stale cache entries.
+        if (forceRefresh && _failedDecryptIds.isNotEmpty) {
+          debugPrint(
+            '[E2EE] key refreshed — clearing '
+            '${_failedDecryptIds.length} failed-decrypt entries for retry',
+          );
+          _failedDecryptIds.clear();
+          _decryptedTextCache.clear();
+          _decryptedMediaUrlCache.clear();
         }
+
+        // When key becomes available, decrypt any pending messages.
+        _decryptExistingMessages();
       }
 
       _safeNotify();
     } catch (e, st) {
-      debugPrint('[E2EE] _initEncryption error: $e\n$st');
+      debugPrint('[E2EE] _initEncryption EXCEPTION: $e\n$st');
+      if (_conversationKey == null && !_disposed) {
+        errorMessage = 'Encryption key not ready. Tap Retry to reconnect.';
+        _safeNotify();
+      }
     } finally {
       _initEncryptionRunning = false;
       _macRecoveryScheduled = false;
@@ -311,6 +515,26 @@ class ChatController extends ChangeNotifier {
         return participants;
       } catch (e) {
         debugPrint('[E2EE] fetchMemberUids (private) error: $e');
+        return [currentUid];
+      }
+    }
+
+    // ── Project group ─────────────────────────────────────────────────────────
+    if (_isProjectGroup) {
+      try {
+        // _conversationPath is "projectGroups/$groupId"
+        final groupDoc = await _firebase.firestore
+            .doc(_conversationPath)
+            .get();
+        final memberIds = List<String>.from(
+          groupDoc.data()?['memberIds'] as List? ?? [],
+        );
+        if (memberIds.isEmpty) memberIds.add(currentUid);
+        if (!memberIds.contains(currentUid)) memberIds.add(currentUid);
+        debugPrint('[E2EE] project group members (${memberIds.length})');
+        return memberIds;
+      } catch (e) {
+        debugPrint('[E2EE] fetchMemberUids (projectGroup) error: $e');
         return [currentUid];
       }
     }
@@ -415,9 +639,13 @@ class ChatController extends ChangeNotifier {
   /// Called by the UI retry button so users can recover without restarting.
   Future<void> retryEncryptionInit() async {
     errorMessage = null;
-    // Reset recovery flags so manual retry is always honoured.
+    // Reset ALL recovery/failure state so manual retry is always honoured.
     _recoveryAttempted = false;
     _macRecoveryScheduled = false;
+    _initEncryptionRunning = false; // Force-clear in case it got stuck.
+    _failedDecryptIds.clear();
+    _decryptedTextCache.clear();
+    _decryptedMediaUrlCache.clear();
     notifyListeners();
     // forceRefresh=true bypasses all caches and re-fetches keys from server.
     _encryptionReady = _initEncryption(forceRefresh: true);
@@ -446,10 +674,65 @@ class ChatController extends ChangeNotifier {
         });
   }
 
+  // ── Decrypt all pending messages in the current list ────────────────────────
+
+  /// Triggers a decrypt pass on all currently loaded messages that haven't
+  /// been decrypted yet.  Called when `_conversationKey` transitions from
+  /// null to non-null (either from fast-path cache or full derivation).
+  void _decryptExistingMessages() {
+    if (_disposed || _conversationKey == null) return;
+    if (messages.isEmpty) {
+      // Messages haven't arrived yet — schedule a deferred pass.
+      _scheduleDecryptRetry();
+      return;
+    }
+    final hasUndecrypted = messages.any(
+      (m) =>
+          m.isEncrypted &&
+          m.id != null &&
+          !_decryptedTextCache.containsKey(m.id) &&
+          !_failedDecryptIds.contains(m.id),
+    );
+    if (hasUndecrypted) {
+      _decryptBatchProgressive(List.from(messages), 0);
+    }
+  }
+
+  /// Schedules a deferred decrypt attempt for when messages arrive after
+  /// the key is already available.
+  void _scheduleDecryptRetry() {
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (_disposed || _conversationKey == null) return;
+      _decryptExistingMessages();
+    });
+  }
+
   // ── Decrypt helper ─────────────────────────────────────────────────────────
 
   Future<ChatMessage> _tryDecrypt(ChatMessage msg) async {
     if (!msg.isEncrypted || _disposed) return msg;
+
+    // Skip permanently failed messages.
+    if (msg.id != null && _failedDecryptIds.contains(msg.id)) {
+      return msg.withDecrypted(
+        text: '[Decryption error: wrong key or corrupted data]',
+      );
+    }
+
+    // Check local + shared cache first — instant return.
+    if (msg.id != null) {
+      final cachedText =
+          _decryptedTextCache[msg.id] ??
+          E2eeManager.getCachedDecryptedText(msg.id!);
+      final cachedUrl = _decryptedMediaUrlCache[msg.id];
+      if (cachedText != null || cachedUrl != null) {
+        if (cachedText != null) _decryptedTextCache[msg.id!] = cachedText;
+        return msg.withDecrypted(
+          text: cachedText,
+          mediaUrl: cachedUrl ?? msg.mediaUrl,
+        );
+      }
+    }
 
     // Capture the key at the start — never null-out the shared field from
     // inside a Future.wait batch.  If another message already scheduled
@@ -460,47 +743,53 @@ class ChatController extends ChangeNotifier {
     String? decryptedText;
     String? decryptedMediaUrl;
 
-    // ── Text decryption ──────────────────────────────────────────────────
+    // ── Text decryption (background isolate) ────────────────────────────
     if (msg.encryptedText != null && msg.iv != null) {
       try {
-        decryptedText = await E2eeManager.decryptMessage(
-          EncryptedPayload(ciphertext: msg.encryptedText!, nonce: msg.iv!),
-          key,
-          messageId: msg.id,
+        // Use compute() to run AES-GCM decrypt off the main thread.
+        decryptedText = await compute(
+          _isolateDecrypt,
+          _DecryptRequest(msg.encryptedText!, msg.iv!, key),
         );
-      } on SecretBoxAuthenticationError {
-        // Old messages encrypted with a previous key — skip silently.
-        // Schedule ONE recovery per session so NEW messages can work.
-        if (!_macRecoveryScheduled && !_recoveryAttempted) {
-          debugPrint('[E2EE] MAC error on msg=${msg.id} — '
-              'scheduling deferred recovery');
-          _macRecoveryScheduled = true;
-          _recoveryAttempted = true;
-          // Deferred: do NOT null the key or re-init inside Future.wait.
-          // Recovery runs after the current batch finishes.
-          Future.microtask(() {
-            if (_disposed) return;
-            _conversationKey = null;
-            _encryptionReady = _initEncryption(forceRefresh: true);
-          });
+        // compute returns null on failure — treat as a generic error.
+        if (decryptedText == null) {
+          // Might be a MAC error — try on main thread to get the exception.
+          decryptedText = await _tryDecryptMainThread(msg, key);
+        } else if (msg.id != null) {
+          _decryptedTextCache[msg.id!] = decryptedText;
+          E2eeManager.cacheDecryptedText(msg.id!, decryptedText);
         }
-        decryptedText = '[Decryption error: wrong key or corrupted data]';
       } catch (e) {
-        decryptedText = '[Decryption error: $e]';
+        // compute() can fail if the isolate can't be spawned — fall back.
+        decryptedText = await _tryDecryptMainThread(msg, key);
       }
     }
 
-    // ── Media URL decryption ─────────────────────────────────────────────
+    // ── Media URL decryption (background isolate) ───────────────────────
     if (msg.encryptedMediaUrl != null && msg.mediaIv != null) {
       try {
-        decryptedMediaUrl = await E2eeManager.decryptMessage(
-          EncryptedPayload(
-            ciphertext: msg.encryptedMediaUrl!,
-            nonce: msg.mediaIv!,
-          ),
-          key,
+        decryptedMediaUrl = await compute(
+          _isolateDecrypt,
+          _DecryptRequest(msg.encryptedMediaUrl!, msg.mediaIv!, key),
         );
-      } catch (_) {}
+        if (decryptedMediaUrl != null && msg.id != null) {
+          _decryptedMediaUrlCache[msg.id!] = decryptedMediaUrl;
+        }
+      } catch (_) {
+        // Fallback to main thread.
+        try {
+          decryptedMediaUrl = await E2eeManager.decryptMessage(
+            EncryptedPayload(
+              ciphertext: msg.encryptedMediaUrl!,
+              nonce: msg.mediaIv!,
+            ),
+            key,
+          );
+          if (msg.id != null) {
+            _decryptedMediaUrlCache[msg.id!] = decryptedMediaUrl;
+          }
+        } catch (_) {}
+      }
     }
 
     return msg.withDecrypted(
@@ -509,37 +798,194 @@ class ChatController extends ChangeNotifier {
     );
   }
 
+  /// Fallback: decrypt on main thread to properly catch typed exceptions
+  /// (SecretBoxAuthenticationError) that can't cross isolate boundaries.
+  Future<String?> _tryDecryptMainThread(ChatMessage msg, Uint8List key) async {
+    try {
+      final text = await E2eeManager.decryptMessage(
+        EncryptedPayload(ciphertext: msg.encryptedText!, nonce: msg.iv!),
+        key,
+        messageId: msg.id,
+      );
+      if (msg.id != null) {
+        _decryptedTextCache[msg.id!] = text;
+        E2eeManager.cacheDecryptedText(msg.id!, text);
+      }
+      return text;
+    } on SecretBoxAuthenticationError {
+      if (msg.id != null) _failedDecryptIds.add(msg.id!);
+      if (!_macRecoveryScheduled && !_recoveryAttempted) {
+        debugPrint(
+          '[E2EE] MAC error on msg=${msg.id} — '
+          'scheduling deferred recovery',
+        );
+        _macRecoveryScheduled = true;
+        _recoveryAttempted = true;
+        Future.microtask(() {
+          if (_disposed) return;
+          _conversationKey = null;
+          _encryptionReady = _initEncryption(forceRefresh: true);
+        });
+      }
+      return '[Decryption error: wrong key or corrupted data]';
+    } catch (e) {
+      return '[Decryption error: $e]';
+    }
+  }
+
+  // ── Scroll-based pagination ─────────────────────────────────────────────────
+
+  void _onScroll() {
+    if (isLoadingMore || hasReachedEnd || _disposed) return;
+    if (!scrollController.hasClients) return;
+    // Trigger load-more when scrolled near the top (older messages).
+    if (scrollController.position.pixels < 200) {
+      _loadOlderMessages();
+    }
+  }
+
+  Future<void> _loadOlderMessages() async {
+    if (isLoadingMore || hasReachedEnd || _oldestDoc == null || _disposed) {
+      return;
+    }
+    isLoadingMore = true;
+    _safeNotify();
+
+    final sw = Stopwatch()..start();
+    try {
+      final snap = await _messagesCollection()
+          .orderBy('createdAt', descending: true)
+          .startAfterDocument(_oldestDoc!)
+          .limit(_pageSize)
+          .get();
+
+      if (_disposed) return;
+
+      if (snap.docs.isEmpty) {
+        hasReachedEnd = true;
+        isLoadingMore = false;
+        _safeNotify();
+        return;
+      }
+
+      // Update oldest doc cursor.
+      _oldestDoc = snap.docs.last;
+
+      final olderMessages =
+          snap.docs
+              .map((doc) => ChatMessage.fromJson(doc.data(), id: doc.id))
+              .where((m) => !m.isDeleted)
+              .toList()
+            ..sort((a, b) {
+              final aTime = a.createdAt ?? DateTime(2000);
+              final bTime = b.createdAt ?? DateTime(2000);
+              return aTime.compareTo(bTime);
+            });
+
+      debugPrint(
+        '[CHAT] older page fetched: ${olderMessages.length} msgs '
+        'in ${sw.elapsedMilliseconds}ms',
+      );
+
+      // Prepend older messages to the list.
+      messages = [...olderMessages, ...messages];
+      _safeNotify();
+
+      // Decrypt in background batches.
+      if (_conversationKey != null) {
+        _decryptBatchProgressive(olderMessages, 0);
+      }
+    } catch (e) {
+      debugPrint('[CHAT] _loadOlderMessages error: $e');
+    }
+    isLoadingMore = false;
+    _safeNotify();
+  }
+
   // ── Message stream ─────────────────────────────────────────────────────────
 
   void _listenForMessages() {
+    final sw = Stopwatch()..start();
+
     _subscription = _messagesCollection()
-        .orderBy('createdAt')
+        .orderBy('createdAt', descending: true)
+        .limit(_pageSize)
         .snapshots()
         .listen(
           (snapshot) async {
             if (_disposed) return;
 
-            final rawMessages = snapshot.docs
-                .map((doc) => ChatMessage.fromJson(doc.data(), id: doc.id))
-                .where((m) => !m.isDeleted)
-                .toList();
+            debugPrint(
+              '[CHAT] messages fetched in ${sw.elapsedMilliseconds}ms '
+              '(${snapshot.docs.length} docs)',
+            );
+            sw.reset();
+            sw.start();
 
-            if (_conversationKey != null) {
-              // Decrypt sequentially to avoid flooding the main isolate
-              // with concurrent crypto operations ("Skipped N frames").
-              final decrypted = <ChatMessage>[];
-              for (final msg in rawMessages) {
-                if (_disposed) return;
-                decrypted.add(await _tryDecrypt(msg));
+            // Track the oldest document for pagination cursor.
+            if (snapshot.docs.isNotEmpty) {
+              _oldestDoc = snapshot.docs.last;
+            }
+            if (snapshot.docs.length < _pageSize) {
+              hasReachedEnd = true;
+            }
+
+            final rawMessages =
+                snapshot.docs
+                    .map((doc) => ChatMessage.fromJson(doc.data(), id: doc.id))
+                    .where((m) => !m.isDeleted)
+                    .toList()
+                  // Reverse since we fetched descending.
+                  ..sort((a, b) {
+                    final aTime = a.createdAt ?? DateTime(2000);
+                    final bTime = b.createdAt ?? DateTime(2000);
+                    return aTime.compareTo(bTime);
+                  });
+
+            // ── Progressive rendering: show messages immediately ──────────
+            // Apply cached decrypted text instantly (no async), then decrypt
+            // uncached messages in background batches.
+            messages = rawMessages.map((msg) {
+              if (!msg.isEncrypted || msg.id == null) return msg;
+
+              // Check local instance cache first — zero cost.
+              final cachedText = _decryptedTextCache[msg.id];
+              final cachedUrl = _decryptedMediaUrlCache[msg.id];
+              if (cachedText != null || cachedUrl != null) {
+                return msg.withDecrypted(
+                  text: cachedText,
+                  mediaUrl: cachedUrl ?? msg.mediaUrl,
+                );
               }
-              messages = decrypted;
+
+              // Check the shared global cache (populated by inbox preview).
+              final sharedText = E2eeManager.getCachedDecryptedText(msg.id!);
+              if (sharedText != null) {
+                _decryptedTextCache[msg.id!] = sharedText;
+                return msg.withDecrypted(text: sharedText);
+              }
+
+              return msg; // Show as encrypted placeholder.
+            }).toList();
+
+            _safeNotify();
+            _scrollToBottom();
+            debugPrint(
+              '[CHAT] first render completed in '
+              '${sw.elapsedMilliseconds}ms',
+            );
+
+            // Decrypt uncached messages in background batches.
+            if (_conversationKey != null) {
+              _decryptBatchProgressive(rawMessages, 0);
             } else {
-              messages = rawMessages;
+              // Key not ready yet — schedule a deferred decrypt once it
+              // becomes available.  This handles the race where the snapshot
+              // arrives before _initEncryption completes.
+              _scheduleDecryptRetry();
             }
 
             _markMessagesAsRead(snapshot.docs).ignore();
-            _safeNotify();
-            _scrollToBottom();
           },
           onError: (error) {
             if (_disposed) return;
@@ -547,6 +993,87 @@ class ChatController extends ChangeNotifier {
             _safeNotify();
           },
         );
+  }
+
+  // ── Progressive batch decrypt ─────────────────────────────────────────────
+
+  /// Decrypts messages in small batches, updating the UI after each batch.
+  /// Starts from [startIndex] and processes [_decryptBatchSize] at a time.
+  void _decryptBatchProgressive(List<ChatMessage> rawMessages, int startIndex) {
+    if (_disposed || _conversationKey == null) return;
+
+    // Collect messages that need decryption.
+    final needsDecrypt = <int>[];
+    for (
+      var i = startIndex;
+      i < rawMessages.length && needsDecrypt.length < _decryptBatchSize;
+      i++
+    ) {
+      final msg = rawMessages[i];
+      if (!msg.isEncrypted || msg.id == null) continue;
+      if (_decryptedTextCache.containsKey(msg.id)) continue;
+      if (_failedDecryptIds.contains(msg.id)) continue;
+      needsDecrypt.add(i);
+    }
+
+    if (needsDecrypt.isEmpty) {
+      // Try next range — there may be cached items we skipped.
+      final nextStart = needsDecrypt.isEmpty
+          ? startIndex + _decryptBatchSize
+          : null;
+      if (nextStart != null && nextStart < rawMessages.length) {
+        // Use a microtask so we don't starve the event loop.
+        Future.microtask(
+          () => _decryptBatchProgressive(rawMessages, nextStart),
+        );
+      }
+      return;
+    }
+
+    final sw = Stopwatch()..start();
+
+    // Process the batch.
+    () async {
+      var changed = false;
+      for (final idx in needsDecrypt) {
+        if (_disposed) return;
+        final msg = rawMessages[idx];
+        final decrypted = await _tryDecrypt(msg);
+        if (decrypted.text != msg.text || decrypted.mediaUrl != msg.mediaUrl) {
+          // Cache results.
+          if (msg.id != null) {
+            if (decrypted.text.isNotEmpty) {
+              _decryptedTextCache[msg.id!] = decrypted.text;
+            }
+            if (decrypted.mediaUrl != null &&
+                decrypted.mediaUrl != msg.mediaUrl) {
+              _decryptedMediaUrlCache[msg.id!] = decrypted.mediaUrl!;
+            }
+          }
+          // Update the message in the list.
+          final listIdx = messages.indexWhere((m) => m.id == msg.id);
+          if (listIdx != -1) {
+            messages[listIdx] = decrypted;
+            changed = true;
+          }
+        }
+      }
+
+      debugPrint(
+        '[CHAT] decrypt batch completed in ${sw.elapsedMilliseconds}ms '
+        '(${needsDecrypt.length} msgs)',
+      );
+
+      if (changed && !_disposed) _safeNotify();
+
+      // Schedule next batch.
+      final lastProcessed = needsDecrypt.last;
+      if (lastProcessed + 1 < rawMessages.length) {
+        Future.microtask(
+          () => _decryptBatchProgressive(rawMessages, lastProcessed + 1),
+        );
+      }
+    }();
   }
 
   // ── Text send ──────────────────────────────────────────────────────────────
@@ -578,9 +1105,7 @@ class ChatController extends ChangeNotifier {
         return;
       }
 
-      final enc = await E2eeManager.encryptMessage(
-        text, _conversationKey!,
-      );
+      final enc = await E2eeManager.encryptMessage(text, _conversationKey!);
 
       final ref = await _messagesCollection().add({
         'senderId': displayId,
@@ -1023,14 +1548,18 @@ class ChatController extends ChangeNotifier {
       }
     }
 
-    // One retry — covers the race where ensureInitialized() returned before the
-    // Firestore write completed on first login, or after a transient network blip.
+    // Retry with forceRefresh — covers the race where ensureInitialized()
+    // returned before the Firestore write completed on first login, or after
+    // a transient network blip, or when a stale key was evicted.
     if (_conversationKey == null) {
       debugPrint(
-        '[E2EE] Key still null after initial wait — retrying _initEncryption()',
+        '[E2EE] Key still null after initial wait — '
+        'retrying _initEncryption(forceRefresh: true)',
       );
+      _recoveryAttempted = false;
+      _initEncryptionRunning = false; // Ensure retry is not blocked by guard.
       try {
-        await _initEncryption();
+        await _initEncryption(forceRefresh: true);
       } catch (e) {
         debugPrint('[E2EE] _initEncryption retry error (swallowed): $e');
       }
@@ -1227,6 +1756,7 @@ class ChatController extends ChangeNotifier {
       PushNotificationService.activeConversationPath = null;
     }
     _disposed = true;
+    scrollController.removeListener(_onScroll);
     _typingDebounceTimer?.cancel();
     _typingClearTimer?.cancel();
     _recordingTimer?.cancel();
@@ -1240,6 +1770,9 @@ class ChatController extends ChangeNotifier {
     scrollController.dispose();
     inputFocusNode.dispose();
     _subscription?.cancel();
+    _decryptedTextCache.clear();
+    _decryptedMediaUrlCache.clear();
+    _failedDecryptIds.clear();
     super.dispose();
   }
 }

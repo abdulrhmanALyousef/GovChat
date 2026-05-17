@@ -1726,7 +1726,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Securely back up your encryption key to restore your messages on a new device.';
 
   @override
-  String get backupKeyButton => 'BACKUP ENCRYPTION KEY';
+  String get backupKeyButton => 'Backup Key';
 
   @override
   String get backupSuccessMessage => 'Encryption key backed up successfully';
