@@ -58,7 +58,7 @@ dependencies:
   lucide_icons: ^0.257.0
   firebase_remote_config: ^5.1.0
   http: ^1.2.0
-
+  flutter_screenshot_blocker: ^1.0.3
 
 dev_dependencies:
   flutter_test:
