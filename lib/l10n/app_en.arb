@@ -585,5 +585,28 @@
         "type": "String"
       }
     }
+  },
+
+  "inboxSummaryTitle": "All Your Conversations",
+  "inboxSummarySubtitle": "AI-powered overview of all your conversations",
+  "inboxSummaryGenerate": "Generate",
+  "inboxSummaryRegenerate": "Regenerate",
+  "inboxSummaryEmptyTitle": "No inbox summary yet",
+  "inboxSummaryEmptySubtitle": "Tap Generate to create an AI-powered summary of recent activity across all your chats.",
+  "inboxSummaryGenerateButton": "Summarize Inbox",
+  "inboxSummaryAnalysing": "Analysing conversations…",
+  "inboxSummaryHighlights": "Key Highlights",
+  "inboxSummaryUrgent": "Urgent & Action Required",
+  "inboxSummaryDecisions": "Decisions Made",
+  "inboxSummaryPending": "Pending Items",
+  "inboxSummaryPerChat": "Per-Chat Breakdown",
+  "inboxSummaryTrends": "Communication Trends",
+  "inboxSummaryGeneratedAt": "Generated {date}",
+  "@inboxSummaryGeneratedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -2953,6 +2953,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Generated {date}'**
   String aiSummaryGeneratedAt(String date);
+
+  /// No description provided for @inboxSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox Summary'**
+  String get inboxSummaryTitle;
+
+  /// No description provided for @inboxSummarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI-powered overview of all your conversations'**
+  String get inboxSummarySubtitle;
+
+  /// No description provided for @inboxSummaryGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate'**
+  String get inboxSummaryGenerate;
+
+  /// No description provided for @inboxSummaryRegenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerate'**
+  String get inboxSummaryRegenerate;
+
+  /// No description provided for @inboxSummaryEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No inbox summary yet'**
+  String get inboxSummaryEmptyTitle;
+
+  /// No description provided for @inboxSummaryEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Generate to create an AI-powered summary of recent activity across all your chats.'**
+  String get inboxSummaryEmptySubtitle;
+
+  /// No description provided for @inboxSummaryGenerateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize Inbox'**
+  String get inboxSummaryGenerateButton;
+
+  /// No description provided for @inboxSummaryAnalysing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysing conversations…'**
+  String get inboxSummaryAnalysing;
+
+  /// No description provided for @inboxSummaryHighlights.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Highlights'**
+  String get inboxSummaryHighlights;
+
+  /// No description provided for @inboxSummaryUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent & Action Required'**
+  String get inboxSummaryUrgent;
+
+  /// No description provided for @inboxSummaryDecisions.
+  ///
+  /// In en, this message translates to:
+  /// **'Decisions Made'**
+  String get inboxSummaryDecisions;
+
+  /// No description provided for @inboxSummaryPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Items'**
+  String get inboxSummaryPending;
+
+  /// No description provided for @inboxSummaryPerChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Per-Chat Breakdown'**
+  String get inboxSummaryPerChat;
+
+  /// No description provided for @inboxSummaryTrends.
+  ///
+  /// In en, this message translates to:
+  /// **'Communication Trends'**
+  String get inboxSummaryTrends;
+
+  /// No description provided for @inboxSummaryGeneratedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated {date}'**
+  String inboxSummaryGeneratedAt(String date);
 }
 
 class _AppLocalizationsDelegate

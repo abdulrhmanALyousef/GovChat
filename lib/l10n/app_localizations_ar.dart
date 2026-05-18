@@ -1500,4 +1500,53 @@ class AppLocalizationsAr extends AppLocalizations {
   String aiSummaryGeneratedAt(String date) {
     return 'تم الإنشاء $date';
   }
+
+  @override
+  String get inboxSummaryTitle => 'جميع محادثاتك';
+
+  @override
+  String get inboxSummarySubtitle =>
+      'نظرة شاملة بالذكاء الاصطناعي على جميع محادثاتك';
+
+  @override
+  String get inboxSummaryGenerate => 'إنشاء';
+
+  @override
+  String get inboxSummaryRegenerate => 'إعادة الإنشاء';
+
+  @override
+  String get inboxSummaryEmptyTitle => 'لا يوجد ملخص بعد';
+
+  @override
+  String get inboxSummaryEmptySubtitle =>
+      'اضغط على إنشاء لإنشاء ملخص ذكي للنشاط الأخير عبر جميع محادثاتك.';
+
+  @override
+  String get inboxSummaryGenerateButton => 'تلخيص صندوق الوارد';
+
+  @override
+  String get inboxSummaryAnalysing => 'جارٍ تحليل المحادثات…';
+
+  @override
+  String get inboxSummaryHighlights => 'أبرز النقاط';
+
+  @override
+  String get inboxSummaryUrgent => 'عاجل ويتطلب إجراء';
+
+  @override
+  String get inboxSummaryDecisions => 'القرارات المتخذة';
+
+  @override
+  String get inboxSummaryPending => 'البنود المعلقة';
+
+  @override
+  String get inboxSummaryPerChat => 'تفصيل لكل محادثة';
+
+  @override
+  String get inboxSummaryTrends => 'اتجاهات التواصل';
+
+  @override
+  String inboxSummaryGeneratedAt(String date) {
+    return 'تم الإنشاء $date';
+  }
 }
