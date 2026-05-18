@@ -3593,7 +3593,7 @@ abstract class AppLocalizations {
   /// No description provided for @inboxSummaryTitle.
   ///
   /// In en, this message translates to:
-  /// **'Inbox Summary'**
+  /// **'All Your Conversations'**
   String get inboxSummaryTitle;
 
   /// No description provided for @inboxSummarySubtitle.

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
@@ -11,7 +12,6 @@ import '../../core/services/otp_service.dart';
 import '../../core/services/push_notification_service.dart';
 import '../../core/services/session_manager.dart';
 import '../../core/Widgets/e2ee_backup_dialogs.dart';
-import '../../models/admin_model.dart';
 import '../../models/employee_model.dart';
 import '../../roles/employee/features/main/employee_main_screen.dart';
 import '../otp_verification_screen.dart';
