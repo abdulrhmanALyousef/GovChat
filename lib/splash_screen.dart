@@ -115,9 +115,10 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: colors.scaffoldBackground,
       body: AnimatedBuilder(
         animation: _controller,
         builder: (context, _) {
@@ -135,7 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
                       gradient: RadialGradient(
                         colors: [
                           AppColors.primaryColor.withValues(alpha: 0.4),
-                          AppColors.scaffoldBackground.withValues(alpha: 0.0),
+                          colors.scaffoldBackground.withValues(alpha: 0.0),
                         ],
                       ),
                     ),
@@ -173,7 +174,7 @@ class _SplashScreenState extends State<SplashScreen>
                           style: GoogleFonts.manrope(
                             fontSize: 30.sp,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
+                            color: colors.textPrimary,
                             letterSpacing: 6,
                           ),
                         ),
@@ -211,9 +212,9 @@ class _SplashScreenState extends State<SplashScreen>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.scaffoldBackground,
+                          colors.scaffoldBackground,
                           AppColors.primaryColor,
-                          AppColors.scaffoldBackground,
+                          colors.scaffoldBackground,
                         ],
                       ),
                     ),

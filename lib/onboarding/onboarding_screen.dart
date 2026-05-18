@@ -102,8 +102,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       ),
     ];
 
+    final colors = context.colors;
+
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: colors.scaffoldBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -119,7 +121,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   child: TextButton(
                     onPressed: isLast ? null : _complete,
                     style: TextButton.styleFrom(
-                      foregroundColor: AppColors.textSecondary,
+                      foregroundColor: colors.textSecondary,
                       padding: EdgeInsets.symmetric(
                           horizontal: 12.w, vertical: 8.h),
                     ),
@@ -128,7 +130,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       style: GoogleFonts.manrope(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ),
@@ -256,7 +258,7 @@ class _OnboardingPage extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: 22.sp,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                       height: 1.3,
                     ),
                   ),
@@ -276,7 +278,7 @@ class _OnboardingPage extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w400,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                       height: 1.6,
                     ),
                   ),
@@ -327,7 +329,7 @@ class _BottomNav extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: i == currentPage
                       ? AppColors.primaryColor
-                      : AppColors.navUnselected,
+                      : context.colors.navUnselected,
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               ),

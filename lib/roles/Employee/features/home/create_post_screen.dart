@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -47,18 +47,18 @@ class _CreatePostView extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new, color: context.colors.textTitle),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           controller.isEditMode ? l.editPostTitle : l.newPostTitle,
           style: GoogleFonts.manrope(
-            color: AppColors.textTitle,
+            color: context.colors.textTitle,
             fontWeight: FontWeight.w800,
             fontSize: AppSizes.sp16,
           ),
@@ -94,7 +94,7 @@ class _CreatePostView extends StatelessWidget {
                             Text(
                               controller.employee.name,
                               style: GoogleFonts.manrope(
-                                color: AppColors.textTitle,
+                                color: context.colors.textTitle,
                                 fontWeight: FontWeight.w700,
                                 fontSize: AppSizes.sp14,
                               ),
@@ -102,7 +102,7 @@ class _CreatePostView extends StatelessWidget {
                             Text(
                               controller.employee.displayId,
                               style: GoogleFonts.manrope(
-                                color: AppColors.textMuted,
+                                color: context.colors.textMuted,
                                 fontSize: AppSizes.sp11,
                                 letterSpacing: 0.8,
                               ),
@@ -122,14 +122,14 @@ class _CreatePostView extends StatelessWidget {
                       maxLines: null,
                       minLines: 4,
                       style: GoogleFonts.manrope(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontSize: AppSizes.sp14,
                         height: 1.6,
                       ),
                       decoration: InputDecoration(
                         hintText: l.whatsOnYourMind,
                         hintStyle: GoogleFonts.manrope(
-                          color: AppColors.hintText,
+                          color: context.colors.hintText,
                           fontSize: AppSizes.sp14,
                         ),
                         border: InputBorder.none,
@@ -207,7 +207,7 @@ class _PostButton extends StatelessWidget {
                   colors: [AppColors.gradientStart, AppColors.gradientEnd],
                 )
               : null,
-          color: controller.canPost ? null : AppColors.inputBorder,
+          color: controller.canPost ? null : context.colors.inputBorder,
           borderRadius: BorderRadius.circular(AppSizes.r20),
         ),
         child: controller.isPosting
@@ -224,7 +224,7 @@ class _PostButton extends StatelessWidget {
                 style: GoogleFonts.manrope(
                   color: controller.canPost
                       ? AppColors.buttonText
-                      : AppColors.textMuted,
+                      : context.colors.textMuted,
                   fontWeight: FontWeight.w800,
                   fontSize: AppSizes.sp13,
                   letterSpacing: 0.8,
@@ -387,16 +387,16 @@ class _BottomToolbar extends StatelessWidget {
         horizontal: AppSizes.pw16,
         vertical: AppSizes.ph12,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.cardBackground,
-        border: Border(top: BorderSide(color: AppColors.inputBorder)),
+      decoration: BoxDecoration(
+        color: context.colors.cardBackground,
+        border: Border(top: BorderSide(color: context.colors.inputBorder)),
       ),
       child: Row(
         children: [
           Text(
             l.addToPostLabel,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp11,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
@@ -411,9 +411,9 @@ class _BottomToolbar extends StatelessWidget {
                 vertical: AppSizes.ph8,
               ),
               decoration: BoxDecoration(
-                color: AppColors.sectionBackground,
+                color: context.colors.sectionBackground,
                 borderRadius: BorderRadius.circular(AppSizes.r8),
-                border: Border.all(color: AppColors.inputBorder),
+                border: Border.all(color: context.colors.inputBorder),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -421,7 +421,7 @@ class _BottomToolbar extends StatelessWidget {
                   Icon(
                     Icons.image_outlined,
                     color: atLimit
-                        ? AppColors.navUnselected
+                        ? context.colors.navUnselected
                         : AppColors.primaryColor,
                     size: AppSizes.sp18,
                   ),
@@ -430,8 +430,8 @@ class _BottomToolbar extends StatelessWidget {
                     l.photoCountLabel(controller.totalMediaCount),
                     style: GoogleFonts.manrope(
                       color: atLimit
-                          ? AppColors.navUnselected
-                          : AppColors.textPrimary,
+                          ? context.colors.navUnselected
+                          : context.colors.textPrimary,
                       fontSize: AppSizes.sp12,
                       fontWeight: FontWeight.w600,
                     ),

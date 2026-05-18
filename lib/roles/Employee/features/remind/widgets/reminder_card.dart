@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -25,9 +25,9 @@ class ReminderCard extends StatelessWidget {
   final VoidCallback onDelete;
 
   // Stripe / accent color: overdue always red, completed always muted
-  Color get _accentColor {
+  Color _accentColor(BuildContext context) {
     if (reminder.isOverdue) return _kOverdueColor;
-    if (reminder.isCompleted) return AppColors.textMuted;
+    if (reminder.isCompleted) return context.colors.textMuted;
     switch (reminder.priority) {
       case ReminderPriority.high:
         return _kOverdueColor;
@@ -69,12 +69,12 @@ class ReminderCard extends StatelessWidget {
             // Overdue: subtle red tint on background
             color: isOverdue
                 ? _kOverdueColor.withValues(alpha: 0.06)
-                : AppColors.cardBackground,
+                : context.colors.cardBackground,
             borderRadius: BorderRadius.circular(AppSizes.r12),
             border: Border.all(
               color: isOverdue
                   ? _kOverdueColor.withValues(alpha: 0.5)
-                  : AppColors.inputBorder,
+                  : context.colors.inputBorder,
               width: isOverdue ? 1.5 : 1.0,
             ),
           ),
@@ -87,7 +87,7 @@ class ReminderCard extends StatelessWidget {
                   duration: const Duration(milliseconds: 300),
                   width: AppSizes.w4,
                   decoration: BoxDecoration(
-                    color: _accentColor,
+                    color: _accentColor(context),
                     borderRadius: BorderRadius.only(
                       topLeft:
                           Radius.circular(isRtl ? 0 : AppSizes.r12),
@@ -123,7 +123,7 @@ class ReminderCard extends StatelessWidget {
                               ? _kCompleteColor
                               : isOverdue
                                   ? _kOverdueColor
-                                  : AppColors.inputBorder,
+                                  : context.colors.inputBorder,
                           width: 2,
                         ),
                       ),
@@ -155,16 +155,16 @@ class ReminderCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.manrope(
                                   color: isCompleted
-                                      ? AppColors.textMuted
+                                      ? context.colors.textMuted
                                       : isOverdue
                                           ? _kOverdueColor
-                                          : AppColors.textTitle,
+                                          : context.colors.textTitle,
                                   fontWeight: FontWeight.w700,
                                   fontSize: AppSizes.sp14,
                                   decoration: isCompleted
                                       ? TextDecoration.lineThrough
                                       : null,
-                                  decorationColor: AppColors.textMuted,
+                                  decorationColor: context.colors.textMuted,
                                 ),
                               ),
                             ),
@@ -180,7 +180,7 @@ class ReminderCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.manrope(
-                              color: AppColors.textMuted,
+                              color: context.colors.textMuted,
                               fontSize: AppSizes.sp12,
                             ),
                           ),
@@ -196,7 +196,7 @@ class ReminderCard extends StatelessWidget {
                               size: AppSizes.sp13,
                               color: isOverdue
                                   ? _kOverdueColor
-                                  : AppColors.textMuted,
+                                  : context.colors.textMuted,
                             ),
                             SizedBox(width: AppSizes.pw4),
                             Text(
@@ -204,7 +204,7 @@ class ReminderCard extends StatelessWidget {
                               style: GoogleFonts.manrope(
                                 color: isOverdue
                                     ? _kOverdueColor
-                                    : AppColors.textMuted,
+                                    : context.colors.textMuted,
                                 fontSize: AppSizes.sp11,
                                 fontWeight: isOverdue
                                     ? FontWeight.w700
@@ -216,13 +216,13 @@ class ReminderCard extends StatelessWidget {
                               SizedBox(width: AppSizes.pw8),
                               Icon(Icons.repeat,
                                   size: AppSizes.sp12,
-                                  color: AppColors.textMuted),
+                                  color: context.colors.textMuted),
                             ],
                             if (reminder.notificationEnabled) ...[
                               SizedBox(width: AppSizes.pw8),
                               Icon(Icons.notifications_outlined,
                                   size: AppSizes.sp12,
-                                  color: AppColors.textMuted),
+                                  color: context.colors.textMuted),
                             ],
                           ],
                         ),
@@ -235,7 +235,7 @@ class ReminderCard extends StatelessWidget {
                   padding: EdgeInsets.only(right: AppSizes.pw12),
                   child: Icon(
                     Icons.chevron_right,
-                    color: AppColors.iconMuted,
+                    color: context.colors.iconMuted,
                     size: AppSizes.sp20,
                   ),
                 ),

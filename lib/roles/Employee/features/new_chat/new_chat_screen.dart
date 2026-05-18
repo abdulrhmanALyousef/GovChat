@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -35,18 +35,18 @@ class _NewChatView extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new, color: context.colors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l.newChatTitle,
           style: GoogleFonts.manrope(
-            color: AppColors.textTitle,
+            color: context.colors.textTitle,
             fontWeight: FontWeight.w800,
             fontSize: AppSizes.sp16,
           ),
@@ -141,15 +141,15 @@ class _SearchBar extends StatelessWidget {
           vertical: AppSizes.ph12,
         ),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: context.colors.cardBackground,
           borderRadius: BorderRadius.circular(AppSizes.r16),
-          border: Border.all(color: AppColors.inputBorder),
+          border: Border.all(color: context.colors.inputBorder),
         ),
         child: Row(
           children: [
             Icon(
               Icons.search,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               size: AppSizes.sp20,
             ),
             SizedBox(width: AppSizes.w12),
@@ -157,14 +157,14 @@ class _SearchBar extends StatelessWidget {
               child: TextField(
                 onChanged: onChanged,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                   fontSize: AppSizes.sp14,
                 ),
                 decoration: InputDecoration(
                   isCollapsed: true,
                   hintText: AppLocalizations.of(context)!.searchByEmployeeId,
                   hintStyle: GoogleFonts.manrope(
-                    color: AppColors.hintText,
+                    color: context.colors.hintText,
                     fontSize: AppSizes.sp14,
                   ),
                   border: InputBorder.none,
@@ -193,8 +193,8 @@ class _EmployeeList extends StatelessWidget {
         vertical: AppSizes.ph4,
       ),
       itemCount: employees.length,
-      separatorBuilder: (context, index) => const Divider(
-        color: AppColors.inputBorder,
+      separatorBuilder: (context, index) => Divider(
+        color: context.colors.inputBorder,
         height: 1,
         thickness: 1,
       ),
@@ -232,7 +232,7 @@ class _EmployeeTile extends StatelessWidget {
               child: Text(
                 employee.name,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textTitle,
+                  color: context.colors.textTitle,
                   fontWeight: FontWeight.w700,
                   fontSize: AppSizes.sp14,
                 ),
@@ -242,7 +242,7 @@ class _EmployeeTile extends StatelessWidget {
             ),
             Icon(
               Icons.chevron_right,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               size: AppSizes.sp20,
             ),
           ],
@@ -263,9 +263,9 @@ class _Avatar extends StatelessWidget {
       height: AppSizes.h48,
       width: AppSizes.w48,
       decoration: BoxDecoration(
-        color: AppColors.sectionBackground,
+        color: context.colors.sectionBackground,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       clipBehavior: Clip.antiAlias,
       child: avatarUrl.isNotEmpty
@@ -317,14 +317,14 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(
             Icons.people_outline,
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
             size: AppSizes.sp40,
           ),
           SizedBox(height: AppSizes.h16),
           Text(
             AppLocalizations.of(context)!.noEmployeesFound,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp16,
               fontWeight: FontWeight.w600,
             ),
@@ -357,7 +357,7 @@ class _ErrorState extends StatelessWidget {
             Text(
               AppLocalizations.of(context)!.somethingWentWrong,
               style: GoogleFonts.manrope(
-                color: AppColors.textTitle,
+                color: context.colors.textTitle,
                 fontSize: AppSizes.sp16,
                 fontWeight: FontWeight.w700,
               ),
@@ -367,7 +367,7 @@ class _ErrorState extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 fontSize: AppSizes.sp12,
               ),
             ),

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -100,14 +100,14 @@ class _ChatViewState extends State<_ChatView> {
     return ScreenshotBlockerWidget(
       detectScreenshots: false,
       child: Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new,
-            color: AppColors.textTitle,
+            color: context.colors.textTitle,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -126,7 +126,7 @@ class _ChatViewState extends State<_ChatView> {
                       Text(
                         title,
                         style: GoogleFonts.manrope(
-                          color: AppColors.textTitle,
+                          color: context.colors.textTitle,
                           fontWeight: FontWeight.w800,
                           fontSize: AppSizes.sp16,
                         ),
@@ -134,7 +134,7 @@ class _ChatViewState extends State<_ChatView> {
                       Text(
                         subtitle,
                         style: GoogleFonts.manrope(
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                           fontSize: AppSizes.sp10,
                           letterSpacing: 1.2,
                         ),
@@ -149,7 +149,7 @@ class _ChatViewState extends State<_ChatView> {
                   Text(
                     fallbackTitle,
                     style: GoogleFonts.manrope(
-                      color: AppColors.textTitle,
+                      color: context.colors.textTitle,
                       fontWeight: FontWeight.w800,
                       fontSize: AppSizes.sp16,
                     ),
@@ -157,7 +157,7 @@ class _ChatViewState extends State<_ChatView> {
                   Text(
                     subtitle,
                     style: GoogleFonts.manrope(
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                       fontSize: AppSizes.sp10,
                       letterSpacing: 1.2,
                     ),
@@ -166,7 +166,7 @@ class _ChatViewState extends State<_ChatView> {
               ),
         actions: [
           IconButton(
-            icon: const Icon(LucideIcons.sparkles, color: AppColors.textTitle),
+            icon: Icon(LucideIcons.sparkles, color: context.colors.textTitle),
             tooltip: 'Summarize Chat',
             onPressed: () => _showSummarizeSheet(
               context,
@@ -184,8 +184,8 @@ class _ChatViewState extends State<_ChatView> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.scaffoldBackground,
-                AppColors.sectionBackground.withValues(alpha: 0.6),
+                context.colors.scaffoldBackground,
+                context.colors.sectionBackground.withValues(alpha: 0.6),
               ],
             ),
           ),
@@ -369,7 +369,7 @@ class _MessageItem extends StatelessWidget {
                       style: GoogleFonts.manrope(
                         color: message.senderRole == 'admin'
                             ? const Color(0xFFEF4444)
-                            : AppColors.textMuted,
+                            : context.colors.textMuted,
                         fontSize: AppSizes.sp10,
                         fontWeight: message.senderRole == 'admin'
                             ? FontWeight.w700
@@ -396,7 +396,7 @@ class _MessageItem extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isMine
                             ? AppColors.primaryColor
-                            : AppColors.sectionBackground,
+                            : context.colors.sectionBackground,
                         borderRadius: BorderRadius.circular(AppSizes.r16),
                       ),
                       clipBehavior: Clip.antiAlias,
@@ -416,7 +416,7 @@ class _MessageItem extends StatelessWidget {
                     Text(
                       time,
                       style: GoogleFonts.manrope(
-                        color: AppColors.textMuted,
+                        color: context.colors.textMuted,
                         fontSize: AppSizes.sp10,
                       ),
                     ),
@@ -425,7 +425,7 @@ class _MessageItem extends StatelessWidget {
                       Text(
                         AppLocalizations.of(context)!.editedLabel,
                         style: GoogleFonts.manrope(
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                           fontSize: AppSizes.sp10,
                           fontStyle: FontStyle.italic,
                         ),
@@ -475,14 +475,14 @@ class _MessageItem extends StatelessWidget {
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(LucideIcons.lock, size: AppSizes.sp14, color: AppColors.textMuted),
+              Icon(LucideIcons.lock, size: AppSizes.sp14, color: context.colors.textMuted),
               SizedBox(width: AppSizes.pw6),
               Flexible(
                 child: Text(
                   'Encrypted message',
                   textDirection: Directionality.of(context),
                   style: GoogleFonts.manrope(
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     fontSize: AppSizes.sp14,
                     fontStyle: FontStyle.italic,
                     height: 1.4,
@@ -496,14 +496,14 @@ class _MessageItem extends StatelessWidget {
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(LucideIcons.lock, size: AppSizes.sp14, color: AppColors.textMuted),
+              Icon(LucideIcons.lock, size: AppSizes.sp14, color: context.colors.textMuted),
               SizedBox(width: AppSizes.pw6),
               Flexible(
                 child: Text(
                   'This message cannot be decrypted',
                   textDirection: Directionality.of(context),
                   style: GoogleFonts.manrope(
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     fontSize: AppSizes.sp14,
                     fontStyle: FontStyle.italic,
                     height: 1.4,
@@ -517,7 +517,7 @@ class _MessageItem extends StatelessWidget {
           message.text,
           textDirection: Directionality.of(context),
           style: GoogleFonts.manrope(
-            color: isMine ? AppColors.buttonText : AppColors.textPrimary,
+            color: isMine ? AppColors.buttonText : context.colors.textPrimary,
             fontSize: AppSizes.sp14,
             height: 1.4,
           ),
@@ -536,7 +536,7 @@ class _MessageItem extends StatelessWidget {
     final canEdit = message.messageType == MessageType.text;
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.cardBackground,
+      backgroundColor: context.colors.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r20)),
       ),
@@ -584,13 +584,13 @@ class _StatusIcon extends StatelessWidget {
         return Icon(
           Icons.check,
           size: AppSizes.sp12,
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
         );
       case MessageStatus.delivered:
         return Icon(
           Icons.done_all,
           size: AppSizes.sp12,
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
         );
       case MessageStatus.read:
         return Icon(
@@ -617,9 +617,9 @@ class _MessageAvatar extends StatelessWidget {
       width: 28,
       height: 28,
       decoration: BoxDecoration(
-        color: AppColors.sectionBackground,
+        color: context.colors.sectionBackground,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       clipBehavior: Clip.antiAlias,
       child: avatarUrl.isNotEmpty
@@ -681,7 +681,7 @@ class _MessageActionsSheet extends StatelessWidget {
             height: AppSizes.h4,
             margin: EdgeInsets.symmetric(vertical: AppSizes.ph12),
             decoration: BoxDecoration(
-              color: AppColors.textMuted.withValues(alpha: 0.4),
+              color: context.colors.textMuted.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(AppSizes.r4),
             ),
           ),
@@ -695,7 +695,7 @@ class _MessageActionsSheet extends StatelessWidget {
               title: Text(
                 l.editMessageTitle,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: AppSizes.sp14,
                 ),
@@ -737,14 +737,14 @@ class _DeleteConfirmationDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return AlertDialog(
-      backgroundColor: AppColors.cardBackground,
+      backgroundColor: context.colors.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.r16),
       ),
       title: Text(
         l.deleteMessageTitle,
         style: GoogleFonts.manrope(
-          color: AppColors.textTitle,
+          color: context.colors.textTitle,
           fontWeight: FontWeight.w800,
           fontSize: AppSizes.sp16,
         ),
@@ -752,7 +752,7 @@ class _DeleteConfirmationDialog extends StatelessWidget {
       content: Text(
         l.deleteMessageConfirm,
         style: GoogleFonts.manrope(
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
           fontSize: AppSizes.sp13,
           height: 1.5,
         ),
@@ -763,7 +763,7 @@ class _DeleteConfirmationDialog extends StatelessWidget {
           child: Text(
             l.cancelButton,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontWeight: FontWeight.w600,
               fontSize: AppSizes.sp14,
             ),
@@ -803,7 +803,7 @@ class _EditContextStrip extends StatelessWidget {
         horizontal: AppSizes.pw16,
         vertical: AppSizes.ph8,
       ),
-      color: AppColors.sectionBackground,
+      color: context.colors.sectionBackground,
       child: Row(
         children: [
           Container(
@@ -834,7 +834,7 @@ class _EditContextStrip extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.manrope(
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     fontSize: AppSizes.sp12,
                   ),
                 ),
@@ -844,7 +844,7 @@ class _EditContextStrip extends StatelessWidget {
           IconButton(
             icon: Icon(
               Icons.close,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               size: AppSizes.sp20,
             ),
             onPressed: controller.cancelEditing,
@@ -883,7 +883,7 @@ class _TypingIndicator extends StatelessWidget {
           Text(
             label,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp12,
               fontStyle: FontStyle.italic,
             ),
@@ -944,7 +944,7 @@ class _EncryptionPill extends StatelessWidget {
         vertical: AppSizes.ph8,
       ),
       decoration: BoxDecoration(
-        color: AppColors.sectionBackground,
+        color: context.colors.sectionBackground,
         borderRadius: BorderRadius.circular(AppSizes.r30),
       ),
       child: Row(
@@ -959,7 +959,7 @@ class _EncryptionPill extends StatelessWidget {
           Text(
             l.endToEndEncryptedChannel,
             style: GoogleFonts.manrope(
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
               fontSize: AppSizes.sp10,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
@@ -1030,7 +1030,7 @@ class _TextInputRow extends StatelessWidget {
             child: _CircleIconButton(
               icon: mediaEnabled ? LucideIcons.paperclip : LucideIcons.lock,
               color: Colors.white,
-              backgroundColor: AppColors.cardBackground,
+              backgroundColor: context.colors.cardBackground,
               onTap: () {
                 if (!mediaEnabled) {
                   _showMediaDisabledSnackBar(context, l);
@@ -1051,15 +1051,15 @@ class _TextInputRow extends StatelessWidget {
               vertical: AppSizes.ph12,
             ),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: context.colors.cardBackground,
               borderRadius: BorderRadius.circular(AppSizes.r16),
-              border: Border.all(color: AppColors.inputBorder),
+              border: Border.all(color: context.colors.inputBorder),
             ),
             child: TextField(
               controller: controller.messageController,
               focusNode: controller.inputFocusNode,
               style: GoogleFonts.manrope(
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
                 fontSize: AppSizes.sp14,
               ),
               onChanged: (v) {
@@ -1075,7 +1075,7 @@ class _TextInputRow extends StatelessWidget {
                 isCollapsed: true,
                 hintText: isEditing ? l.editMessageHint : l.typeAMessage,
                 hintStyle: GoogleFonts.manrope(
-                  color: AppColors.hintText,
+                  color: context.colors.hintText,
                   fontSize: AppSizes.sp14,
                 ),
                 border: InputBorder.none,
@@ -1160,7 +1160,7 @@ class _RecordingBar extends StatelessWidget {
             height: AppSizes.h48,
             padding: EdgeInsets.symmetric(horizontal: AppSizes.pw12),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: context.colors.cardBackground,
               borderRadius: BorderRadius.circular(AppSizes.r16),
               border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
             ),
@@ -1210,9 +1210,9 @@ class _UploadingBar extends StatelessWidget {
       height: AppSizes.h48,
       padding: EdgeInsets.symmetric(horizontal: AppSizes.pw16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.colors.cardBackground,
         borderRadius: BorderRadius.circular(AppSizes.r16),
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1229,7 +1229,7 @@ class _UploadingBar extends StatelessWidget {
           Text(
             l.uploadingMedia,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp13,
             ),
           ),
@@ -1270,7 +1270,7 @@ void _showAttachmentSheet(
 ) {
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: AppColors.cardBackground,
+    backgroundColor: context.colors.cardBackground,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r20)),
     ),
@@ -1285,7 +1285,7 @@ void _showAttachmentSheet(
               height: AppSizes.h4,
               margin: EdgeInsets.symmetric(vertical: AppSizes.ph12),
               decoration: BoxDecoration(
-                color: AppColors.textMuted.withValues(alpha: 0.4),
+                color: context.colors.textMuted.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(AppSizes.r4),
               ),
             ),
@@ -1297,7 +1297,7 @@ void _showAttachmentSheet(
               child: Text(
                 l.mediaAttachmentTitle,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textTitle,
+                  color: context.colors.textTitle,
                   fontWeight: FontWeight.w700,
                   fontSize: AppSizes.sp14,
                 ),
@@ -1382,8 +1382,8 @@ class _AttachOption extends StatelessWidget {
           Container(
             width: AppSizes.h56,
             height: AppSizes.h56,
-            decoration: const BoxDecoration(
-              color: AppColors.sectionBackground,
+            decoration: BoxDecoration(
+              color: context.colors.sectionBackground,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: AppSizes.sp28),
@@ -1392,7 +1392,7 @@ class _AttachOption extends StatelessWidget {
           Text(
             label,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp12,
               fontWeight: FontWeight.w600,
             ),
@@ -1615,7 +1615,7 @@ void _showSummarizeSheet(
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: AppColors.cardBackground,
+    backgroundColor: context.colors.cardBackground,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r20)),
     ),
@@ -1724,7 +1724,7 @@ class _SummaryChatSheetState extends State<_SummaryChatSheet> {
                 width: AppSizes.w42,
                 height: AppSizes.h4,
                 decoration: BoxDecoration(
-                  color: AppColors.textMuted.withValues(alpha: 0.4),
+                  color: context.colors.textMuted.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(AppSizes.r4),
                 ),
               ),
@@ -1744,7 +1744,7 @@ class _SummaryChatSheetState extends State<_SummaryChatSheet> {
                     child: Text(
                       AppLocalizations.of(context)!.aiSummaryTitle,
                       style: GoogleFonts.manrope(
-                        color: AppColors.textTitle,
+                        color: context.colors.textTitle,
                         fontWeight: FontWeight.w800,
                         fontSize: AppSizes.sp16,
                       ),
@@ -1789,7 +1789,7 @@ class _SummaryChatSheetState extends State<_SummaryChatSheet> {
               ),
             ),
             Divider(
-              color: AppColors.inputBorder,
+              color: context.colors.inputBorder,
               height: AppSizes.h2,
               thickness: 1,
             ),
@@ -1813,7 +1813,7 @@ class _SummaryChatSheetState extends State<_SummaryChatSheet> {
                               Text(
                                 'Analysing conversation…',
                                 style: GoogleFonts.manrope(
-                                  color: AppColors.textMuted,
+                                  color: context.colors.textMuted,
                                   fontSize: AppSizes.sp13,
                                 ),
                               ),
@@ -1851,14 +1851,14 @@ class _SummaryEmptyState extends StatelessWidget {
           children: [
             Icon(
               LucideIcons.fileText,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               size: AppSizes.sp40,
             ),
             SizedBox(height: AppSizes.ph16),
             Text(
               AppLocalizations.of(context)!.aiSummaryEmptyTitle,
               style: GoogleFonts.manrope(
-                color: AppColors.textTitle,
+                color: context.colors.textTitle,
                 fontWeight: FontWeight.w700,
                 fontSize: AppSizes.sp14,
               ),
@@ -1868,7 +1868,7 @@ class _SummaryEmptyState extends StatelessWidget {
               AppLocalizations.of(context)!.aiSummaryEmptySubtitle,
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 fontSize: AppSizes.sp13,
               ),
             ),
@@ -1985,7 +1985,7 @@ class _SummaryContent extends StatelessWidget {
               _formatDate(summary.generatedAt)),
           textAlign: TextAlign.center,
           style: GoogleFonts.manrope(
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
             fontSize: AppSizes.sp11,
           ),
         ),
@@ -2011,9 +2011,9 @@ class _SummarySection extends StatelessWidget {
       margin: EdgeInsets.only(bottom: AppSizes.ph12),
       padding: EdgeInsets.all(AppSizes.pw16),
       decoration: BoxDecoration(
-        color: AppColors.sectionBackground,
+        color: context.colors.sectionBackground,
         borderRadius: BorderRadius.circular(AppSizes.r12),
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2037,7 +2037,7 @@ class _SummarySection extends StatelessWidget {
           Text(
             body.isNotEmpty ? body : '—',
             style: GoogleFonts.manrope(
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
               fontSize: AppSizes.sp13,
               height: 1.5,
             ),

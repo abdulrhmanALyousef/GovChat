@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -64,24 +64,24 @@ class _ViewState extends State<_View> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSizes.r16)),
         title: Text(
           l.deleteReminderTitle,
           style: GoogleFonts.manrope(
-              color: AppColors.textTitle, fontWeight: FontWeight.w800),
+              color: context.colors.textTitle, fontWeight: FontWeight.w800),
         ),
         content: Text(
           l.deleteReminderConfirm,
           style: GoogleFonts.manrope(
-              color: AppColors.textMuted, fontSize: AppSizes.sp14),
+              color: context.colors.textMuted, fontSize: AppSizes.sp14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(l.cancelButton,
-                style: GoogleFonts.manrope(color: AppColors.textMuted)),
+                style: GoogleFonts.manrope(color: context.colors.textMuted)),
           ),
           TextButton(
             onPressed: () {
@@ -104,7 +104,7 @@ class _ViewState extends State<_View> {
     final ctrl = context.watch<ReminderController>();
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: _buildAppBar(context, l, ctrl),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primaryColor,
@@ -125,7 +125,7 @@ class _ViewState extends State<_View> {
   AppBar _buildAppBar(
       BuildContext context, AppLocalizations l, ReminderController ctrl) {
     return AppBar(
-      backgroundColor: AppColors.cardBackground,
+      backgroundColor: context.colors.cardBackground,
       elevation: 0,
       leading: Padding(
         padding: EdgeInsets.only(left: AppSizes.pw16),
@@ -138,7 +138,7 @@ class _ViewState extends State<_View> {
           Text(
             widget.employee.name,
             style: GoogleFonts.manrope(
-              color: AppColors.textTitle,
+              color: context.colors.textTitle,
               fontWeight: FontWeight.w800,
               fontSize: AppSizes.sp16,
             ),
@@ -146,7 +146,7 @@ class _ViewState extends State<_View> {
           Text(
             l.remindersLabel,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp10,
               letterSpacing: 1.2,
             ),
@@ -162,7 +162,7 @@ class _ViewState extends State<_View> {
         IconButton(
           icon: Icon(
             _searchOpen ? Icons.search_off : Icons.search,
-            color: AppColors.textTitle,
+            color: context.colors.textTitle,
           ),
           onPressed: () {
             setState(() {
@@ -189,31 +189,31 @@ class _SearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return Container(
-      color: AppColors.cardBackground,
+      color: context.colors.cardBackground,
       padding: EdgeInsets.fromLTRB(
           AppSizes.pw16, 0, AppSizes.pw16, AppSizes.ph12),
       child: TextField(
         controller: searchCtrl,
         autofocus: true,
         style: GoogleFonts.manrope(
-            color: AppColors.textTitle, fontSize: AppSizes.sp14),
+            color: context.colors.textTitle, fontSize: AppSizes.sp14),
         decoration: InputDecoration(
           hintText: l.searchRemindersHint,
           hintStyle: GoogleFonts.manrope(
-              color: AppColors.hintText, fontSize: AppSizes.sp14),
+              color: context.colors.hintText, fontSize: AppSizes.sp14),
           prefixIcon:
-              const Icon(Icons.search, color: AppColors.iconMuted),
+              Icon(Icons.search, color: context.colors.iconMuted),
           filled: true,
-          fillColor: AppColors.sectionBackground,
+          fillColor: context.colors.sectionBackground,
           contentPadding:
               EdgeInsets.symmetric(vertical: AppSizes.ph10),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSizes.r10),
-            borderSide: const BorderSide(color: AppColors.inputBorder),
+            borderSide: BorderSide(color: context.colors.inputBorder),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSizes.r10),
-            borderSide: const BorderSide(color: AppColors.inputBorder),
+            borderSide: BorderSide(color: context.colors.inputBorder),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSizes.r10),
@@ -243,7 +243,7 @@ class _FilterBar extends StatelessWidget {
     ];
 
     return Container(
-      color: AppColors.cardBackground,
+      color: context.colors.cardBackground,
       padding: EdgeInsets.only(bottom: AppSizes.ph10),
       height: AppSizes.h44,
       child: ListView.separated(
@@ -262,12 +262,12 @@ class _FilterBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? AppColors.primaryColor.withValues(alpha: 0.15)
-                    : AppColors.sectionBackground,
+                    : context.colors.sectionBackground,
                 borderRadius: BorderRadius.circular(AppSizes.r20),
                 border: Border.all(
                   color: selected
                       ? AppColors.primaryColor
-                      : AppColors.inputBorder,
+                      : context.colors.inputBorder,
                 ),
               ),
               alignment: Alignment.center,
@@ -276,7 +276,7 @@ class _FilterBar extends StatelessWidget {
                 style: GoogleFonts.manrope(
                   color: selected
                       ? AppColors.primaryColor
-                      : AppColors.textMuted,
+                      : context.colors.textMuted,
                   fontSize: AppSizes.sp12,
                   fontWeight:
                       selected ? FontWeight.w700 : FontWeight.w500,
@@ -350,9 +350,9 @@ class _EmptyState extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(AppSizes.ph24),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: context.colors.cardBackground,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.inputBorder),
+              border: Border.all(color: context.colors.inputBorder),
             ),
             child: Icon(
               hasSearch ? Icons.search_off : Icons.notifications_none,
@@ -364,7 +364,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             hasSearch ? l.noSearchResults : l.noRemindersYet,
             style: GoogleFonts.manrope(
-              color: AppColors.textTitle,
+              color: context.colors.textTitle,
               fontWeight: FontWeight.w700,
               fontSize: AppSizes.sp16,
             ),
@@ -374,7 +374,7 @@ class _EmptyState extends StatelessWidget {
             hasSearch ? l.noSearchResultsDesc : l.noRemindersDesc,
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp13,
             ),
           ),

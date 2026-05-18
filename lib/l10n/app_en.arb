@@ -745,5 +745,10 @@
   "onboarding3Title": "Stay Informed",
   "onboarding3Subtitle": "Receive critical announcements and organization-wide updates the moment they happen.",
   "onboarding4Title": "Verified Identity",
-  "onboarding4Subtitle": "OTP authentication ensures only authorized personnel can access the system."
+  "onboarding4Subtitle": "OTP authentication ensures only authorized personnel can access the system.",
+
+  "themeLabel": "Theme",
+  "themeDark": "Dark",
+  "themeLight": "Light",
+  "themeSystem": "System"
 }

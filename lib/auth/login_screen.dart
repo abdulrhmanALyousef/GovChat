@@ -6,6 +6,7 @@ import '../core/theme/app_color.dart';
 import '../core/constants/app_size.dart';
 import '../core/Widgets/text_field_for_login.dart';
 import '../core/providers/locale_provider.dart';
+import '../core/providers/theme_provider.dart';
 import 'controllers/login_controller.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -28,16 +29,18 @@ class _LoginView extends StatelessWidget {
     final controller = context.watch<LoginController>();
     final l = AppLocalizations.of(context)!;
     final localeProvider = context.watch<LocaleProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: colors.scaffoldBackground,
       body: SafeArea(
         child: Form(
           key: controller.formKey,
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // ── Language Switcher ──
+                // ── Top bar: Language + Theme switchers ──
                 Padding(
                   padding: EdgeInsets.only(
                     top: AppSizes.h16,
@@ -47,7 +50,15 @@ class _LoginView extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      _LanguageSwitcher(localeProvider: localeProvider, l: l),
+                      _ThemeSwitcher(
+                        themeProvider: themeProvider,
+                        l: l,
+                      ),
+                      SizedBox(width: AppSizes.w8),
+                      _LanguageSwitcher(
+                        localeProvider: localeProvider,
+                        l: l,
+                      ),
                     ],
                   ),
                 ),
@@ -66,7 +77,7 @@ class _LoginView extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppSizes.r24),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.shadowDark,
+                              color: colors.shadowDark,
                               blurRadius: AppSizes.r20,
                               offset: Offset(0, AppSizes.h10),
                             ),
@@ -88,7 +99,7 @@ class _LoginView extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp28,
                           fontWeight: FontWeight.w900,
-                          color: AppColors.textTitle,
+                          color: colors.textTitle,
                           letterSpacing: 3,
                         ),
                       ),
@@ -99,7 +110,7 @@ class _LoginView extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp20,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textTitle,
+                          color: colors.textTitle,
                         ),
                       ),
                       SizedBox(height: AppSizes.h8),
@@ -108,7 +119,7 @@ class _LoginView extends StatelessWidget {
                         l.secureAccessSubtitle,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp14,
-                          color: AppColors.textSubtitle,
+                          color: colors.textSubtitle,
                         ),
                       ),
                     ],
@@ -122,12 +133,12 @@ class _LoginView extends StatelessWidget {
                   margin: EdgeInsets.symmetric(horizontal: AppSizes.pw24),
                   padding: EdgeInsets.all(AppSizes.ph20),
                   decoration: BoxDecoration(
-                    color: AppColors.scaffoldBackground,
+                    color: colors.scaffoldBackground,
                     borderRadius: BorderRadius.circular(AppSizes.r16),
-                    border: Border.all(color: AppColors.formBorder, width: 1),
+                    border: Border.all(color: colors.formBorder, width: 1),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.shadowColor,
+                        color: colors.shadowColor,
                         blurRadius: AppSizes.h32,
                         offset: Offset(0, AppSizes.h16),
                       ),
@@ -142,7 +153,7 @@ class _LoginView extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp12,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textMuted,
+                          color: colors.textMuted,
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -162,7 +173,7 @@ class _LoginView extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp12,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textMuted,
+                          color: colors.textMuted,
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -271,7 +282,7 @@ class _LoginView extends StatelessWidget {
                           onPressed: () => controller.requestAccess(context),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(
-                              color: AppColors.inputBorder,
+                              color: colors.inputBorder,
                               width: 1.5,
                             ),
                             shape: RoundedRectangleBorder(
@@ -286,13 +297,13 @@ class _LoginView extends StatelessWidget {
                                 style: GoogleFonts.manrope(
                                   fontSize: AppSizes.sp16,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.textMuted,
+                                  color: colors.textMuted,
                                 ),
                               ),
                               SizedBox(width: AppSizes.w10),
                               Icon(
                                 Icons.person_add_outlined,
-                                color: AppColors.textMuted,
+                                color: colors.textMuted,
                                 size: AppSizes.sp20,
                               ),
                             ],
@@ -308,7 +319,7 @@ class _LoginView extends StatelessWidget {
                           child: Text(
                             l.forgotPasswordButton,
                             style: GoogleFonts.manrope(
-                              color: AppColors.textMuted,
+                              color: colors.textMuted,
                               fontSize: AppSizes.sp14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -331,13 +342,13 @@ class _LoginView extends StatelessWidget {
                       Container(
                         width: AppSizes.w30,
                         height: 1,
-                        color: AppColors.inputBorder,
+                        color: colors.inputBorder,
                       ),
                       SizedBox(width: AppSizes.w8),
                       Icon(
                         Icons.verified_user_outlined,
                         size: AppSizes.sp14,
-                        color: AppColors.hintText,
+                        color: colors.hintText,
                       ),
                       SizedBox(width: AppSizes.w6),
                       Flexible(
@@ -345,7 +356,7 @@ class _LoginView extends StatelessWidget {
                           l.endToEndEncrypted,
                           style: GoogleFonts.manrope(
                             fontSize: AppSizes.sp10,
-                            color: AppColors.hintText,
+                            color: colors.hintText,
                             letterSpacing: 1.5,
                             fontWeight: FontWeight.w600,
                           ),
@@ -356,7 +367,7 @@ class _LoginView extends StatelessWidget {
                       Container(
                         width: AppSizes.w30,
                         height: 1,
-                        color: AppColors.inputBorder,
+                        color: colors.inputBorder,
                       ),
                     ],
                   ),
@@ -364,6 +375,58 @@ class _LoginView extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Theme Switcher Widget ──
+class _ThemeSwitcher extends StatelessWidget {
+  const _ThemeSwitcher({
+    required this.themeProvider,
+    required this.l,
+  });
+
+  final ThemeProvider themeProvider;
+  final AppLocalizations l;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final isDark = themeProvider.themeMode == ThemeMode.dark;
+    return GestureDetector(
+      onTap: () => themeProvider.setTheme(
+        isDark ? ThemeMode.light : ThemeMode.dark,
+      ),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSizes.pw12,
+          vertical: AppSizes.ph6,
+        ),
+        decoration: BoxDecoration(
+          color: colors.cardBackground,
+          borderRadius: BorderRadius.circular(AppSizes.r20),
+          border: Border.all(color: colors.inputBorder),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+              color: AppColors.primaryColor,
+              size: AppSizes.sp16,
+            ),
+            SizedBox(width: AppSizes.w6),
+            Text(
+              isDark ? l.themeLight : l.themeDark,
+              style: GoogleFonts.manrope(
+                color: colors.textMuted,
+                fontSize: AppSizes.sp12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -382,6 +445,7 @@ class _LanguageSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final isArabic = localeProvider.isArabic;
     return GestureDetector(
       onTap: () => localeProvider.toggleLocale(),
@@ -391,9 +455,9 @@ class _LanguageSwitcher extends StatelessWidget {
           vertical: AppSizes.ph6,
         ),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: colors.cardBackground,
           borderRadius: BorderRadius.circular(AppSizes.r20),
-          border: Border.all(color: AppColors.inputBorder),
+          border: Border.all(color: colors.inputBorder),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -407,7 +471,7 @@ class _LanguageSwitcher extends StatelessWidget {
             Text(
               isArabic ? l.englishLanguage : l.arabicLanguage,
               style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
+                color: colors.textMuted,
                 fontSize: AppSizes.sp12,
                 fontWeight: FontWeight.w600,
               ),

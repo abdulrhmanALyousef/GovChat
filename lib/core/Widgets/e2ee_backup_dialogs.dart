@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:projects/l10n/app_localizations.dart';
 
@@ -77,7 +77,7 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
     final l = AppLocalizations.of(context)!;
 
     return Dialog(
-      backgroundColor: AppColors.cardBackground,
+      backgroundColor: context.colors.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.r20),
       ),
@@ -111,7 +111,7 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
                   child: Text(
                     l.backupKeyPasswordDialogTitle,
                     style: GoogleFonts.manrope(
-                      color: AppColors.textTitle,
+                      color: context.colors.textTitle,
                       fontWeight: FontWeight.w800,
                       fontSize: AppSizes.sp16,
                     ),
@@ -123,7 +123,7 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
             Text(
               l.backupKeyPasswordDialogDescription,
               style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 fontSize: AppSizes.sp12,
                 height: 1.5,
               ),
@@ -165,7 +165,7 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.inputBorder),
+                        side: BorderSide(color: context.colors.inputBorder),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppSizes.r12),
                         ),
@@ -179,7 +179,7 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.manrope(
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                           fontWeight: FontWeight.w600,
                           fontSize: AppSizes.sp13,
                         ),
@@ -289,7 +289,7 @@ class _RestorePasswordDialogState extends State<_RestorePasswordDialog> {
     final l = AppLocalizations.of(context)!;
 
     return Dialog(
-      backgroundColor: AppColors.cardBackground,
+      backgroundColor: context.colors.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.r20),
       ),
@@ -323,7 +323,7 @@ class _RestorePasswordDialogState extends State<_RestorePasswordDialog> {
                   child: Text(
                     l.restoreKeyPasswordDialogTitle,
                     style: GoogleFonts.manrope(
-                      color: AppColors.textTitle,
+                      color: context.colors.textTitle,
                       fontWeight: FontWeight.w800,
                       fontSize: AppSizes.sp16,
                     ),
@@ -335,7 +335,7 @@ class _RestorePasswordDialogState extends State<_RestorePasswordDialog> {
             Text(
               l.restoreKeyPasswordDialogDescription,
               style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 fontSize: AppSizes.sp12,
                 height: 1.5,
               ),
@@ -367,7 +367,7 @@ class _RestorePasswordDialogState extends State<_RestorePasswordDialog> {
                     child: OutlinedButton(
                       onPressed: _loading ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.inputBorder),
+                        side: BorderSide(color: context.colors.inputBorder),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppSizes.r12),
                         ),
@@ -381,7 +381,7 @@ class _RestorePasswordDialogState extends State<_RestorePasswordDialog> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.manrope(
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                           fontWeight: FontWeight.w600,
                           fontSize: AppSizes.sp13,
                         ),
@@ -458,24 +458,24 @@ class _PasswordField extends StatelessWidget {
       obscureText: obscure,
       onChanged: onChanged,
       style: GoogleFonts.manrope(
-        color: AppColors.textPrimary,
+        color: context.colors.textPrimary,
         fontSize: AppSizes.sp14,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: GoogleFonts.manrope(
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
           fontSize: AppSizes.sp13,
         ),
         filled: true,
-        fillColor: AppColors.sectionBackground,
+        fillColor: context.colors.sectionBackground,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.r12),
-          borderSide: const BorderSide(color: AppColors.inputBorder),
+          borderSide: BorderSide(color: context.colors.inputBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.r12),
-          borderSide: const BorderSide(color: AppColors.inputBorder),
+          borderSide: BorderSide(color: context.colors.inputBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.r12),
@@ -487,7 +487,7 @@ class _PasswordField extends StatelessWidget {
             obscure
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
             size: AppSizes.sp18,
           ),
         ),

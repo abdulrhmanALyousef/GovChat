@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
@@ -41,9 +41,9 @@ class _HomeView extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         elevation: 0,
         leading: Padding(
           padding: EdgeInsets.only(left: AppSizes.pw16),
@@ -58,7 +58,7 @@ class _HomeView extends StatelessWidget {
             Text(
               employee.name,
               style: GoogleFonts.manrope(
-                color: AppColors.textTitle,
+                color: context.colors.textTitle,
                 fontWeight: FontWeight.w800,
                 fontSize: AppSizes.sp16,
               ),
@@ -66,7 +66,7 @@ class _HomeView extends StatelessWidget {
             Text(
               l.feedLabel,
               style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 fontSize: AppSizes.sp10,
                 letterSpacing: 1.2,
               ),
@@ -107,7 +107,7 @@ class _HomeView extends StatelessWidget {
             Text(
               controller.errorMessage!,
               style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 fontSize: AppSizes.sp14,
               ),
             ),
@@ -169,14 +169,14 @@ class _HomeView extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSizes.r16),
         ),
         title: Text(
           l.deletePostTitle,
           style: GoogleFonts.manrope(
-            color: AppColors.textTitle,
+            color: context.colors.textTitle,
             fontWeight: FontWeight.w800,
             fontSize: AppSizes.sp16,
           ),
@@ -184,7 +184,7 @@ class _HomeView extends StatelessWidget {
         content: Text(
           l.deletePostConfirm,
           style: GoogleFonts.manrope(
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
             fontSize: AppSizes.sp13,
             height: 1.5,
           ),
@@ -195,7 +195,7 @@ class _HomeView extends StatelessWidget {
             child: Text(
               l.cancelButton,
               style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -393,9 +393,9 @@ class _PostCardState extends State<PostCard>
           // ── Card ──
           Container(
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: context.colors.cardBackground,
               borderRadius: BorderRadius.circular(AppSizes.r16),
-              border: Border.all(color: AppColors.inputBorder),
+              border: Border.all(color: context.colors.inputBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,7 +432,7 @@ class _PostCardState extends State<PostCard>
                       Text(
                         _formatTime(post.createdAt, l),
                         style: GoogleFonts.manrope(
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                           fontSize: AppSizes.sp11,
                         ),
                       ),
@@ -459,7 +459,7 @@ class _PostCardState extends State<PostCard>
                     child: Text(
                       post.text,
                       style: GoogleFonts.manrope(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontSize: AppSizes.sp14,
                         height: 1.55,
                       ),
@@ -482,8 +482,8 @@ class _PostCardState extends State<PostCard>
                   ),
                   child: Column(
                     children: [
-                      const Divider(
-                        color: AppColors.inputBorder,
+                      Divider(
+                        color: context.colors.inputBorder,
                         height: 1,
                         thickness: 1,
                       ),
@@ -503,7 +503,7 @@ class _PostCardState extends State<PostCard>
                                       : Icons.favorite_border_rounded,
                                   color: _optimisticLiked
                                       ? AppColors.error
-                                      : AppColors.textMuted,
+                                      : context.colors.textMuted,
                                   size: AppSizes.sp16,
                                 ),
                                 SizedBox(width: AppSizes.w6),
@@ -512,7 +512,7 @@ class _PostCardState extends State<PostCard>
                                   style: GoogleFonts.manrope(
                                     color: _optimisticLiked
                                         ? AppColors.error
-                                        : AppColors.textMuted,
+                                        : context.colors.textMuted,
                                     fontSize: AppSizes.sp12,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -527,14 +527,14 @@ class _PostCardState extends State<PostCard>
                             children: [
                               Icon(
                                 Icons.chat_bubble_outline_rounded,
-                                color: AppColors.textMuted,
+                                color: context.colors.textMuted,
                                 size: AppSizes.sp16,
                               ),
                               SizedBox(width: AppSizes.w6),
                               Text(
                                 '${post.commentsCount} ${post.commentsCount == 1 ? l.commentSingular : l.commentPlural}',
                                 style: GoogleFonts.manrope(
-                                  color: AppColors.textMuted,
+                                  color: context.colors.textMuted,
                                   fontSize: AppSizes.sp12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -606,13 +606,13 @@ class _PostActionsMenu extends StatelessWidget {
     return PopupMenuButton<_PostAction>(
       icon: Icon(
         Icons.more_vert,
-        color: AppColors.textMuted,
+        color: context.colors.textMuted,
         size: AppSizes.sp20,
       ),
-      color: AppColors.cardBackground,
+      color: context.colors.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.r12),
-        side: const BorderSide(color: AppColors.inputBorder),
+        side: BorderSide(color: context.colors.inputBorder),
       ),
       onSelected: (action) {
         if (action == _PostAction.edit) onEdit();
@@ -632,7 +632,7 @@ class _PostActionsMenu extends StatelessWidget {
               Text(
                 l.editMenuItem,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: AppSizes.sp13,
                 ),
@@ -788,8 +788,8 @@ class _MediaRow extends StatelessWidget {
             width: double.infinity,
             height: AppSizes.h240,
             fit: BoxFit.cover,
-            placeholder: (_, _a) => _shimmerBox(double.infinity, AppSizes.h240),
-            errorWidget: (_, _a, _b) => _errorBox(double.infinity, AppSizes.h240),
+            placeholder: (_, _a) => _shimmerBox(context, double.infinity, AppSizes.h240),
+            errorWidget: (_, _a, _b) => _errorBox(context, double.infinity, AppSizes.h240),
           ),
         ),
       );
@@ -809,28 +809,28 @@ class _MediaRow extends StatelessWidget {
             width: AppSizes.w200,
             height: AppSizes.h200,
             fit: BoxFit.cover,
-            placeholder: (_, _a) => _shimmerBox(AppSizes.w200, AppSizes.h200),
-            errorWidget: (_, _a, _b) => _errorBox(AppSizes.w200, AppSizes.h200),
+            placeholder: (_, _a) => _shimmerBox(context, AppSizes.w200, AppSizes.h200),
+            errorWidget: (_, _a, _b) => _errorBox(context, AppSizes.w200, AppSizes.h200),
           ),
         ),
       ),
     );
   }
 
-  Widget _shimmerBox(double w, double h) {
+  Widget _shimmerBox(BuildContext context, double w, double h) {
     return Shimmer.fromColors(
-      baseColor: AppColors.sectionBackground,
-      highlightColor: AppColors.cardBackground,
-      child: Container(width: w, height: h, color: AppColors.sectionBackground),
+      baseColor: context.colors.sectionBackground,
+      highlightColor: context.colors.cardBackground,
+      child: Container(width: w, height: h, color: context.colors.sectionBackground),
     );
   }
 
-  Widget _errorBox(double w, double h) {
+  Widget _errorBox(BuildContext context, double w, double h) {
     return Container(
       width: w,
       height: h,
-      color: AppColors.sectionBackground,
-      child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
+      color: context.colors.sectionBackground,
+      child: Icon(Icons.broken_image_outlined, color: context.colors.textMuted),
     );
   }
 }
@@ -847,12 +847,12 @@ class _EmptyFeed extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.article_outlined, color: AppColors.textMuted, size: AppSizes.sp40),
+          Icon(Icons.article_outlined, color: context.colors.textMuted, size: AppSizes.sp40),
           SizedBox(height: AppSizes.h16),
           Text(
             l.noPostsYet,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp16,
               fontWeight: FontWeight.w600,
             ),
@@ -861,7 +861,7 @@ class _EmptyFeed extends StatelessWidget {
           Text(
             l.beFirstToShare,
             style: GoogleFonts.manrope(
-              color: AppColors.navUnselected,
+              color: context.colors.navUnselected,
               fontSize: AppSizes.sp13,
             ),
           ),
@@ -879,12 +879,12 @@ class _PostCardShimmer extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: AppSizes.h12),
       child: Shimmer.fromColors(
-        baseColor: AppColors.cardBackground,
-        highlightColor: AppColors.sectionBackground,
+        baseColor: context.colors.cardBackground,
+        highlightColor: context.colors.sectionBackground,
         child: Container(
           height: AppSizes.h140,
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            color: context.colors.cardBackground,
             borderRadius: BorderRadius.circular(AppSizes.r16),
           ),
         ),

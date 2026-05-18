@@ -23,14 +23,14 @@ class CustomDropdownField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title
         Text(
           title,
           style: GoogleFonts.inter(
-            color: AppColors.textSubtitle,
+            color: colors.textSubtitle,
             fontSize: 14,
             fontWeight: FontWeight.w600,
             height: 20 / 14,
@@ -44,20 +44,20 @@ class CustomDropdownField extends StatelessWidget {
           onChanged: onChanged,
           validator: validator,
           menuMaxHeight: 250,
-          dropdownColor: AppColors.cardBackground,
+          dropdownColor: colors.cardBackground,
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
             fontSize: AppSizes.sp14,
           ),
           icon: Icon(
             Icons.keyboard_arrow_down,
-            color: AppColors.textSecondary,
+            color: colors.textSecondary,
             size: AppSizes.sp20,
           ),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: TextStyle(
-              color: AppColors.hintText,
+              color: colors.hintText,
               fontSize: AppSizes.sp14,
             ),
             filled: true,
@@ -66,29 +66,29 @@ class CustomDropdownField extends StatelessWidget {
               horizontal: AppSizes.w16,
               vertical: AppSizes.h16,
             ),
-
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.inputBorder, width: 1),
+              borderSide: BorderSide(color: colors.inputBorder, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
+              borderSide: const BorderSide(
                 color: AppColors.inputFocusBorder,
                 width: 1.5,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.error, width: 1),
+              borderSide: const BorderSide(color: AppColors.error, width: 1),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.error, width: 1.5),
+              borderSide:
+                  const BorderSide(color: AppColors.error, width: 1.5),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.inputBorder, width: 1),
+              borderSide: BorderSide(color: colors.inputBorder, width: 1),
             ),
           ),
           items: items.map((item) {

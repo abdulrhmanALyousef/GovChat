@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -34,9 +34,9 @@ class _AnnounceView extends StatelessWidget {
     final ctrl = context.watch<AnnounceController>();
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         elevation: 0,
         leading: Padding(
           padding: EdgeInsets.only(left: AppSizes.pw16),
@@ -48,7 +48,7 @@ class _AnnounceView extends StatelessWidget {
             Text(
               employee.name,
               style: GoogleFonts.manrope(
-                color: AppColors.textTitle,
+                color: context.colors.textTitle,
                 fontWeight: FontWeight.w800,
                 fontSize: AppSizes.sp16,
               ),
@@ -56,7 +56,7 @@ class _AnnounceView extends StatelessWidget {
             Text(
               l.announcementsLabel,
               style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 fontSize: AppSizes.sp10,
                 letterSpacing: 1.2,
               ),
@@ -86,7 +86,7 @@ class _AnnounceView extends StatelessWidget {
           child: Text(
             l.somethingWentWrong,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp14,
             ),
             textAlign: TextAlign.center,
@@ -101,7 +101,7 @@ class _AnnounceView extends StatelessWidget {
 
     return RefreshIndicator(
       color: AppColors.primaryColor,
-      backgroundColor: AppColors.cardBackground,
+      backgroundColor: context.colors.cardBackground,
       onRefresh: () async {},
       child: ListView.separated(
         padding: EdgeInsets.symmetric(
@@ -131,9 +131,9 @@ class _EmptyState extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(AppSizes.ph24),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: context.colors.cardBackground,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.inputBorder),
+              border: Border.all(color: context.colors.inputBorder),
             ),
             child: Icon(
               Icons.campaign_outlined,
@@ -145,7 +145,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             l.announcementsLabel,
             style: GoogleFonts.manrope(
-              color: AppColors.textTitle,
+              color: context.colors.textTitle,
               fontWeight: FontWeight.w800,
               fontSize: AppSizes.sp20,
               letterSpacing: 2,
@@ -155,7 +155,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             l.noAnnouncementsDesc,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp14,
             ),
             textAlign: TextAlign.center,
@@ -192,9 +192,9 @@ class _AnnouncementCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.colors.cardBackground,
         borderRadius: BorderRadius.circular(AppSizes.r8),
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -222,7 +222,7 @@ class _AnnouncementCard extends StatelessWidget {
                           child: Text(
                             announcement.title,
                             style: GoogleFonts.manrope(
-                              color: AppColors.textTitle,
+                              color: context.colors.textTitle,
                               fontWeight: FontWeight.w700,
                               fontSize: AppSizes.sp14,
                             ),
@@ -240,7 +240,7 @@ class _AnnouncementCard extends StatelessWidget {
                     Text(
                       announcement.content,
                       style: GoogleFonts.manrope(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         fontSize: AppSizes.sp13,
                         height: 1.5,
                       ),
@@ -345,7 +345,7 @@ class _MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = highlight ? const Color(0xFFF59E0B) : AppColors.textMuted;
+    final color = highlight ? const Color(0xFFF59E0B) : context.colors.textMuted;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

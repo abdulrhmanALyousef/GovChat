@@ -10,6 +10,7 @@ import 'core/datasource/local_data/preferences_manager.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/push_notification_service.dart';
 import 'core/providers/locale_provider.dart';
+import 'core/providers/theme_provider.dart';
 import 'core/services/session_manager.dart';
 import 'core/theme/theme_data.dart';
 import 'firebase_options.dart';
@@ -25,8 +26,11 @@ void main() async {
   await NotificationService.instance.initialize();
   await PushNotificationService.instance.initialize();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => LocaleProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -111,6 +115,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final localeProvider = context.watch<LocaleProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
 
     return ScreenUtilInit(
       designSize: const Size(375, 812),
@@ -135,7 +140,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               ],
               title: 'GovChat',
               debugShowCheckedModeBanner: false,
-              theme: darkTheme,
+              theme: lightTheme,
+              darkTheme: darkTheme,
+              themeMode: themeProvider.themeMode,
 
               // ── Localization ──
               locale: localeProvider.locale,

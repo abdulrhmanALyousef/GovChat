@@ -28,7 +28,8 @@ class OtpVerificationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => OtpController(phone: phone, purpose: purpose, uid: uid),
-      child: _OtpView(maskedPhone: OtpService.maskPhone(phone), purpose: purpose),
+      child: _OtpView(
+          maskedPhone: OtpService.maskPhone(phone), purpose: purpose),
     );
   }
 }
@@ -45,21 +46,22 @@ class _OtpView extends StatelessWidget {
   Widget build(BuildContext context) {
     final ctrl = context.watch<OtpController>();
     final l = AppLocalizations.of(context)!;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: colors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: colors.textPrimary),
           onPressed: () => Navigator.pop(context, false),
         ),
         centerTitle: true,
         title: Text(
           _isLogin ? l.otpLoginTitle : l.otpVerificationTitle,
           style: GoogleFonts.manrope(
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
             fontWeight: FontWeight.w800,
             fontSize: AppSizes.sp16,
           ),
@@ -82,7 +84,9 @@ class _OtpView extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    _isLogin ? Icons.security_outlined : Icons.phone_android_outlined,
+                    _isLogin
+                        ? Icons.security_outlined
+                        : Icons.phone_android_outlined,
                     color: AppColors.primaryColor,
                     size: AppSizes.sp40,
                   ),
@@ -94,7 +98,7 @@ class _OtpView extends StatelessWidget {
                   style: GoogleFonts.manrope(
                     fontSize: AppSizes.sp20,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textTitle,
+                    color: colors.textTitle,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -105,7 +109,7 @@ class _OtpView extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.manrope(
                     fontSize: AppSizes.sp12,
-                    color: AppColors.textSubtitle,
+                    color: colors.textSubtitle,
                     height: 1.5,
                   ),
                 ),
@@ -131,7 +135,7 @@ class _OtpView extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: AppSizes.sp11,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textMuted,
+                      color: colors.textMuted,
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -156,7 +160,7 @@ class _OtpView extends StatelessWidget {
                     }
                   },
                   style: GoogleFonts.manrope(
-                    color: AppColors.textPrimary,
+                    color: colors.textPrimary,
                     fontSize: AppSizes.sp32,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 18,
@@ -164,7 +168,7 @@ class _OtpView extends StatelessWidget {
                   decoration: InputDecoration(
                     counterText: '',
                     filled: true,
-                    fillColor: AppColors.inputFill,
+                    fillColor: colors.inputFill,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppSizes.r12),
                       borderSide: BorderSide.none,
@@ -222,7 +226,8 @@ class _OtpView extends StatelessWidget {
                                 AppColors.gradientEnd,
                               ],
                             ),
-                      color: ctrl.attemptsExhausted ? AppColors.inputFill : null,
+                      color:
+                          ctrl.attemptsExhausted ? colors.inputFill : null,
                       borderRadius: BorderRadius.circular(AppSizes.r16),
                     ),
                     child: ElevatedButton(
@@ -270,7 +275,7 @@ class _OtpView extends StatelessWidget {
                     ? Text(
                         l.otpResendIn(ctrl.cooldownSeconds),
                         style: GoogleFonts.manrope(
-                          color: AppColors.textMuted,
+                          color: colors.textMuted,
                           fontSize: AppSizes.sp13,
                           fontWeight: FontWeight.w600,
                         ),
