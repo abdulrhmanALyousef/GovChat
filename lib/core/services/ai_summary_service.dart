@@ -7,6 +7,10 @@ import 'package:http/http.dart' as http;
 
 import '../../models/chat_message.dart';
 import '../../models/chat_summary.dart';
+import '../../models/inbox_summary.dart';
+import '../services/encryption/e2ee_crypto.dart';
+import '../services/encryption/e2ee_key_store.dart';
+import '../services/encryption/e2ee_manager.dart';
 
 /// Provides AI-powered chat summarisation via Gemini REST API (v1 stable).
 ///
@@ -79,6 +83,113 @@ Important rules:
 Expected output style: clean, human-readable, concise, accurate, structured when useful.''';
 
     return '$baseRules\n\nThe user transcript will be appended after this system prompt.';
+  }
+
+  // ── Safe field extraction ─────────────────────────────────────────────────
+  // Gemini may return a field as a String, a Map, or a List depending on
+  // how it interprets the prompt.  This helper normalises any value to a
+  // human-readable string so the parser never crashes on unexpected types.
+
+  static String _asString(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value;
+    if (value is Map) {
+      // e.g. {"Chat A": "summary …", "Chat B": "summary …"}
+      final lines = (value as Map<String, dynamic>).entries.map(
+        (e) => '${e.key}: ${e.value}',
+      );
+      return lines.join('\n');
+    }
+    if (value is List) {
+      return value.map((e) => e.toString()).join('\n');
+    }
+    return value.toString();
+  }
+
+  // ── Tolerant JSON parser ──────────────────────────────────────────────────
+  // Gemini may return truncated JSON, partial JSON, or plain text.
+  // This parser tries multiple strategies before giving up.
+
+  static Map<String, dynamic> _tolerantJsonParse(String raw) {
+    // 1. Try direct parse — the happy path.
+    try {
+      final result = jsonDecode(raw);
+      if (result is Map<String, dynamic>) {
+        return result;
+      }
+    } catch (_) {}
+
+    // 2. Try fixing truncated JSON by closing open braces/quotes.
+    try {
+      var fixed = raw;
+      // If it ends mid-string, close the quote and braces.
+      if (!fixed.trimRight().endsWith('}')) {
+        // Count unmatched braces.
+        var depth = 0;
+        var inString = false;
+        var lastChar = '';
+        for (var i = 0; i < fixed.length; i++) {
+          final c = fixed[i];
+          if (c == '"' && lastChar != '\\') inString = !inString;
+          if (!inString) {
+            if (c == '{') depth++;
+            if (c == '}') depth--;
+          }
+          lastChar = c;
+        }
+        if (inString) fixed += '"';
+        while (depth > 0) {
+          fixed += '}';
+          depth--;
+        }
+      }
+      final result = jsonDecode(fixed);
+      if (result is Map<String, dynamic>) {
+        debugPrint('[AI_SUMMARY:INBOX] parsed with brace-fix');
+        return result;
+      }
+    } catch (_) {}
+
+    // 3. Try extracting a JSON substring from mixed prose.
+    try {
+      final firstBrace = raw.indexOf('{');
+      final lastBrace = raw.lastIndexOf('}');
+      if (firstBrace != -1 && lastBrace > firstBrace) {
+        final sub = raw.substring(firstBrace, lastBrace + 1);
+        final result = jsonDecode(sub);
+        if (result is Map<String, dynamic>) {
+          debugPrint('[AI_SUMMARY:INBOX] parsed from substring');
+          return result;
+        }
+      }
+    } catch (_) {}
+
+    // 4. Regex extraction — pull "key": "value" pairs individually.
+    final fields = <String, dynamic>{};
+    final fieldPattern = RegExp(
+      r'"(\w+)"\s*:\s*"((?:[^"\\]|\\.)*)(?:"|$)',
+      dotAll: true,
+    );
+    for (final match in fieldPattern.allMatches(raw)) {
+      final key = match.group(1)!;
+      var value = match.group(2) ?? '';
+      // Unescape basic JSON escapes.
+      value = value
+          .replaceAll(r'\"', '"')
+          .replaceAll(r'\\', r'\')
+          .replaceAll(r'\n', '\n');
+      fields[key] = value;
+    }
+    if (fields.isNotEmpty) {
+      debugPrint(
+        '[AI_SUMMARY:INBOX] regex-extracted ${fields.length} fields',
+      );
+      return fields;
+    }
+
+    // 5. Nothing worked — return empty map (caller will use raw-text fallback).
+    debugPrint('[AI_SUMMARY:INBOX] all parse strategies failed');
+    return {};
   }
 
   // ── Patterns for sensitive data that must never leave the device ──────────
@@ -421,4 +532,401 @@ $jsonHints
     if (!doc.exists || doc.data() == null) return null;
     return ChatSummary.fromJson(doc.data()!);
   }
+
+  // ── Inbox-level summary ──────────────────────────────────────────────────
+
+  /// Maximum recent messages to fetch per conversation for the inbox summary.
+  static const int _inboxMsgsPerChat = 10;
+
+  /// Maximum conversations to include in a single inbox summary.
+  static const int _inboxMaxChats = 10;
+
+  /// Maximum total messages across all chats to keep token usage reasonable.
+  static const int _inboxMaxTotal = 80;
+
+  /// Maximum characters for the combined transcript.
+  static const int _inboxMaxTranscriptChars = 8000;
+
+  /// Maximum characters per individual message line.
+  static const int _inboxMaxMsgChars = 200;
+
+  static String _inboxSystemPrompt(String langCode) {
+    final isArabic = langCode == 'ar';
+
+    return isArabic
+        ? '''أنت مساعد ذكاء اصطناعي داخل تطبيق محادثة حكومي مشفر.
+المهمة: تلخيص النشاط الأخير عبر عدة محادثات في صندوق الوارد.
+
+لغة الإخراج: العربية — بغض النظر عن لغة الرسائل الأصلية.
+
+قواعد مهمة:
+- تم فك تشفير الرسائل محليًا قبل إرسالها إليك.
+- لا تذكر التشفير أو المفاتيح أو تفاصيل الأمان.
+- لخّص فقط النص المقدم دون اختلاق رسائل أو سياق.
+- ركّز على: القرارات، المهام العاجلة، البنود المعلقة، التحديثات المهمة، المواعيد النهائية.
+- اكتب بأسلوب عربي طبيعي وواضح.
+- إذا لم يوجد محتوى لحقل معين، اكتب ملاحظة مختصرة مثل "لا يوجد" أو "غير متوفر".
+- أبقِ الأسماء والمصطلحات التقنية بلغتها الأصلية.
+- لكل محادثة، اكتب سطرًا أو سطرين كحد أقصى في تفصيل المحادثات.'''
+        : '''You are an AI assistant inside an encrypted government chat application.
+Task: Summarize recent activity across multiple conversations in the user's inbox.
+
+Output language: English — regardless of the original chat language.
+
+Important rules:
+- Messages were decrypted locally on the user's device before being sent to you.
+- Never mention encryption, keys, or security internals.
+- Only summarize the provided plaintext transcript.
+- Never invent missing messages or context.
+- Focus on: decisions, urgent items, pending tasks, important updates, deadlines, action items.
+- Keep summaries concise and actionable.
+- If a field has no relevant content, write a brief note like "None identified".
+- Keep names and technical terms unchanged.
+- For the per-chat breakdown, write 1-2 lines max per conversation.''';
+  }
+
+  /// Firestore doc reference for storing the inbox summary per user.
+  DocumentReference<Map<String, dynamic>> _inboxSummaryRef(String uid) {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('ai_summaries')
+        .doc('inbox_latest');
+  }
+
+  /// Persistent HTTP client for inbox requests — avoids connection churn.
+  final http.Client _httpClient = http.Client();
+
+  /// Generates an inbox-level summary across all provided conversations.
+  ///
+  /// For each conversation, fetches the most recent [_inboxMsgsPerChat]
+  /// messages, decrypts them locally, then sends the combined transcript
+  /// to Gemini. Only text messages with successful decryption are included.
+  Future<InboxSummary> summarizeInbox({
+    required List<InboxChat> chats,
+    required String uid,
+    String languageCode = 'en',
+  }) async {
+    final sw = Stopwatch()..start();
+    final chatCount = chats.length > _inboxMaxChats
+        ? _inboxMaxChats
+        : chats.length;
+    debugPrint(
+      '[AI_SUMMARY:INBOX] started — ${chats.length} conversations '
+      '(capped to $chatCount)',
+    );
+
+    final firestore = FirebaseFirestore.instance;
+    final sections = <String>[];
+    var totalMessages = 0;
+    var totalChars = 0;
+
+    for (var ci = 0; ci < chatCount; ci++) {
+      if (totalMessages >= _inboxMaxTotal) break;
+      if (totalChars >= _inboxMaxTranscriptChars) break;
+
+      final chat = chats[ci];
+      try {
+        final snap = await firestore
+            .collection(chat.messagesPath)
+            .orderBy('createdAt', descending: true)
+            .limit(_inboxMsgsPerChat)
+            .get();
+
+        if (snap.docs.isEmpty) continue;
+
+        final convPath = chat.messagesPath.replaceAll('/messages', '');
+        var key = E2eeKeyStore.getConversationKeyCached(convPath);
+        key ??= await E2eeKeyStore.getConversationKey(convPath);
+
+        if (key == null) {
+          final currentUid = E2eeManager.currentUid;
+          if (currentUid != null) {
+            key = await E2eeManager.getConversationKey(
+              conversationPath: convPath,
+              currentUid: currentUid,
+              memberUids: const [],
+              isPrivateChat: chat.type == 'private',
+            );
+          }
+        }
+
+        final lines = <String>[];
+        for (final doc in snap.docs.reversed) {
+          if (totalMessages >= _inboxMaxTotal) break;
+          if (totalChars >= _inboxMaxTranscriptChars) break;
+
+          final data = doc.data();
+          final msgType = data['messageType'] as String? ?? 'text';
+          if (msgType != 'text') continue;
+          if (data['isDeleted'] as bool? ?? false) continue;
+
+          final isEncrypted = data['isEncrypted'] as bool? ?? false;
+          String? text;
+
+          if (isEncrypted && key != null) {
+            final encText = data['encryptedText'] as String?;
+            final iv = data['iv'] as String?;
+            if (encText != null && iv != null) {
+              final msgId = doc.id;
+              text = E2eeManager.getCachedDecryptedText(msgId);
+              if (text == null) {
+                try {
+                  text = await E2eeCrypto.decrypt(
+                    EncryptedPayload(ciphertext: encText, nonce: iv),
+                    key,
+                  );
+                  E2eeManager.cacheDecryptedText(msgId, text);
+                } catch (_) {
+                  continue;
+                }
+              }
+            }
+          } else if (!isEncrypted) {
+            text = data['text'] as String?;
+          }
+
+          if (text == null || text.trim().isEmpty) continue;
+          if (text.startsWith('[Decryption error:')) continue;
+
+          var sanitized = _sanitize(text.trim());
+          if (sanitized.isEmpty) continue;
+
+          // Truncate long messages.
+          if (sanitized.length > _inboxMaxMsgChars) {
+            sanitized = '${sanitized.substring(0, _inboxMaxMsgChars)}…';
+          }
+
+          final sender = data['senderId'] as String? ?? '?';
+          final line = '[$sender]: $sanitized';
+          lines.add(line);
+          totalMessages++;
+          totalChars += line.length + 1; // +1 for newline
+        }
+
+        if (lines.isNotEmpty) {
+          final section =
+              '--- ${chat.title} (${chat.type}) ---\n${lines.join('\n')}';
+          sections.add(section);
+        }
+      } catch (e) {
+        debugPrint('[AI_SUMMARY:INBOX] error processing ${chat.title}: $e');
+      }
+    }
+
+    debugPrint(
+      '[AI_SUMMARY:INBOX] collected: $totalMessages msgs, '
+      '$totalChars chars, ${sections.length} chats '
+      'in ${sw.elapsedMilliseconds}ms',
+    );
+
+    if (sections.isEmpty) {
+      throw Exception('No decryptable messages available across conversations.');
+    }
+
+    // Build prompt.
+    final apiKey = await _loadApiKey();
+    final isArabic = languageCode == 'ar';
+    var transcript = sections.join('\n\n');
+
+    // Final safety cap on transcript length.
+    if (transcript.length > _inboxMaxTranscriptChars) {
+      transcript = '${transcript.substring(0, _inboxMaxTranscriptChars)}\n[truncated]';
+    }
+
+    final jsonHints = isArabic
+        ? '''
+{
+  "highlights": "<ملخص من 3-5 جمل لأهم التحديثات عبر جميع المحادثات>",
+  "urgentItems": "<البنود العاجلة التي تتطلب إجراءً فوريًا، أو 'لا يوجد'>",
+  "decisions": "<القرارات الرئيسية المتخذة عبر المحادثات، أو 'لم تُسجَّل قرارات'>",
+  "pendingItems": "<المهام والبنود المعلقة التي تحتاج متابعة، أو 'لا يوجد'>",
+  "perChatBreakdown": "<سطر أو سطرين لكل محادثة نشطة — اسم المحادثة: ملخص مختصر>",
+  "trends": "<اتجاهات التواصل العامة: النبرة، مستوى النشاط، المواضيع المتكررة>"
+}'''
+        : '''
+{
+  "highlights": "<3-5 sentence summary of the most important updates across all chats>",
+  "urgentItems": "<Urgent items requiring immediate action, or 'None identified'>",
+  "decisions": "<Key decisions made across conversations, or 'No decisions recorded'>",
+  "pendingItems": "<Pending tasks and items needing follow-up, or 'None identified'>",
+  "perChatBreakdown": "<1-2 lines per active conversation — chat name: brief summary>",
+  "trends": "<Overall communication trends: tone, activity level, recurring themes>"
+}''';
+
+    final instruction = isArabic
+        ? 'حلّل النشاط الأخير عبر جميع المحادثات أدناه وأجب فقط بكائن JSON صالح — بدون علامات markdown. يجب أن تكون جميع القيم نصوصًا باللغة العربية — لا كائنات JSON متداخلة.'
+        : 'Analyze the recent activity across all conversations below and reply ONLY with a valid JSON object — no markdown fences. All values MUST be plain strings — never nested JSON objects or arrays.';
+
+    final prompt = '''
+${_inboxSystemPrompt(languageCode)}
+
+---
+
+$instruction
+
+Total conversations: ${sections.length}
+Total messages: $totalMessages
+
+Transcript:
+$transcript
+
+Required JSON structure:
+$jsonHints
+''';
+
+    final requestBody = jsonEncode({
+      'contents': [
+        {
+          'parts': [
+            {'text': prompt},
+          ],
+        },
+      ],
+      'generationConfig': {
+        'temperature': 0.2,
+        'maxOutputTokens': 2048,
+      },
+    });
+
+    debugPrint(
+      '[AI_SUMMARY:INBOX] payload: ${requestBody.length} bytes, '
+      '~${(requestBody.length / 4).round()} tokens (est)',
+    );
+
+    // Call Gemini with retry + timeout.
+    final model = await _resolveModel(apiKey);
+    final endpoint = '$_baseUrl/$model:generateContent?key=$apiKey';
+    final uri = Uri.parse(endpoint);
+
+    http.Response response;
+    const maxRetries = 2;
+
+    for (var attempt = 0; ; attempt++) {
+      try {
+        debugPrint(
+          '[AI_SUMMARY:INBOX] request attempt=${attempt + 1} to $model',
+        );
+
+        response = await _httpClient
+            .post(uri, headers: {'Content-Type': 'application/json'}, body: requestBody)
+            .timeout(const Duration(seconds: 60));
+        break; // Success — exit retry loop.
+      } catch (e) {
+        debugPrint('[AI_SUMMARY:INBOX] request failed (attempt ${attempt + 1}): $e');
+        if (attempt >= maxRetries) {
+          throw Exception(
+            'Network error after ${maxRetries + 1} attempts. '
+            'Please check your connection and try again.',
+          );
+        }
+        // Exponential backoff: 2s, 4s.
+        await Future.delayed(Duration(seconds: 2 << attempt));
+      }
+    }
+
+    debugPrint(
+      '[AI_SUMMARY:INBOX] response status=${response.statusCode} '
+      'in ${sw.elapsedMilliseconds}ms',
+    );
+
+    if (response.statusCode != 200) {
+      debugPrint('[AI_SUMMARY:INBOX] error: ${response.body}');
+      throw Exception(
+        'Gemini API error (${response.statusCode}). '
+        'Check API key, billing, and model availability.',
+      );
+    }
+
+    // Parse response — reuse the same extraction logic as per-chat summaries.
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final candidates = body['candidates'] as List?;
+    debugPrint('[AI_SUMMARY:INBOX] candidates=${candidates?.length ?? 0}');
+
+    final candidate =
+        (candidates != null && candidates.isNotEmpty) ? candidates.first : null;
+    final parts =
+        (candidate as Map<String, dynamic>?)?['content']?['parts'] as List?;
+    final rawText =
+        (parts != null && parts.isNotEmpty ? parts.first['text'] : null)
+                as String? ??
+            '';
+
+    debugPrint('[AI_SUMMARY:INBOX] rawText length=${rawText.length}');
+
+    if (rawText.isEmpty) {
+      throw Exception('Gemini returned an empty response. Please try again.');
+    }
+
+    final cleaned = rawText
+        .replaceAll(RegExp(r'```json\s*'), '')
+        .replaceAll(RegExp(r'```\s*'), '')
+        .trim();
+
+    final parsed = _tolerantJsonParse(cleaned);
+
+    debugPrint(
+      '[AI_SUMMARY:INBOX] parsed ${parsed.length} fields: '
+      '${parsed.keys.join(", ")}',
+    );
+
+    final summary = InboxSummary(
+      highlights: _asString(parsed['highlights']),
+      urgentItems: _asString(parsed['urgentItems']),
+      decisions: _asString(parsed['decisions']),
+      pendingItems: _asString(parsed['pendingItems']),
+      perChatBreakdown: _asString(parsed['perChatBreakdown']),
+      trends: _asString(parsed['trends']),
+      generatedAt: DateTime.now(),
+    );
+
+    // If every field is empty, the response was truly unusable.
+    if (summary.highlights.isEmpty &&
+        summary.urgentItems.isEmpty &&
+        summary.decisions.isEmpty &&
+        summary.pendingItems.isEmpty &&
+        summary.perChatBreakdown.isEmpty &&
+        summary.trends.isEmpty) {
+      // Last resort: put the entire raw text into highlights.
+      final fallback = InboxSummary(
+        highlights: cleaned.length > 2000
+            ? '${cleaned.substring(0, 2000)}…'
+            : cleaned,
+        urgentItems: '',
+        decisions: '',
+        pendingItems: '',
+        perChatBreakdown: '',
+        trends: '',
+        generatedAt: DateTime.now(),
+      );
+      await _inboxSummaryRef(uid).set(fallback.toJson());
+      debugPrint('[AI_SUMMARY:INBOX] used raw-text fallback');
+      return fallback;
+    }
+
+    await _inboxSummaryRef(uid).set(summary.toJson());
+    debugPrint(
+      '[AI_SUMMARY:INBOX] done in ${sw.elapsedMilliseconds}ms',
+    );
+    return summary;
+  }
+
+  /// Returns the most recently saved inbox summary, or `null`.
+  Future<InboxSummary?> fetchInboxSummary(String uid) async {
+    final doc = await _inboxSummaryRef(uid).get();
+    if (!doc.exists || doc.data() == null) return null;
+    return InboxSummary.fromJson(doc.data()!);
+  }
+}
+
+/// Lightweight descriptor for a conversation to be summarized.
+class InboxChat {
+  final String title;
+  final String type;
+  final String messagesPath;
+  const InboxChat({
+    required this.title,
+    required this.type,
+    required this.messagesPath,
+  });
 }

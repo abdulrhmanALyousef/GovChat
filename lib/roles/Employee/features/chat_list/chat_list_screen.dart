@@ -6,10 +6,12 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_size.dart';
-
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/services/ai_summary_service.dart';
 import '../../../../core/theme/app_color.dart';
 import '../../../../models/conversation_model.dart';
 import '../../../../models/employee_model.dart';
+import '../../../../models/inbox_summary.dart';
 import '../chat/employee_chat_screen.dart';
 import '../new_chat/new_chat_screen.dart';
 import 'controller/chat_list_controller.dart';
@@ -68,6 +70,21 @@ class _ChatListView extends StatelessWidget {
             ),
           ],
         ),
+        actions: [
+          if (controller.conversations.isNotEmpty)
+            IconButton(
+              icon: const Icon(
+                LucideIcons.sparkles,
+                color: AppColors.primaryColor,
+              ),
+              tooltip: l.inboxSummaryTitle,
+              onPressed: () => _showInboxSummary(
+                context: context,
+                conversations: controller.conversations,
+                employee: employee,
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -506,6 +523,473 @@ class _EmptyState extends StatelessWidget {
               color: AppColors.textMuted,
               fontSize: AppSizes.sp16,
               fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Inbox Summary ─────────────────────────────────────────────────────────────
+
+void _showInboxSummary({
+  required BuildContext context,
+  required List<ConversationModel> conversations,
+  required EmployeeModel employee,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.cardBackground,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r20)),
+    ),
+    builder: (_) => _InboxSummarySheet(
+      conversations: conversations,
+      employee: employee,
+    ),
+  );
+}
+
+class _InboxSummarySheet extends StatefulWidget {
+  const _InboxSummarySheet({
+    required this.conversations,
+    required this.employee,
+  });
+
+  final List<ConversationModel> conversations;
+  final EmployeeModel employee;
+
+  @override
+  State<_InboxSummarySheet> createState() => _InboxSummarySheetState();
+}
+
+class _InboxSummarySheetState extends State<_InboxSummarySheet> {
+  InboxSummary? _summary;
+  bool _loading = true;
+  bool _generating = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExisting();
+  }
+
+  Future<void> _loadExisting() async {
+    try {
+      final uid = widget.employee.id ?? '';
+      if (uid.isEmpty) {
+        if (mounted) setState(() => _loading = false);
+        return;
+      }
+      final existing =
+          await AiSummaryService.instance.fetchInboxSummary(uid);
+      if (mounted) {
+        setState(() {
+          _summary = existing;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _generate() async {
+    setState(() {
+      _generating = true;
+      _error = null;
+    });
+
+    try {
+      final langCode =
+          context.read<LocaleProvider>().locale.languageCode;
+
+      // Build the chat descriptors from the conversation list.
+      final chats = widget.conversations
+          .map((c) => InboxChat(
+                title: c.name,
+                type: c.type,
+                messagesPath: c.messagesCollectionPath,
+              ))
+          .toList();
+
+      final uid = widget.employee.id ?? '';
+      final result = await AiSummaryService.instance.summarizeInbox(
+        chats: chats,
+        uid: uid,
+        languageCode: langCode,
+      );
+      if (mounted) {
+        setState(() {
+          _summary = result;
+          _generating = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[AI_SUMMARY:INBOX] generate error: $e');
+      if (mounted) {
+        setState(() {
+          _generating = false;
+          _error = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.75,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (_, scrollController) {
+        return Column(
+          children: [
+            // Drag handle
+            Padding(
+              padding: EdgeInsets.only(
+                top: AppSizes.ph12,
+                bottom: AppSizes.ph8,
+              ),
+              child: Container(
+                width: AppSizes.w42,
+                height: AppSizes.h4,
+                decoration: BoxDecoration(
+                  color: AppColors.textMuted.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(AppSizes.r4),
+                ),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSizes.pw16),
+              child: Row(
+                children: [
+                  const Icon(
+                    LucideIcons.sparkles,
+                    color: AppColors.primaryColor,
+                    size: 20,
+                  ),
+                  SizedBox(width: AppSizes.w8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l.inboxSummaryTitle,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textTitle,
+                            fontWeight: FontWeight.w800,
+                            fontSize: AppSizes.sp16,
+                          ),
+                        ),
+                        Text(
+                          l.inboxSummarySubtitle,
+                          style: GoogleFonts.manrope(
+                            color: AppColors.textMuted,
+                            fontSize: AppSizes.sp10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!_generating)
+                    TextButton.icon(
+                      onPressed: _generate,
+                      icon: Icon(
+                        _summary == null
+                            ? LucideIcons.zap
+                            : LucideIcons.refreshCw,
+                        size: 14,
+                        color: AppColors.primaryColor,
+                      ),
+                      label: Text(
+                        _summary == null
+                            ? l.inboxSummaryGenerate
+                            : l.inboxSummaryRegenerate,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.primaryColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: AppSizes.sp12,
+                        ),
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: AppSizes.pw16),
+                      child: SizedBox(
+                        width: AppSizes.w16,
+                        height: AppSizes.h16,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Divider(
+              color: AppColors.inputBorder,
+              height: AppSizes.h2,
+              thickness: 1,
+            ),
+            // Body
+            Expanded(
+              child: _loading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryColor,
+                      ),
+                    )
+                  : _generating
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                color: AppColors.primaryColor,
+                              ),
+                              SizedBox(height: AppSizes.ph16),
+                              Text(
+                                l.inboxSummaryAnalysing,
+                                style: GoogleFonts.manrope(
+                                  color: AppColors.textMuted,
+                                  fontSize: AppSizes.sp13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _summary == null
+                          ? _InboxSummaryEmpty(onGenerate: _generate)
+                          : _InboxSummaryContent(
+                              summary: _summary!,
+                              error: _error,
+                              scrollController: scrollController,
+                            ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _InboxSummaryEmpty extends StatelessWidget {
+  const _InboxSummaryEmpty({required this.onGenerate});
+  final VoidCallback onGenerate;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: AppSizes.pw24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              LucideIcons.inbox,
+              color: AppColors.textMuted,
+              size: AppSizes.sp40,
+            ),
+            SizedBox(height: AppSizes.ph16),
+            Text(
+              l.inboxSummaryEmptyTitle,
+              style: GoogleFonts.manrope(
+                color: AppColors.textTitle,
+                fontWeight: FontWeight.w700,
+                fontSize: AppSizes.sp14,
+              ),
+            ),
+            SizedBox(height: AppSizes.ph8),
+            Text(
+              l.inboxSummaryEmptySubtitle,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.manrope(
+                color: AppColors.textMuted,
+                fontSize: AppSizes.sp13,
+              ),
+            ),
+            SizedBox(height: AppSizes.ph24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onGenerate,
+                icon: const Icon(LucideIcons.sparkles, size: 16),
+                label: Text(
+                  l.inboxSummaryGenerateButton,
+                  style: GoogleFonts.manrope(
+                    fontWeight: FontWeight.w700,
+                    fontSize: AppSizes.sp14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.buttonBackground,
+                  foregroundColor: AppColors.buttonText,
+                  padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.r12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InboxSummaryContent extends StatelessWidget {
+  const _InboxSummaryContent({
+    required this.summary,
+    required this.scrollController,
+    this.error,
+  });
+
+  final InboxSummary summary;
+  final ScrollController scrollController;
+  final String? error;
+
+  String _formatDate(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return ListView(
+      controller: scrollController,
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.pw16,
+        AppSizes.ph8,
+        AppSizes.pw16,
+        AppSizes.ph24,
+      ),
+      children: [
+        if (error != null) ...[
+          Container(
+            margin: EdgeInsets.only(bottom: AppSizes.ph12),
+            padding: EdgeInsets.all(AppSizes.pw16),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppSizes.r12),
+              border: Border.all(
+                color: AppColors.error.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Text(
+              error!,
+              style: GoogleFonts.manrope(
+                color: AppColors.error,
+                fontSize: AppSizes.sp12,
+              ),
+            ),
+          ),
+        ],
+        _InboxSection(
+          icon: LucideIcons.sparkles,
+          title: l.inboxSummaryHighlights,
+          body: summary.highlights,
+        ),
+        _InboxSection(
+          icon: LucideIcons.alertTriangle,
+          title: l.inboxSummaryUrgent,
+          body: summary.urgentItems,
+        ),
+        _InboxSection(
+          icon: LucideIcons.checkCircle,
+          title: l.inboxSummaryDecisions,
+          body: summary.decisions,
+        ),
+        _InboxSection(
+          icon: LucideIcons.clipboardList,
+          title: l.inboxSummaryPending,
+          body: summary.pendingItems,
+        ),
+        _InboxSection(
+          icon: LucideIcons.messageSquare,
+          title: l.inboxSummaryPerChat,
+          body: summary.perChatBreakdown,
+        ),
+        _InboxSection(
+          icon: LucideIcons.barChart2,
+          title: l.inboxSummaryTrends,
+          body: summary.trends,
+        ),
+        SizedBox(height: AppSizes.ph8),
+        Text(
+          l.inboxSummaryGeneratedAt(_formatDate(summary.generatedAt)),
+          textAlign: TextAlign.center,
+          style: GoogleFonts.manrope(
+            color: AppColors.textMuted,
+            fontSize: AppSizes.sp11,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InboxSection extends StatelessWidget {
+  const _InboxSection({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: AppSizes.ph12),
+      padding: EdgeInsets.all(AppSizes.pw16),
+      decoration: BoxDecoration(
+        color: AppColors.sectionBackground,
+        borderRadius: BorderRadius.circular(AppSizes.r12),
+        border: Border.all(color: AppColors.inputBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppColors.primaryColor, size: AppSizes.sp14),
+              SizedBox(width: AppSizes.w6),
+              Text(
+                title,
+                style: GoogleFonts.manrope(
+                  color: AppColors.primaryColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: AppSizes.sp12,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSizes.ph8),
+          Text(
+            body.isNotEmpty ? body : '—',
+            style: GoogleFonts.manrope(
+              color: AppColors.textPrimary,
+              fontSize: AppSizes.sp13,
+              height: 1.5,
             ),
           ),
         ],

@@ -20,28 +20,66 @@ import '../../../../../core/services/logging_service.dart';
 import '../../../../../core/services/push_notification_service.dart';
 import '../../../../../models/chat_message.dart';
 
-// ── Isolate-safe decrypt payload ──────────────────────────────────────────────
+// ── Batch isolate decrypt ────────────────────────────────────────────────────
 
-/// Data class for sending decrypt work to a background isolate.
-/// Must be a top-level class (not a closure) so [compute] can serialize it.
-class _DecryptRequest {
-  final String ciphertext;
-  final String nonce;
+/// Payload for batch decryption in a background isolate.
+class _BatchDecryptRequest {
+  final List<_DecryptItem> items;
   final Uint8List key;
-  _DecryptRequest(this.ciphertext, this.nonce, this.key);
+  _BatchDecryptRequest(this.items, this.key);
 }
 
-/// Runs AES-256-GCM decryption in a background isolate via [compute].
-/// Returns the plaintext string, or null on any failure.
-Future<String?> _isolateDecrypt(_DecryptRequest req) async {
-  try {
-    return await E2eeCrypto.decrypt(
-      EncryptedPayload(ciphertext: req.ciphertext, nonce: req.nonce),
-      req.key,
-    );
-  } catch (_) {
-    return null;
+class _DecryptItem {
+  final String id;
+  final String? ciphertext;
+  final String? nonce;
+  final String? encryptedMediaUrl;
+  final String? mediaIv;
+  _DecryptItem({
+    required this.id,
+    this.ciphertext,
+    this.nonce,
+    this.encryptedMediaUrl,
+    this.mediaIv,
+  });
+}
+
+class _DecryptResult {
+  final String id;
+  final String? text;
+  final String? mediaUrl;
+  final bool failed;
+  _DecryptResult({required this.id, this.text, this.mediaUrl, this.failed = false});
+}
+
+/// Decrypts a batch of messages in a single isolate — amortises spawn cost.
+Future<List<_DecryptResult>> _isolateBatchDecrypt(_BatchDecryptRequest req) async {
+  final results = <_DecryptResult>[];
+  for (final item in req.items) {
+    String? text;
+    String? mediaUrl;
+    bool failed = false;
+    try {
+      if (item.ciphertext != null && item.nonce != null) {
+        text = await E2eeCrypto.decrypt(
+          EncryptedPayload(ciphertext: item.ciphertext!, nonce: item.nonce!),
+          req.key,
+        );
+      }
+    } catch (_) {
+      failed = true;
+    }
+    try {
+      if (item.encryptedMediaUrl != null && item.mediaIv != null) {
+        mediaUrl = await E2eeCrypto.decrypt(
+          EncryptedPayload(ciphertext: item.encryptedMediaUrl!, nonce: item.mediaIv!),
+          req.key,
+        );
+      }
+    } catch (_) {}
+    results.add(_DecryptResult(id: item.id, text: text, mediaUrl: mediaUrl, failed: failed));
   }
+  return results;
 }
 
 class ChatController extends ChangeNotifier {
@@ -77,7 +115,6 @@ class ChatController extends ChangeNotifier {
 
   // ── Pagination constants ──────────────────────────────────────────────────
   static const int _pageSize = 50;
-  static const int _decryptBatchSize = 15;
 
   final FirebaseService _firebase = FirebaseService.instance;
   final _imagePicker = ImagePicker();
@@ -676,149 +713,191 @@ class ChatController extends ChangeNotifier {
 
   // ── Decrypt all pending messages in the current list ────────────────────────
 
-  /// Triggers a decrypt pass on all currently loaded messages that haven't
-  /// been decrypted yet.  Called when `_conversationKey` transitions from
-  /// null to non-null (either from fast-path cache or full derivation).
+  /// Guards against overlapping decrypt passes.
+  bool _decryptPassRunning = false;
+
   void _decryptExistingMessages() {
     if (_disposed || _conversationKey == null) return;
     if (messages.isEmpty) {
-      // Messages haven't arrived yet — schedule a deferred pass.
-      _scheduleDecryptRetry();
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_disposed || _conversationKey == null) return;
+        _decryptExistingMessages();
+      });
       return;
     }
-    final hasUndecrypted = messages.any(
-      (m) =>
-          m.isEncrypted &&
-          m.id != null &&
-          !_decryptedTextCache.containsKey(m.id) &&
-          !_failedDecryptIds.contains(m.id),
-    );
-    if (hasUndecrypted) {
-      _decryptBatchProgressive(List.from(messages), 0);
-    }
+    _runBatchDecrypt(messages);
   }
 
-  /// Schedules a deferred decrypt attempt for when messages arrive after
-  /// the key is already available.
-  void _scheduleDecryptRetry() {
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (_disposed || _conversationKey == null) return;
-      _decryptExistingMessages();
-    });
-  }
+  // ── Optimised batch decrypt pipeline ──────────────────────────────────────
 
-  // ── Decrypt helper ─────────────────────────────────────────────────────────
+  /// Collects all undecrypted messages and sends them to a single background
+  /// isolate for batch AES-GCM decryption.  Results are applied to the message
+  /// list in one pass and the UI is notified once.
+  void _runBatchDecrypt(List<ChatMessage> rawMessages) {
+    if (_disposed || _conversationKey == null) return;
+    if (_decryptPassRunning) return;
 
-  Future<ChatMessage> _tryDecrypt(ChatMessage msg) async {
-    if (!msg.isEncrypted || _disposed) return msg;
+    final key = _conversationKey!;
+    final sw = Stopwatch()..start();
 
-    // Skip permanently failed messages.
-    if (msg.id != null && _failedDecryptIds.contains(msg.id)) {
-      return msg.withDecrypted(
-        text: '[Decryption error: wrong key or corrupted data]',
-      );
-    }
-
-    // Check local + shared cache first — instant return.
-    if (msg.id != null) {
-      final cachedText =
-          _decryptedTextCache[msg.id] ??
-          E2eeManager.getCachedDecryptedText(msg.id!);
-      final cachedUrl = _decryptedMediaUrlCache[msg.id];
-      if (cachedText != null || cachedUrl != null) {
-        if (cachedText != null) _decryptedTextCache[msg.id!] = cachedText;
-        return msg.withDecrypted(
-          text: cachedText,
-          mediaUrl: cachedUrl ?? msg.mediaUrl,
-        );
+    // Collect messages that actually need decryption.
+    final pending = <ChatMessage>[];
+    for (final msg in rawMessages) {
+      if (!msg.isEncrypted || msg.id == null) continue;
+      if (_decryptedTextCache.containsKey(msg.id)) continue;
+      if (_decryptedMediaUrlCache.containsKey(msg.id) &&
+          msg.encryptedText == null) {
+        continue;
       }
+      if (_failedDecryptIds.contains(msg.id)) continue;
+      pending.add(msg);
     }
 
-    // Capture the key at the start — never null-out the shared field from
-    // inside a Future.wait batch.  If another message already scheduled
-    // recovery the key will be null here and we skip gracefully.
-    final key = _conversationKey;
-    if (key == null) return msg;
+    if (pending.isEmpty) return;
 
-    String? decryptedText;
-    String? decryptedMediaUrl;
+    _decryptPassRunning = true;
 
-    // ── Text decryption (background isolate) ────────────────────────────
-    if (msg.encryptedText != null && msg.iv != null) {
+    final items = pending.map((m) => _DecryptItem(
+      id: m.id!,
+      ciphertext: m.encryptedText,
+      nonce: m.iv,
+      encryptedMediaUrl: m.encryptedMediaUrl,
+      mediaIv: m.mediaIv,
+    )).toList();
+
+    debugPrint('[DECRYPT] starting batch: ${items.length} msgs');
+
+    () async {
       try {
-        // Use compute() to run AES-GCM decrypt off the main thread.
-        decryptedText = await compute(
-          _isolateDecrypt,
-          _DecryptRequest(msg.encryptedText!, msg.iv!, key),
+        final results = await compute(
+          _isolateBatchDecrypt,
+          _BatchDecryptRequest(items, key),
         );
-        // compute returns null on failure — treat as a generic error.
-        if (decryptedText == null) {
-          // Might be a MAC error — try on main thread to get the exception.
-          decryptedText = await _tryDecryptMainThread(msg, key);
-        } else if (msg.id != null) {
-          _decryptedTextCache[msg.id!] = decryptedText;
-          E2eeManager.cacheDecryptedText(msg.id!, decryptedText);
-        }
-      } catch (e) {
-        // compute() can fail if the isolate can't be spawned — fall back.
-        decryptedText = await _tryDecryptMainThread(msg, key);
-      }
-    }
 
-    // ── Media URL decryption (background isolate) ───────────────────────
-    if (msg.encryptedMediaUrl != null && msg.mediaIv != null) {
-      try {
-        decryptedMediaUrl = await compute(
-          _isolateDecrypt,
-          _DecryptRequest(msg.encryptedMediaUrl!, msg.mediaIv!, key),
-        );
-        if (decryptedMediaUrl != null && msg.id != null) {
-          _decryptedMediaUrlCache[msg.id!] = decryptedMediaUrl;
-        }
-      } catch (_) {
-        // Fallback to main thread.
-        try {
-          decryptedMediaUrl = await E2eeManager.decryptMessage(
-            EncryptedPayload(
-              ciphertext: msg.encryptedMediaUrl!,
-              nonce: msg.mediaIv!,
-            ),
-            key,
-          );
-          if (msg.id != null) {
-            _decryptedMediaUrlCache[msg.id!] = decryptedMediaUrl;
+        if (_disposed) return;
+
+        final decryptDuration = sw.elapsedMilliseconds;
+        var changed = false;
+        var macErrorSeen = false;
+
+        for (final r in results) {
+          if (r.text != null) {
+            _decryptedTextCache[r.id] = r.text!;
+            E2eeManager.cacheDecryptedText(r.id, r.text!);
           }
-        } catch (_) {}
-      }
-    }
+          if (r.mediaUrl != null) {
+            _decryptedMediaUrlCache[r.id] = r.mediaUrl!;
+          }
+          if (r.failed) {
+            // Isolate can't throw typed exceptions — retry on main thread
+            // for the first failure to detect MAC errors.
+            if (!macErrorSeen) {
+              macErrorSeen = true;
+              final msg = pending.firstWhere((m) => m.id == r.id);
+              await _handleDecryptFailure(msg, key);
+            } else {
+              _failedDecryptIds.add(r.id);
+            }
+          }
 
-    return msg.withDecrypted(
-      text: decryptedText,
-      mediaUrl: decryptedMediaUrl ?? msg.mediaUrl,
-    );
+          // Apply to message list.
+          final idx = messages.indexWhere((m) => m.id == r.id);
+          if (idx != -1) {
+            final m = messages[idx];
+            final newText = r.text ??
+                (r.failed ? '[Decryption error: wrong key or corrupted data]' : null);
+            if (newText != null || r.mediaUrl != null) {
+              messages[idx] = m.withDecrypted(
+                text: newText,
+                mediaUrl: r.mediaUrl ?? m.mediaUrl,
+              );
+              changed = true;
+            }
+          }
+        }
+
+        debugPrint(
+          '[DECRYPT] batch done: ${results.length} msgs in ${decryptDuration}ms '
+          '(apply ${sw.elapsedMilliseconds - decryptDuration}ms)',
+        );
+
+        if (changed && !_disposed) _safeNotify();
+      } catch (e) {
+        // Isolate spawn failure — fall back to main-thread sequential decrypt.
+        debugPrint('[DECRYPT] isolate failed ($e) — falling back to main thread');
+        await _mainThreadBatchDecrypt(pending, key);
+      } finally {
+        _decryptPassRunning = false;
+      }
+    }();
   }
 
-  /// Fallback: decrypt on main thread to properly catch typed exceptions
-  /// (SecretBoxAuthenticationError) that can't cross isolate boundaries.
-  Future<String?> _tryDecryptMainThread(ChatMessage msg, Uint8List key) async {
+  /// Fallback: decrypt all pending messages on the main thread concurrently.
+  Future<void> _mainThreadBatchDecrypt(
+    List<ChatMessage> pending,
+    Uint8List key,
+  ) async {
+    var changed = false;
+    // Run up to 10 concurrent decrypts at a time.
+    for (var i = 0; i < pending.length; i += 10) {
+      if (_disposed) return;
+      final chunk = pending.skip(i).take(10).toList();
+      await Future.wait(chunk.map((msg) async {
+        if (_disposed) return;
+        try {
+          String? text;
+          String? mediaUrl;
+          if (msg.encryptedText != null && msg.iv != null) {
+            text = await E2eeCrypto.decrypt(
+              EncryptedPayload(ciphertext: msg.encryptedText!, nonce: msg.iv!),
+              key,
+            );
+            if (msg.id != null) {
+              _decryptedTextCache[msg.id!] = text;
+              E2eeManager.cacheDecryptedText(msg.id!, text);
+            }
+          }
+          if (msg.encryptedMediaUrl != null && msg.mediaIv != null) {
+            mediaUrl = await E2eeCrypto.decrypt(
+              EncryptedPayload(ciphertext: msg.encryptedMediaUrl!, nonce: msg.mediaIv!),
+              key,
+            );
+            if (msg.id != null) _decryptedMediaUrlCache[msg.id!] = mediaUrl;
+          }
+          final idx = messages.indexWhere((m) => m.id == msg.id);
+          if (idx != -1) {
+            messages[idx] = messages[idx].withDecrypted(
+              text: text,
+              mediaUrl: mediaUrl ?? messages[idx].mediaUrl,
+            );
+            changed = true;
+          }
+        } on SecretBoxAuthenticationError {
+          await _handleDecryptFailure(msg, key);
+        } catch (_) {
+          if (msg.id != null) _failedDecryptIds.add(msg.id!);
+        }
+      }));
+      // Notify after each concurrent chunk so UI updates progressively.
+      if (changed && !_disposed) {
+        _safeNotify();
+        changed = false;
+      }
+    }
+  }
+
+  /// Handle a single message decrypt failure — detect MAC errors and schedule
+  /// recovery if needed.
+  Future<void> _handleDecryptFailure(ChatMessage msg, Uint8List key) async {
     try {
-      final text = await E2eeManager.decryptMessage(
+      await E2eeCrypto.decrypt(
         EncryptedPayload(ciphertext: msg.encryptedText!, nonce: msg.iv!),
         key,
-        messageId: msg.id,
       );
-      if (msg.id != null) {
-        _decryptedTextCache[msg.id!] = text;
-        E2eeManager.cacheDecryptedText(msg.id!, text);
-      }
-      return text;
     } on SecretBoxAuthenticationError {
       if (msg.id != null) _failedDecryptIds.add(msg.id!);
       if (!_macRecoveryScheduled && !_recoveryAttempted) {
-        debugPrint(
-          '[E2EE] MAC error on msg=${msg.id} — '
-          'scheduling deferred recovery',
-        );
+        debugPrint('[E2EE] MAC error on msg=${msg.id} — scheduling recovery');
         _macRecoveryScheduled = true;
         _recoveryAttempted = true;
         Future.microtask(() {
@@ -827,9 +906,8 @@ class ChatController extends ChangeNotifier {
           _encryptionReady = _initEncryption(forceRefresh: true);
         });
       }
-      return '[Decryption error: wrong key or corrupted data]';
-    } catch (e) {
-      return '[Decryption error: $e]';
+    } catch (_) {
+      if (msg.id != null) _failedDecryptIds.add(msg.id!);
     }
   }
 
@@ -891,9 +969,10 @@ class ChatController extends ChangeNotifier {
       messages = [...olderMessages, ...messages];
       _safeNotify();
 
-      // Decrypt in background batches.
+      // Decrypt in a single background isolate batch.
       if (_conversationKey != null) {
-        _decryptBatchProgressive(olderMessages, 0);
+        _decryptPassRunning = false; // Allow new pass for pagination.
+        _runBatchDecrypt(olderMessages);
       }
     } catch (e) {
       debugPrint('[CHAT] _loadOlderMessages error: $e');
@@ -975,14 +1054,10 @@ class ChatController extends ChangeNotifier {
               '${sw.elapsedMilliseconds}ms',
             );
 
-            // Decrypt uncached messages in background batches.
+            // Decrypt uncached messages in a single background isolate batch.
             if (_conversationKey != null) {
-              _decryptBatchProgressive(rawMessages, 0);
-            } else {
-              // Key not ready yet — schedule a deferred decrypt once it
-              // becomes available.  This handles the race where the snapshot
-              // arrives before _initEncryption completes.
-              _scheduleDecryptRetry();
+              _decryptPassRunning = false; // Allow new pass for fresh snapshot.
+              _runBatchDecrypt(rawMessages);
             }
 
             _markMessagesAsRead(snapshot.docs).ignore();
@@ -993,87 +1068,6 @@ class ChatController extends ChangeNotifier {
             _safeNotify();
           },
         );
-  }
-
-  // ── Progressive batch decrypt ─────────────────────────────────────────────
-
-  /// Decrypts messages in small batches, updating the UI after each batch.
-  /// Starts from [startIndex] and processes [_decryptBatchSize] at a time.
-  void _decryptBatchProgressive(List<ChatMessage> rawMessages, int startIndex) {
-    if (_disposed || _conversationKey == null) return;
-
-    // Collect messages that need decryption.
-    final needsDecrypt = <int>[];
-    for (
-      var i = startIndex;
-      i < rawMessages.length && needsDecrypt.length < _decryptBatchSize;
-      i++
-    ) {
-      final msg = rawMessages[i];
-      if (!msg.isEncrypted || msg.id == null) continue;
-      if (_decryptedTextCache.containsKey(msg.id)) continue;
-      if (_failedDecryptIds.contains(msg.id)) continue;
-      needsDecrypt.add(i);
-    }
-
-    if (needsDecrypt.isEmpty) {
-      // Try next range — there may be cached items we skipped.
-      final nextStart = needsDecrypt.isEmpty
-          ? startIndex + _decryptBatchSize
-          : null;
-      if (nextStart != null && nextStart < rawMessages.length) {
-        // Use a microtask so we don't starve the event loop.
-        Future.microtask(
-          () => _decryptBatchProgressive(rawMessages, nextStart),
-        );
-      }
-      return;
-    }
-
-    final sw = Stopwatch()..start();
-
-    // Process the batch.
-    () async {
-      var changed = false;
-      for (final idx in needsDecrypt) {
-        if (_disposed) return;
-        final msg = rawMessages[idx];
-        final decrypted = await _tryDecrypt(msg);
-        if (decrypted.text != msg.text || decrypted.mediaUrl != msg.mediaUrl) {
-          // Cache results.
-          if (msg.id != null) {
-            if (decrypted.text.isNotEmpty) {
-              _decryptedTextCache[msg.id!] = decrypted.text;
-            }
-            if (decrypted.mediaUrl != null &&
-                decrypted.mediaUrl != msg.mediaUrl) {
-              _decryptedMediaUrlCache[msg.id!] = decrypted.mediaUrl!;
-            }
-          }
-          // Update the message in the list.
-          final listIdx = messages.indexWhere((m) => m.id == msg.id);
-          if (listIdx != -1) {
-            messages[listIdx] = decrypted;
-            changed = true;
-          }
-        }
-      }
-
-      debugPrint(
-        '[CHAT] decrypt batch completed in ${sw.elapsedMilliseconds}ms '
-        '(${needsDecrypt.length} msgs)',
-      );
-
-      if (changed && !_disposed) _safeNotify();
-
-      // Schedule next batch.
-      final lastProcessed = needsDecrypt.last;
-      if (lastProcessed + 1 < rawMessages.length) {
-        Future.microtask(
-          () => _decryptBatchProgressive(rawMessages, lastProcessed + 1),
-        );
-      }
-    }();
   }
 
   // ── Text send ──────────────────────────────────────────────────────────────

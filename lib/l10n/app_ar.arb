@@ -642,5 +642,28 @@
         "type": "String"
       }
     }
+  },
+
+  "inboxSummaryTitle": "جميع محادثاتك",
+  "inboxSummarySubtitle": "نظرة شاملة بالذكاء الاصطناعي على جميع محادثاتك",
+  "inboxSummaryGenerate": "إنشاء",
+  "inboxSummaryRegenerate": "إعادة الإنشاء",
+  "inboxSummaryEmptyTitle": "لا يوجد ملخص بعد",
+  "inboxSummaryEmptySubtitle": "اضغط على إنشاء لإنشاء ملخص ذكي للنشاط الأخير عبر جميع محادثاتك.",
+  "inboxSummaryGenerateButton": "تلخيص صندوق الوارد",
+  "inboxSummaryAnalysing": "جارٍ تحليل المحادثات…",
+  "inboxSummaryHighlights": "أبرز النقاط",
+  "inboxSummaryUrgent": "عاجل ويتطلب إجراء",
+  "inboxSummaryDecisions": "القرارات المتخذة",
+  "inboxSummaryPending": "البنود المعلقة",
+  "inboxSummaryPerChat": "تفصيل لكل محادثة",
+  "inboxSummaryTrends": "اتجاهات التواصل",
+  "inboxSummaryGeneratedAt": "تم الإنشاء {date}",
+  "@inboxSummaryGeneratedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }

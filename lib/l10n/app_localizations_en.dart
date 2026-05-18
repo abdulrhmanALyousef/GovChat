@@ -1841,4 +1841,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String aiSummaryGeneratedAt(String date) {
     return 'Generated $date';
   }
+
+  @override
+  String get inboxSummaryTitle => 'All Your Conversations';
+
+  @override
+  String get inboxSummarySubtitle =>
+      'AI-powered overview of all your conversations';
+
+  @override
+  String get inboxSummaryGenerate => 'Generate';
+
+  @override
+  String get inboxSummaryRegenerate => 'Regenerate';
+
+  @override
+  String get inboxSummaryEmptyTitle => 'No inbox summary yet';
+
+  @override
+  String get inboxSummaryEmptySubtitle =>
+      'Tap Generate to create an AI-powered summary of recent activity across all your chats.';
+
+  @override
+  String get inboxSummaryGenerateButton => 'Summarize Inbox';
+
+  @override
+  String get inboxSummaryAnalysing => 'Analysing conversations…';
+
+  @override
+  String get inboxSummaryHighlights => 'Key Highlights';
+
+  @override
+  String get inboxSummaryUrgent => 'Urgent & Action Required';
+
+  @override
+  String get inboxSummaryDecisions => 'Decisions Made';
+
+  @override
+  String get inboxSummaryPending => 'Pending Items';
+
+  @override
+  String get inboxSummaryPerChat => 'Per-Chat Breakdown';
+
+  @override
+  String get inboxSummaryTrends => 'Communication Trends';
+
+  @override
+  String inboxSummaryGeneratedAt(String date) {
+    return 'Generated $date';
+  }
 }
