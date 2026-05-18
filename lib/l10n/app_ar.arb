@@ -665,5 +665,17 @@
         "type": "String"
       }
     }
-  }
+  },
+  "splashTagline": "تواصل داخلي آمن",
+  "onboardingSkip": "تخطي",
+  "onboardingNext": "التالي",
+  "onboardingGetStarted": "ابدأ الآن",
+  "onboarding1Title": "تواصل آمن",
+  "onboarding1Subtitle": "تشفير كامل من طرف إلى طرف بمستوى عسكري يحمي كل رسالة.",
+  "onboarding2Title": "تعاون الفريق",
+  "onboarding2Subtitle": "تنسيق سلس عبر الأقسام مع رسائل فورية وقنوات جماعية.",
+  "onboarding3Title": "ابق على اطلاع",
+  "onboarding3Subtitle": "استقبل الإعلانات الهامة والتحديثات التنظيمية في اللحظة التي تصدر فيها.",
+  "onboarding4Title": "هوية موثقة",
+  "onboarding4Subtitle": "التحقق بكلمة مرور لمرة واحدة يضمن وصول الأفراد المخوّلين فقط للنظام."
 }

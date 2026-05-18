@@ -50,7 +50,13 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat\" -Recurse -Directory)",
       "PowerShell(head *)",
       "Bash(grep -E \"\\\\.\\(js|ts\\)$\")",
-      "PowerShell($path = \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat\\\\functions\\\\index.js\"; $content = [System.IO.File]::ReadAllText\\($path\\); $lf = $content -replace \"`r`n\", \"`n\"; [System.IO.File]::WriteAllText\\($path, $lf, [System.Text.Encoding]::UTF8\\); \"Done\")"
+      "PowerShell($path = \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat\\\\functions\\\\index.js\"; $content = [System.IO.File]::ReadAllText\\($path\\); $lf = $content -replace \"`r`n\", \"`n\"; [System.IO.File]::WriteAllText\\($path, $lf, [System.Text.Encoding]::UTF8\\); \"Done\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat\" -Directory -Force)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat\\\\lib\\\\auth\" -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat\\\\\", \"\"\\) })",
+      "Bash(dir C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat\\\\android\\\\app\\\\src\\\\main\\\\res\\\\mipmap-xxhdpi *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat Web\" -Recurse -Directory | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat Web\", \".\"\\) } | Sort-Object)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat Web\" -Recurse -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { $_ -replace [regex]::Escape\\(\"C:\\\\Users\\\\bssam\\\\StudioProjects\\\\cargo\\\\GovChat Web\"\\), \".\" })"
     ]
   }
 }

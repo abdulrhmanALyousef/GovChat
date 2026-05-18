@@ -1883,4 +1883,44 @@ class AppLocalizationsAr extends AppLocalizations {
   String inboxSummaryGeneratedAt(String date) {
     return 'تم الإنشاء $date';
   }
+
+  @override
+  String get splashTagline => 'تواصل داخلي آمن';
+
+  @override
+  String get onboardingSkip => 'تخطي';
+
+  @override
+  String get onboardingNext => 'التالي';
+
+  @override
+  String get onboardingGetStarted => 'ابدأ الآن';
+
+  @override
+  String get onboarding1Title => 'تواصل آمن';
+
+  @override
+  String get onboarding1Subtitle =>
+      'تشفير كامل من طرف إلى طرف بمستوى عسكري يحمي كل رسالة.';
+
+  @override
+  String get onboarding2Title => 'تعاون الفريق';
+
+  @override
+  String get onboarding2Subtitle =>
+      'تنسيق سلس عبر الأقسام مع رسائل فورية وقنوات جماعية.';
+
+  @override
+  String get onboarding3Title => 'ابق على اطلاع';
+
+  @override
+  String get onboarding3Subtitle =>
+      'استقبل الإعلانات الهامة والتحديثات التنظيمية في اللحظة التي تصدر فيها.';
+
+  @override
+  String get onboarding4Title => 'هوية موثقة';
+
+  @override
+  String get onboarding4Subtitle =>
+      'التحقق بكلمة مرور لمرة واحدة يضمن وصول الأفراد المخوّلين فقط للنظام.';
 }

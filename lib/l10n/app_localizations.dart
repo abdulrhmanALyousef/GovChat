@@ -3679,6 +3679,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Generated {date}'**
   String inboxSummaryGeneratedAt(String date);
+
+  /// No description provided for @splashTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'SECURE INTERNAL COMMUNICATION'**
+  String get splashTagline;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get onboardingGetStarted;
+
+  /// No description provided for @onboarding1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure Communication'**
+  String get onboarding1Title;
+
+  /// No description provided for @onboarding1Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Military-grade end-to-end encryption keeps every message private and protected.'**
+  String get onboarding1Subtitle;
+
+  /// No description provided for @onboarding2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Team Collaboration'**
+  String get onboarding2Title;
+
+  /// No description provided for @onboarding2Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordinate seamlessly across departments with real-time messaging and group channels.'**
+  String get onboarding2Subtitle;
+
+  /// No description provided for @onboarding3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay Informed'**
+  String get onboarding3Title;
+
+  /// No description provided for @onboarding3Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive critical announcements and organization-wide updates the moment they happen.'**
+  String get onboarding3Subtitle;
+
+  /// No description provided for @onboarding4Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Identity'**
+  String get onboarding4Title;
+
+  /// No description provided for @onboarding4Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP authentication ensures only authorized personnel can access the system.'**
+  String get onboarding4Subtitle;
 }
 
 class _AppLocalizationsDelegate

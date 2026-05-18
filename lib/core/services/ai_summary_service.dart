@@ -24,6 +24,7 @@ class AiSummaryService {
   static final AiSummaryService instance = AiSummaryService._();
 
   static const String _remoteConfigKey = 'gemini_api_key';
+  static const String _fallbackApiKey = 'AIzaSyAxMqN2JRzUVQMpE-Ctrnj2zJ-aqpJ7yF8'; // TODO: remove before production
 
   /// Stable v1 endpoint — NOT v1beta.
   static const String _baseUrl =
@@ -242,9 +243,9 @@ Expected output style: clean, human-readable, concise, accurate, structured when
       debugPrint('[AI_SUMMARY] Remote Config fetch failed: $e');
     }
 
-    // 2. No key available — Remote Config must supply it.
-    debugPrint('[AI_SUMMARY] No API key available — set gemini_api_key in Firebase Remote Config');
-    return '';
+    // 2. Fallback for testing — remove before production.
+    debugPrint('[AI_SUMMARY] API key loaded (fallback)');
+    return _fallbackApiKey;
   }
 
   // ── Dynamic model resolution ───────────────────────────────────────────────
@@ -499,14 +500,10 @@ $jsonHints
         .replaceAll(RegExp(r'```\s*'), '')
         .trim();
 
-    Map<String, dynamic> parsed;
-    try {
-      parsed = jsonDecode(cleaned) as Map<String, dynamic>;
-    } catch (_) {
+    final parsed = _tolerantJsonParse(cleaned);
+    if (parsed.isEmpty) {
       debugPrint('[AI_SUMMARY] JSON parse failed. Raw: $cleaned');
-      throw Exception(
-        'Could not parse Gemini response. Please try again.',
-      );
+      throw Exception('Could not parse Gemini response. Please try again.');
     }
 
     final summary = ChatSummary(
