@@ -34,10 +34,10 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 2000),
     );
 
-    _logoScale = Tween<double>(begin: 0.55, end: 1.0).animate(
+    _logoScale = Tween<double>(begin: 0.88, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.55, curve: Curves.easeOutBack),
+        curve: const Interval(0.0, 0.55, curve: Curves.easeOut),
       ),
     );
 
@@ -158,6 +158,7 @@ class _SplashScreenState extends State<SplashScreen>
                           width: 100.w,
                           height: 100.w,
                           fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
                         ),
                       ),
                     ),
