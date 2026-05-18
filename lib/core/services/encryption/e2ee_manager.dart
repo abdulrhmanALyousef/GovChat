@@ -1234,11 +1234,6 @@ class E2eeManager {
       debugPrint('[E2EE] users/$uid write failed: $e');
     }
 
-      wroteAny = true;
-    } catch (e) {
-      debugPrint('[E2EE] users/$uid write failed: $e');
-    }
-
     try {
       await _firestore
           .collection('employees')
