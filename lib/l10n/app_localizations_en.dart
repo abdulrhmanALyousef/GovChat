@@ -1890,4 +1890,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String inboxSummaryGeneratedAt(String date) {
     return 'Generated $date';
   }
+
+  @override
+  String get splashTagline => 'SECURE INTERNAL COMMUNICATION';
+
+  @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingGetStarted => 'Get Started';
+
+  @override
+  String get onboarding1Title => 'Secure Communication';
+
+  @override
+  String get onboarding1Subtitle =>
+      'Military-grade end-to-end encryption keeps every message private and protected.';
+
+  @override
+  String get onboarding2Title => 'Team Collaboration';
+
+  @override
+  String get onboarding2Subtitle =>
+      'Coordinate seamlessly across departments with real-time messaging and group channels.';
+
+  @override
+  String get onboarding3Title => 'Stay Informed';
+
+  @override
+  String get onboarding3Subtitle =>
+      'Receive critical announcements and organization-wide updates the moment they happen.';
+
+  @override
+  String get onboarding4Title => 'Verified Identity';
+
+  @override
+  String get onboarding4Subtitle =>
+      'OTP authentication ensures only authorized personnel can access the system.';
 }

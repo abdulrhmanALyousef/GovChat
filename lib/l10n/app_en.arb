@@ -733,5 +733,17 @@
         "type": "String"
       }
     }
-  }
+  },
+  "splashTagline": "SECURE INTERNAL COMMUNICATION",
+  "onboardingSkip": "Skip",
+  "onboardingNext": "Next",
+  "onboardingGetStarted": "Get Started",
+  "onboarding1Title": "Secure Communication",
+  "onboarding1Subtitle": "Military-grade end-to-end encryption keeps every message private and protected.",
+  "onboarding2Title": "Team Collaboration",
+  "onboarding2Subtitle": "Coordinate seamlessly across departments with real-time messaging and group channels.",
+  "onboarding3Title": "Stay Informed",
+  "onboarding3Subtitle": "Receive critical announcements and organization-wide updates the moment they happen.",
+  "onboarding4Title": "Verified Identity",
+  "onboarding4Subtitle": "OTP authentication ensures only authorized personnel can access the system."
 }

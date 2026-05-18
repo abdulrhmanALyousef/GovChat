@@ -13,7 +13,7 @@ import 'core/providers/locale_provider.dart';
 import 'core/services/session_manager.dart';
 import 'core/theme/theme_data.dart';
 import 'firebase_options.dart';
-import 'auth/login_screen.dart';
+import 'splash_screen.dart';
 import 'package:projects/l10n/app_localizations.dart';
 
 void main() async {
@@ -156,7 +156,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   child: child ?? const SizedBox.shrink(),
                 );
               },
-              home: const LoginScreen(),
+              home: const SplashScreen(),
             ),
           ),
         );
