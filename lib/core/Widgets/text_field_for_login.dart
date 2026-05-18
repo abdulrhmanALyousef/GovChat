@@ -29,29 +29,30 @@ class _TextFieldForLoginState extends State<TextFieldForLogin> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return TextFormField(
       controller: widget.controller,
       obscureText: widget.isPassword ? _obscureText : false,
       validator: widget.validator,
       keyboardType: widget.keyboardType,
       style: GoogleFonts.manrope(
-        color: AppColors.textPrimary,
+        color: colors.textPrimary,
         fontSize: 16,
         fontWeight: FontWeight.w500,
       ),
       decoration: InputDecoration(
         hintText: widget.hintText,
         hintStyle: GoogleFonts.manrope(
-          color: AppColors.hintText,
+          color: colors.hintText,
           fontSize: 15,
           fontWeight: FontWeight.w500,
         ),
         filled: true,
-        fillColor: AppColors.inputFill,
+        fillColor: colors.inputFill,
         prefixIcon: widget.icon != null
             ? Padding(
                 padding: const EdgeInsets.only(left: 16, right: 12),
-                child: Icon(widget.icon, color: AppColors.hintText, size: 20),
+                child: Icon(widget.icon, color: colors.hintText, size: 20),
               )
             : null,
         prefixIconConstraints: widget.icon != null
@@ -63,7 +64,7 @@ class _TextFieldForLoginState extends State<TextFieldForLogin> {
                   _obscureText
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: AppColors.hintText,
+                  color: colors.hintText,
                   size: 20,
                 ),
                 onPressed: () {

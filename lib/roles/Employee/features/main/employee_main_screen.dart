@@ -87,10 +87,10 @@ class _EmployeeMainScreenState extends State<EmployeeMainScreen> {
         ),
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
-          backgroundColor: AppColors.bottomNavBackground,
+          backgroundColor: context.colors.bottomNavBackground,
           elevation: 0,
           selectedItemColor: AppColors.primaryColor,
-          unselectedItemColor: AppColors.navUnselected,
+          unselectedItemColor: context.colors.navUnselected,
           selectedFontSize: 10,
           unselectedFontSize: 10,
           currentIndex: _currentIndex,

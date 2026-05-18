@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:projects/l10n/app_localizations.dart';
@@ -37,19 +37,19 @@ class _VerificationCodeView extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.colors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
         title: Text(
           l.verificationCodeTitle,
           style: GoogleFonts.manrope(
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.w800,
             fontSize: AppSizes.sp16,
           ),
@@ -84,7 +84,7 @@ class _VerificationCodeView extends StatelessWidget {
                   style: GoogleFonts.manrope(
                     fontSize: AppSizes.sp24,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textTitle,
+                    color: context.colors.textTitle,
                   ),
                 ),
                 SizedBox(height: AppSizes.h8),
@@ -94,7 +94,7 @@ class _VerificationCodeView extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.manrope(
                     fontSize: AppSizes.sp12,
-                    color: AppColors.textSubtitle,
+                    color: context.colors.textSubtitle,
                   ),
                 ),
                 SizedBox(height: AppSizes.h8),
@@ -130,7 +130,7 @@ class _VerificationCodeView extends StatelessWidget {
                         Text(
                           l.sendingCode,
                           style: GoogleFonts.manrope(
-                            color: AppColors.textMuted,
+                            color: context.colors.textMuted,
                             fontSize: AppSizes.sp12,
                           ),
                         ),
@@ -144,7 +144,7 @@ class _VerificationCodeView extends StatelessWidget {
                   style: GoogleFonts.manrope(
                     fontSize: AppSizes.sp12,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -157,7 +157,7 @@ class _VerificationCodeView extends StatelessWidget {
                   maxLength: 6,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   style: GoogleFonts.manrope(
-                    color: AppColors.textPrimary,
+                    color: context.colors.textPrimary,
                     fontSize: AppSizes.sp24,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 12,
@@ -165,7 +165,7 @@ class _VerificationCodeView extends StatelessWidget {
                   decoration: InputDecoration(
                     counterText: '',
                     filled: true,
-                    fillColor: AppColors.inputFill,
+                    fillColor: context.colors.inputFill,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppSizes.r12),
                       borderSide: BorderSide.none,

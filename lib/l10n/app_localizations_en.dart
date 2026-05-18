@@ -1930,4 +1930,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get onboarding4Subtitle =>
       'OTP authentication ensures only authorized personnel can access the system.';
+
+  @override
+  String get themeLabel => 'Theme';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeSystem => 'System';
 }

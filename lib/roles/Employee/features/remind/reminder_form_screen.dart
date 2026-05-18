@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -98,11 +98,11 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
   Widget _darkPickerTheme(BuildContext ctx, Widget? child) {
     return Theme(
       data: ThemeData.dark().copyWith(
-        colorScheme: const ColorScheme.dark(
+        colorScheme: ColorScheme.dark(
           primary: AppColors.primaryColor,
           onPrimary: AppColors.buttonText,
-          surface: AppColors.cardBackground,
-          onSurface: AppColors.textTitle,
+          surface: context.colors.cardBackground,
+          onSurface: context.colors.textTitle,
         ),
       ),
       child: child!,
@@ -161,14 +161,14 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
     final isRtl = Directionality.of(context).index == 0;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             isRtl ? Icons.arrow_forward_ios : Icons.arrow_back_ios,
-            color: AppColors.textTitle,
+            color: context.colors.textTitle,
             size: AppSizes.sp18,
           ),
           onPressed: () => Navigator.of(context).pop(),
@@ -176,7 +176,7 @@ class _ReminderFormScreenState extends State<ReminderFormScreen> {
         title: Text(
           _isEdit ? l.editReminderTitle : l.newReminderTitle,
           style: GoogleFonts.manrope(
-            color: AppColors.textTitle,
+            color: context.colors.textTitle,
             fontWeight: FontWeight.w800,
             fontSize: AppSizes.sp16,
           ),
@@ -289,9 +289,9 @@ class _Section extends StatelessWidget {
         Container(
           padding: EdgeInsets.all(AppSizes.ph16),
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            color: context.colors.cardBackground,
             borderRadius: BorderRadius.circular(AppSizes.r12),
-            border: Border.all(color: AppColors.inputBorder),
+            border: Border.all(color: context.colors.inputBorder),
           ),
           child: Column(children: children),
         ),
@@ -327,7 +327,7 @@ class _Field extends StatelessWidget {
         Text(
           label,
           style: GoogleFonts.manrope(
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
             fontSize: AppSizes.sp11,
             letterSpacing: 0.8,
           ),
@@ -338,21 +338,21 @@ class _Field extends StatelessWidget {
           maxLines: maxLines,
           maxLength: maxLength,
           style: GoogleFonts.manrope(
-              color: AppColors.textTitle, fontSize: AppSizes.sp14),
+              color: context.colors.textTitle, fontSize: AppSizes.sp14),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.manrope(
-                color: AppColors.hintText, fontSize: AppSizes.sp14),
+                color: context.colors.hintText, fontSize: AppSizes.sp14),
             filled: true,
-            fillColor: AppColors.inputFill,
+            fillColor: context.colors.inputFill,
             counterText: '',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSizes.r8),
-              borderSide: const BorderSide(color: AppColors.inputBorder),
+              borderSide: BorderSide(color: context.colors.inputBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSizes.r8),
-              borderSide: const BorderSide(color: AppColors.inputBorder),
+              borderSide: BorderSide(color: context.colors.inputBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSizes.r8),
@@ -401,10 +401,10 @@ class _PrioritySelector extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? color.withValues(alpha: 0.15)
-                    : AppColors.sectionBackground,
+                    : context.colors.sectionBackground,
                 borderRadius: BorderRadius.circular(AppSizes.r8),
                 border: Border.all(
-                  color: selected ? color : AppColors.inputBorder,
+                  color: selected ? color : context.colors.inputBorder,
                   width: selected ? 1.5 : 1,
                 ),
               ),
@@ -412,14 +412,14 @@ class _PrioritySelector extends StatelessWidget {
                 children: [
                   Icon(
                     selected ? Icons.flag : Icons.flag_outlined,
-                    color: selected ? color : AppColors.textMuted,
+                    color: selected ? color : context.colors.textMuted,
                     size: AppSizes.sp18,
                   ),
                   SizedBox(height: AppSizes.h4),
                   Text(
                     label,
                     style: GoogleFonts.manrope(
-                      color: selected ? color : AppColors.textMuted,
+                      color: selected ? color : context.colors.textMuted,
                       fontSize: AppSizes.sp11,
                       fontWeight: FontWeight.w600,
                     ),
@@ -460,10 +460,10 @@ class _DateTimeTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: hasError
               ? AppColors.error.withValues(alpha: 0.06)
-              : AppColors.sectionBackground,
+              : context.colors.sectionBackground,
           borderRadius: BorderRadius.circular(AppSizes.r8),
           border: Border.all(
-            color: hasError ? AppColors.error : AppColors.inputBorder,
+            color: hasError ? AppColors.error : context.colors.inputBorder,
             width: hasError ? 1.5 : 1.0,
           ),
         ),
@@ -482,7 +482,7 @@ class _DateTimeTile extends StatelessWidget {
                     style: GoogleFonts.manrope(
                         color: hasError
                             ? AppColors.error
-                            : AppColors.textMuted,
+                            : context.colors.textMuted,
                         fontSize: AppSizes.sp10,
                         letterSpacing: 0.8),
                   ),
@@ -491,7 +491,7 @@ class _DateTimeTile extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       color: hasError
                           ? AppColors.error
-                          : AppColors.textTitle,
+                          : context.colors.textTitle,
                       fontSize: AppSizes.sp14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -500,7 +500,7 @@ class _DateTimeTile extends StatelessWidget {
               ),
             ),
             Icon(Icons.edit_outlined,
-                color: AppColors.iconMuted, size: AppSizes.sp16),
+                color: context.colors.iconMuted, size: AppSizes.sp16),
           ],
         ),
       ),
@@ -568,7 +568,7 @@ class _RemindBeforeSelector extends StatelessWidget {
         Text(
           l.remindBeforeLabel,
           style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp11,
               letterSpacing: 0.8),
         ),
@@ -588,12 +588,12 @@ class _RemindBeforeSelector extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: selected
                       ? AppColors.primaryColor.withValues(alpha: 0.15)
-                      : AppColors.sectionBackground,
+                      : context.colors.sectionBackground,
                   borderRadius: BorderRadius.circular(AppSizes.r20),
                   border: Border.all(
                     color: selected
                         ? AppColors.primaryColor
-                        : AppColors.inputBorder,
+                        : context.colors.inputBorder,
                     width: selected ? 1.5 : 1,
                   ),
                 ),
@@ -602,7 +602,7 @@ class _RemindBeforeSelector extends StatelessWidget {
                   style: GoogleFonts.manrope(
                     color: selected
                         ? AppColors.primaryColor
-                        : AppColors.textMuted,
+                        : context.colors.textMuted,
                     fontSize: AppSizes.sp12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -659,12 +659,12 @@ class _RepeatSelector extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: selected
                       ? AppColors.primaryColor.withValues(alpha: 0.15)
-                      : AppColors.sectionBackground,
+                      : context.colors.sectionBackground,
                   borderRadius: BorderRadius.circular(AppSizes.r20),
                   border: Border.all(
                     color: selected
                         ? AppColors.primaryColor
-                        : AppColors.inputBorder,
+                        : context.colors.inputBorder,
                     width: selected ? 1.5 : 1,
                   ),
                 ),
@@ -673,7 +673,7 @@ class _RepeatSelector extends StatelessWidget {
                   style: GoogleFonts.manrope(
                     color: selected
                         ? AppColors.primaryColor
-                        : AppColors.textMuted,
+                        : context.colors.textMuted,
                     fontSize: AppSizes.sp12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -689,7 +689,7 @@ class _RepeatSelector extends StatelessWidget {
               Text(
                 l.repeatEveryLabel,
                 style: GoogleFonts.manrope(
-                    color: AppColors.textMuted, fontSize: AppSizes.sp13),
+                    color: context.colors.textMuted, fontSize: AppSizes.sp13),
               ),
               SizedBox(width: AppSizes.pw12),
               _IntervalStepper(
@@ -700,7 +700,7 @@ class _RepeatSelector extends StatelessWidget {
               Text(
                 l.repeatDaysLabel,
                 style: GoogleFonts.manrope(
-                    color: AppColors.textMuted, fontSize: AppSizes.sp13),
+                    color: context.colors.textMuted, fontSize: AppSizes.sp13),
               ),
             ],
           ),
@@ -730,7 +730,7 @@ class _IntervalStepper extends StatelessWidget {
           child: Text(
             '$value',
             style: GoogleFonts.manrope(
-              color: AppColors.textTitle,
+              color: context.colors.textTitle,
               fontSize: AppSizes.sp16,
               fontWeight: FontWeight.w700,
             ),
@@ -758,14 +758,14 @@ class _StepBtn extends StatelessWidget {
         width: AppSizes.w32,
         height: AppSizes.w32,
         decoration: BoxDecoration(
-          color: AppColors.sectionBackground,
+          color: context.colors.sectionBackground,
           borderRadius: BorderRadius.circular(AppSizes.r6),
-          border: Border.all(color: AppColors.inputBorder),
+          border: Border.all(color: context.colors.inputBorder),
         ),
         child: Icon(
           icon,
           size: AppSizes.sp16,
-          color: onTap != null ? AppColors.primaryColor : AppColors.iconMuted,
+          color: onTap != null ? AppColors.primaryColor : context.colors.iconMuted,
         ),
       ),
     );
@@ -789,7 +789,7 @@ class _NotificationToggle extends StatelessWidget {
           enabled
               ? Icons.notifications_active_outlined
               : Icons.notifications_off_outlined,
-          color: enabled ? AppColors.primaryColor : AppColors.iconMuted,
+          color: enabled ? AppColors.primaryColor : context.colors.iconMuted,
           size: AppSizes.sp20,
         ),
         SizedBox(width: AppSizes.pw12),
@@ -800,7 +800,7 @@ class _NotificationToggle extends StatelessWidget {
               Text(
                 l.notificationEnabledLabel,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textTitle,
+                  color: context.colors.textTitle,
                   fontSize: AppSizes.sp14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -810,7 +810,7 @@ class _NotificationToggle extends StatelessWidget {
                     ? l.notificationEnabledDesc
                     : l.notificationDisabledDesc,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textMuted,
+                  color: context.colors.textMuted,
                   fontSize: AppSizes.sp11,
                 ),
               ),
@@ -822,8 +822,8 @@ class _NotificationToggle extends StatelessWidget {
           onChanged: onChanged,
           activeThumbColor: AppColors.primaryColor,
           activeTrackColor: AppColors.primaryColor.withValues(alpha: 0.4),
-          inactiveTrackColor: AppColors.inputBorder,
-          inactiveThumbColor: AppColors.iconMuted,
+          inactiveTrackColor: context.colors.inputBorder,
+          inactiveThumbColor: context.colors.iconMuted,
         ),
       ],
     );

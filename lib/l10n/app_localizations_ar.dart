@@ -1923,4 +1923,16 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get onboarding4Subtitle =>
       'التحقق بكلمة مرور لمرة واحدة يضمن وصول الأفراد المخوّلين فقط للنظام.';
+
+  @override
+  String get themeLabel => 'المظهر';
+
+  @override
+  String get themeDark => 'داكن';
+
+  @override
+  String get themeLight => 'فاتح';
+
+  @override
+  String get themeSystem => 'النظام';
 }

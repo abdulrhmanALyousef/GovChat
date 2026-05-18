@@ -27,21 +27,22 @@ class _ForgotPasswordView extends StatelessWidget {
   Widget build(BuildContext context) {
     final ctrl = context.watch<ForgotPasswordController>();
     final l = AppLocalizations.of(context)!;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: colors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: colors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
         title: Text(
           l.fpTitle,
           style: GoogleFonts.manrope(
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
             fontWeight: FontWeight.w800,
             fontSize: AppSizes.sp16,
           ),
@@ -56,7 +57,6 @@ class _ForgotPasswordView extends StatelessWidget {
               children: [
                 SizedBox(height: AppSizes.ph40),
 
-                // Icon
                 Container(
                   padding: EdgeInsets.all(AppSizes.ph20),
                   decoration: BoxDecoration(
@@ -76,7 +76,7 @@ class _ForgotPasswordView extends StatelessWidget {
                   style: GoogleFonts.manrope(
                     fontSize: AppSizes.sp20,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textTitle,
+                    color: colors.textTitle,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -86,14 +86,13 @@ class _ForgotPasswordView extends StatelessWidget {
                   l.fpSubtitle,
                   style: GoogleFonts.manrope(
                     fontSize: AppSizes.sp13,
-                    color: AppColors.textSubtitle,
+                    color: colors.textSubtitle,
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: AppSizes.ph40),
 
-                // Email field
                 Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
@@ -101,7 +100,7 @@ class _ForgotPasswordView extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: AppSizes.sp12,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textMuted,
+                      color: colors.textMuted,
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -117,7 +116,6 @@ class _ForgotPasswordView extends StatelessWidget {
                 ),
                 SizedBox(height: AppSizes.ph30),
 
-                // Error banner
                 if (ctrl.errorMessage != null)
                   Container(
                     width: double.infinity,
@@ -140,7 +138,6 @@ class _ForgotPasswordView extends StatelessWidget {
                     ),
                   ),
 
-                // Send OTP button
                 SizedBox(
                   width: double.infinity,
                   height: AppSizes.h56,
@@ -196,7 +193,7 @@ class _ForgotPasswordView extends StatelessWidget {
                   child: Text(
                     l.backToLogin,
                     style: GoogleFonts.manrope(
-                      color: AppColors.textMuted,
+                      color: colors.textMuted,
                       fontSize: AppSizes.sp14,
                       fontWeight: FontWeight.w500,
                     ),

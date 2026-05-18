@@ -53,7 +53,6 @@ class _ResetPasswordView extends StatelessWidget {
           duration: const Duration(seconds: 3),
         ),
       );
-      // Return to login screen — pop entire forgot-password stack
       Navigator.popUntil(context, (route) => route.isFirst);
     }
   }
@@ -62,21 +61,22 @@ class _ResetPasswordView extends StatelessWidget {
   Widget build(BuildContext context) {
     final ctrl = context.watch<ResetPasswordController>();
     final l = AppLocalizations.of(context)!;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: colors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: colors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
         title: Text(
           l.resetPasswordTitle,
           style: GoogleFonts.manrope(
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
             fontWeight: FontWeight.w800,
             fontSize: AppSizes.sp16,
           ),
@@ -92,7 +92,6 @@ class _ResetPasswordView extends StatelessWidget {
               children: [
                 SizedBox(height: AppSizes.ph40),
 
-                // Header
                 Center(
                   child: Column(
                     children: [
@@ -114,7 +113,7 @@ class _ResetPasswordView extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp24,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textTitle,
+                          color: colors.textTitle,
                         ),
                       ),
                       SizedBox(height: AppSizes.h8),
@@ -123,7 +122,7 @@ class _ResetPasswordView extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp12,
-                          color: AppColors.textSubtitle,
+                          color: colors.textSubtitle,
                           height: 1.5,
                         ),
                       ),
@@ -133,13 +132,12 @@ class _ResetPasswordView extends StatelessWidget {
 
                 SizedBox(height: AppSizes.ph40),
 
-                // New Password
                 Text(
                   l.newPasswordLabel,
                   style: GoogleFonts.manrope(
                     fontSize: AppSizes.sp12,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textMuted,
+                    color: colors.textMuted,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -152,8 +150,10 @@ class _ResetPasswordView extends StatelessWidget {
                   validator: (v) {
                     if (v == null || v.isEmpty) return l.requiredField;
                     if (!ctrl.hasMinLength) return l.minimumEightChars;
-                    if (!ctrl.hasUppercase || !ctrl.hasLowercase ||
-                        !ctrl.hasNumber || !ctrl.hasSpecialChar) {
+                    if (!ctrl.hasUppercase ||
+                        !ctrl.hasLowercase ||
+                        !ctrl.hasNumber ||
+                        !ctrl.hasSpecialChar) {
                       return l.mustContainSpecialChar;
                     }
                     return null;
@@ -161,13 +161,12 @@ class _ResetPasswordView extends StatelessWidget {
                 ),
                 SizedBox(height: AppSizes.ph20),
 
-                // Confirm Password
                 Text(
                   l.confirmPasswordLabel,
                   style: GoogleFonts.manrope(
                     fontSize: AppSizes.sp12,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textMuted,
+                    color: colors.textMuted,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -188,20 +187,18 @@ class _ResetPasswordView extends StatelessWidget {
 
                 SizedBox(height: AppSizes.ph24),
 
-                // Password strength rules
-                _buildRule(l.ruleMinChars, ctrl.hasMinLength),
+                _buildRule(context, l.ruleMinChars, ctrl.hasMinLength),
                 SizedBox(height: AppSizes.ph12),
-                _buildRule(l.ruleUppercase, ctrl.hasUppercase),
+                _buildRule(context, l.ruleUppercase, ctrl.hasUppercase),
                 SizedBox(height: AppSizes.ph12),
-                _buildRule(l.ruleLowercase, ctrl.hasLowercase),
+                _buildRule(context, l.ruleLowercase, ctrl.hasLowercase),
                 SizedBox(height: AppSizes.ph12),
-                _buildRule(l.ruleNumber, ctrl.hasNumber),
+                _buildRule(context, l.ruleNumber, ctrl.hasNumber),
                 SizedBox(height: AppSizes.ph12),
-                _buildRule(l.ruleSpecialChar, ctrl.hasSpecialChar),
+                _buildRule(context, l.ruleSpecialChar, ctrl.hasSpecialChar),
 
                 SizedBox(height: AppSizes.ph30),
 
-                // Error banner
                 if (ctrl.errorMessage != null)
                   Container(
                     width: double.infinity,
@@ -224,7 +221,6 @@ class _ResetPasswordView extends StatelessWidget {
                     ),
                   ),
 
-                // Submit button
                 SizedBox(
                   width: double.infinity,
                   height: AppSizes.h56,
@@ -241,9 +237,8 @@ class _ResetPasswordView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppSizes.r16),
                     ),
                     child: ElevatedButton(
-                      onPressed: ctrl.isLoading
-                          ? null
-                          : () => _submit(context),
+                      onPressed:
+                          ctrl.isLoading ? null : () => _submit(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
@@ -273,9 +268,9 @@ class _ResetPasswordView extends StatelessWidget {
                                   ),
                                 ),
                                 SizedBox(width: AppSizes.w8),
-                                Icon(
+                                const Icon(
                                   Icons.check_circle_outline,
-                                  size: AppSizes.sp20,
+                                  size: 20,
                                 ),
                               ],
                             ),
@@ -292,18 +287,19 @@ class _ResetPasswordView extends StatelessWidget {
     );
   }
 
-  Widget _buildRule(String text, bool isValid) {
+  Widget _buildRule(BuildContext context, String text, bool isValid) {
+    final colors = context.colors;
     return Container(
       width: double.infinity,
       height: AppSizes.h44,
       padding: EdgeInsets.all(AppSizes.ph12),
       decoration: BoxDecoration(
-        color: AppColors.ruleBackground,
+        color: colors.ruleBackground,
         borderRadius: BorderRadius.circular(AppSizes.r8),
         border: Border.all(
           color: isValid
               ? AppColors.primaryColor.withValues(alpha: 0.4)
-              : AppColors.inputBorder,
+              : colors.inputBorder,
           width: 1,
         ),
       ),
@@ -314,7 +310,7 @@ class _ResetPasswordView extends StatelessWidget {
                 ? Icons.check_circle_outline
                 : Icons.radio_button_unchecked,
             size: AppSizes.sp18,
-            color: isValid ? AppColors.primaryColor : AppColors.textSecondary,
+            color: isValid ? AppColors.primaryColor : colors.textSecondary,
           ),
           SizedBox(width: AppSizes.w12),
           Expanded(
@@ -322,8 +318,7 @@ class _ResetPasswordView extends StatelessWidget {
               text,
               style: GoogleFonts.manrope(
                 fontSize: AppSizes.sp12,
-                color:
-                    isValid ? AppColors.textPrimary : AppColors.textSecondary,
+                color: isValid ? colors.textPrimary : colors.textSecondary,
               ),
             ),
           ),

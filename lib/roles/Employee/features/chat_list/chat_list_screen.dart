@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -41,9 +41,9 @@ class _ChatListView extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         elevation: 0,
         leading: Padding(
           padding: EdgeInsetsDirectional.only(start: AppSizes.pw16),
@@ -55,7 +55,7 @@ class _ChatListView extends StatelessWidget {
             Text(
               employee.name,
               style: GoogleFonts.manrope(
-                color: AppColors.textTitle,
+                color: context.colors.textTitle,
                 fontWeight: FontWeight.w800,
                 fontSize: AppSizes.sp16,
               ),
@@ -63,7 +63,7 @@ class _ChatListView extends StatelessWidget {
             Text(
               l.messagesLabel,
               style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 fontSize: AppSizes.sp10,
                 letterSpacing: 1.2,
               ),
@@ -197,7 +197,7 @@ class _ConversationList extends StatelessWidget {
       ),
       itemCount: conversations.length,
       separatorBuilder: (context, index) =>
-          const Divider(color: AppColors.inputBorder, height: 1, thickness: 1),
+          Divider(color: context.colors.inputBorder, height: 1, thickness: 1),
       itemBuilder: (context, index) {
         return _ConversationTile(
           conversation: conversations[index],
@@ -244,7 +244,7 @@ class _ConversationTile extends StatelessWidget {
                         child: Text(
                           conversation.name,
                           style: GoogleFonts.manrope(
-                            color: AppColors.textTitle,
+                            color: context.colors.textTitle,
                             fontWeight: FontWeight.w700,
                             fontSize: AppSizes.sp14,
                           ),
@@ -256,7 +256,7 @@ class _ConversationTile extends StatelessWidget {
                         Text(
                           timeLabel,
                           style: GoogleFonts.manrope(
-                            color: AppColors.textMuted,
+                            color: context.colors.textMuted,
                             fontSize: AppSizes.sp11,
                           ),
                         ),
@@ -329,7 +329,7 @@ class _LastMessagePreview extends StatelessWidget {
       return Text(
         l.noMessagesYet,
         style: GoogleFonts.manrope(
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
           fontSize: AppSizes.sp12,
           fontStyle: FontStyle.italic,
         ),
@@ -370,7 +370,7 @@ class _LastMessagePreview extends StatelessWidget {
           Text(
             mediaLabel!,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp12,
             ),
           ),
@@ -384,7 +384,7 @@ class _LastMessagePreview extends StatelessWidget {
       return Text(
         l.noMessagesYet,
         style: GoogleFonts.manrope(
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
           fontSize: AppSizes.sp12,
           fontStyle: FontStyle.italic,
         ),
@@ -410,7 +410,7 @@ class _LastMessagePreview extends StatelessWidget {
           TextSpan(
             text: lastMsg,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp12,
             ),
           ),
@@ -440,9 +440,9 @@ class _ConversationAvatar extends StatelessWidget {
       height: AppSizes.h48,
       width: AppSizes.w48,
       decoration: BoxDecoration(
-        color: AppColors.sectionBackground,
+        color: context.colors.sectionBackground,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       clipBehavior: Clip.antiAlias,
       child: avatarUrl.isNotEmpty
@@ -485,14 +485,14 @@ class _ConversationTypeBadge extends StatelessWidget {
       children: [
         Icon(
           Icons.lock_outline,
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
           size: AppSizes.sp10,
         ),
         SizedBox(width: AppSizes.w6),
         Text(
           label,
           style: GoogleFonts.manrope(
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
             fontSize: AppSizes.sp10,
             letterSpacing: 0.8,
             fontWeight: FontWeight.w600,
@@ -513,14 +513,14 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(
             Icons.chat_bubble_outline,
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
             size: AppSizes.sp40,
           ),
           SizedBox(height: AppSizes.h16),
           Text(
             l.noConversationsYet,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp16,
               fontWeight: FontWeight.w600,
             ),
@@ -541,7 +541,7 @@ void _showInboxSummary({
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: AppColors.cardBackground,
+    backgroundColor: context.colors.cardBackground,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r20)),
     ),
@@ -661,7 +661,7 @@ class _InboxSummarySheetState extends State<_InboxSummarySheet> {
                 width: AppSizes.w42,
                 height: AppSizes.h4,
                 decoration: BoxDecoration(
-                  color: AppColors.textMuted.withValues(alpha: 0.4),
+                  color: context.colors.textMuted.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(AppSizes.r4),
                 ),
               ),
@@ -684,7 +684,7 @@ class _InboxSummarySheetState extends State<_InboxSummarySheet> {
                         Text(
                           l.inboxSummaryTitle,
                           style: GoogleFonts.manrope(
-                            color: AppColors.textTitle,
+                            color: context.colors.textTitle,
                             fontWeight: FontWeight.w800,
                             fontSize: AppSizes.sp16,
                           ),
@@ -692,7 +692,7 @@ class _InboxSummarySheetState extends State<_InboxSummarySheet> {
                         Text(
                           l.inboxSummarySubtitle,
                           style: GoogleFonts.manrope(
-                            color: AppColors.textMuted,
+                            color: context.colors.textMuted,
                             fontSize: AppSizes.sp10,
                           ),
                         ),
@@ -737,7 +737,7 @@ class _InboxSummarySheetState extends State<_InboxSummarySheet> {
               ),
             ),
             Divider(
-              color: AppColors.inputBorder,
+              color: context.colors.inputBorder,
               height: AppSizes.h2,
               thickness: 1,
             ),
@@ -761,7 +761,7 @@ class _InboxSummarySheetState extends State<_InboxSummarySheet> {
                               Text(
                                 l.inboxSummaryAnalysing,
                                 style: GoogleFonts.manrope(
-                                  color: AppColors.textMuted,
+                                  color: context.colors.textMuted,
                                   fontSize: AppSizes.sp13,
                                 ),
                               ),
@@ -798,14 +798,14 @@ class _InboxSummaryEmpty extends StatelessWidget {
           children: [
             Icon(
               LucideIcons.inbox,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               size: AppSizes.sp40,
             ),
             SizedBox(height: AppSizes.ph16),
             Text(
               l.inboxSummaryEmptyTitle,
               style: GoogleFonts.manrope(
-                color: AppColors.textTitle,
+                color: context.colors.textTitle,
                 fontWeight: FontWeight.w700,
                 fontSize: AppSizes.sp14,
               ),
@@ -815,7 +815,7 @@ class _InboxSummaryEmpty extends StatelessWidget {
               l.inboxSummaryEmptySubtitle,
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 fontSize: AppSizes.sp13,
               ),
             ),
@@ -935,7 +935,7 @@ class _InboxSummaryContent extends StatelessWidget {
           l.inboxSummaryGeneratedAt(_formatDate(summary.generatedAt)),
           textAlign: TextAlign.center,
           style: GoogleFonts.manrope(
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
             fontSize: AppSizes.sp11,
           ),
         ),
@@ -961,9 +961,9 @@ class _InboxSection extends StatelessWidget {
       margin: EdgeInsets.only(bottom: AppSizes.ph12),
       padding: EdgeInsets.all(AppSizes.pw16),
       decoration: BoxDecoration(
-        color: AppColors.sectionBackground,
+        color: context.colors.sectionBackground,
         borderRadius: BorderRadius.circular(AppSizes.r12),
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -987,7 +987,7 @@ class _InboxSection extends StatelessWidget {
           Text(
             body.isNotEmpty ? body : '—',
             style: GoogleFonts.manrope(
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
               fontSize: AppSizes.sp13,
               height: 1.5,
             ),

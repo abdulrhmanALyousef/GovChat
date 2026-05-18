@@ -1,30 +1,35 @@
 import 'package:flutter/material.dart';
-import '../constants/app_size.dart';
 import 'app_color.dart';
+
+// ThemeData must NOT reference AppSizes / ScreenUtil because ThemeData is
+// constructed as a top-level global — ScreenUtilInit may not have run yet.
+// Use raw design-size values (375×812 dp) here; ScreenUtil scaling belongs
+// exclusively in widget build() methods.
 
 ThemeData darkTheme = ThemeData(
   useMaterial3: true,
   brightness: Brightness.dark,
+  extensions: const [AppColors.dark],
   colorScheme: ColorScheme.dark(
     primary: AppColors.primaryColor,
-    surface: AppColors.cardBackground,
+    surface: AppColors.dark.cardBackground,
     error: AppColors.error,
   ),
-  scaffoldBackgroundColor: AppColors.scaffoldBackground,
+  scaffoldBackgroundColor: AppColors.dark.scaffoldBackground,
   primaryColor: AppColors.primaryColor,
 
   appBarTheme: AppBarTheme(
-    backgroundColor: AppColors.scaffoldBackground,
+    backgroundColor: AppColors.dark.scaffoldBackground,
     elevation: 0,
     titleTextStyle: TextStyle(
-      fontSize: AppSizes.sp16,
+      fontSize: 16,
       fontWeight: FontWeight.w700,
-      color: AppColors.textPrimary,
+      color: AppColors.dark.textPrimary,
     ),
-    iconTheme: IconThemeData(color: AppColors.textPrimary),
+    iconTheme: IconThemeData(color: AppColors.dark.textPrimary),
   ),
 
-  progressIndicatorTheme: ProgressIndicatorThemeData(
+  progressIndicatorTheme: const ProgressIndicatorThemeData(
     color: AppColors.primaryColor,
   ),
 
@@ -32,72 +37,178 @@ ThemeData darkTheme = ThemeData(
     style: ElevatedButton.styleFrom(
       backgroundColor: AppColors.buttonBackground,
       foregroundColor: AppColors.buttonText,
-      textStyle: TextStyle(
-        fontSize: AppSizes.sp16,
+      textStyle: const TextStyle(
+        fontSize: 16,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.5,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      minimumSize: Size.fromHeight(AppSizes.h52),
+      minimumSize: const Size.fromHeight(52),
     ),
   ),
 
-  textButtonTheme: TextButtonThemeData(
-    style: TextButton.styleFrom(foregroundColor: AppColors.primaryColor),
+  textButtonTheme: const TextButtonThemeData(
+    style: ButtonStyle(
+      foregroundColor: WidgetStatePropertyAll(AppColors.primaryColor),
+    ),
   ),
 
   inputDecorationTheme: InputDecorationTheme(
-    hintStyle: TextStyle(color: AppColors.hintText, fontSize: AppSizes.sp14),
+    hintStyle: TextStyle(
+      color: AppColors.dark.hintText,
+      fontSize: 14,
+    ),
     filled: true,
-    fillColor: AppColors.inputFill,
+    fillColor: AppColors.dark.inputFill,
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: AppColors.error, width: 1),
+      borderSide: const BorderSide(color: AppColors.error, width: 1),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: AppColors.inputFocusBorder, width: 1.5),
+      borderSide: const BorderSide(color: AppColors.inputFocusBorder, width: 1.5),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: AppColors.inputBorder, width: 1),
+      borderSide: BorderSide(color: AppColors.dark.inputBorder, width: 1),
     ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: AppColors.inputBorder, width: 1),
+      borderSide: BorderSide(color: AppColors.dark.inputBorder, width: 1),
     ),
-    labelStyle: TextStyle(color: AppColors.textSecondary),
+    labelStyle: TextStyle(color: AppColors.dark.textSecondary),
   ),
 
   bottomNavigationBarTheme: BottomNavigationBarThemeData(
-    backgroundColor: AppColors.bottomNavBackground,
+    backgroundColor: AppColors.dark.bottomNavBackground,
     type: BottomNavigationBarType.fixed,
     selectedItemColor: AppColors.primaryColor,
-    unselectedItemColor: AppColors.navUnselected,
+    unselectedItemColor: AppColors.dark.navUnselected,
     showUnselectedLabels: true,
-    selectedLabelStyle: TextStyle(
-      fontSize: AppSizes.sp10,
-      fontWeight: FontWeight.w600,
-    ),
-    unselectedLabelStyle: TextStyle(fontSize: AppSizes.sp10),
+    selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+    unselectedLabelStyle: const TextStyle(fontSize: 10),
   ),
 
   cardTheme: CardThemeData(
-    color: AppColors.cardBackground,
+    color: AppColors.dark.cardBackground,
     elevation: 0,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(12),
-      side: BorderSide(color: AppColors.inputBorder, width: 1),
+      side: BorderSide(color: AppColors.dark.inputBorder, width: 1),
     ),
   ),
 
-  dividerTheme: DividerThemeData(color: AppColors.inputBorder, thickness: 1),
+  dividerTheme: DividerThemeData(color: AppColors.dark.inputBorder, thickness: 1),
 
   textTheme: TextTheme(
-    bodyLarge: TextStyle(color: AppColors.textPrimary),
-    bodyMedium: TextStyle(color: AppColors.textSecondary),
+    bodyLarge: TextStyle(color: AppColors.dark.textPrimary),
+    bodyMedium: TextStyle(color: AppColors.dark.textSecondary),
     titleLarge: TextStyle(
-      color: AppColors.textPrimary,
+      color: AppColors.dark.textPrimary,
+      fontWeight: FontWeight.w700,
+    ),
+  ),
+);
+
+ThemeData lightTheme = ThemeData(
+  useMaterial3: true,
+  brightness: Brightness.light,
+  extensions: const [AppColors.light],
+  colorScheme: ColorScheme.light(
+    primary: AppColors.primaryColor,
+    surface: AppColors.light.cardBackground,
+    error: AppColors.error,
+  ),
+  scaffoldBackgroundColor: AppColors.light.scaffoldBackground,
+  primaryColor: AppColors.primaryColor,
+
+  appBarTheme: AppBarTheme(
+    backgroundColor: AppColors.light.cardBackground,
+    elevation: 0,
+    titleTextStyle: TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w700,
+      color: AppColors.light.textPrimary,
+    ),
+    iconTheme: IconThemeData(color: AppColors.light.textPrimary),
+  ),
+
+  progressIndicatorTheme: const ProgressIndicatorThemeData(
+    color: AppColors.primaryColor,
+  ),
+
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: AppColors.buttonBackground,
+      foregroundColor: AppColors.buttonText,
+      textStyle: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.5,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      minimumSize: const Size.fromHeight(52),
+    ),
+  ),
+
+  textButtonTheme: const TextButtonThemeData(
+    style: ButtonStyle(
+      foregroundColor: WidgetStatePropertyAll(AppColors.primaryColor),
+    ),
+  ),
+
+  inputDecorationTheme: InputDecorationTheme(
+    hintStyle: TextStyle(
+      color: AppColors.light.hintText,
+      fontSize: 14,
+    ),
+    filled: true,
+    fillColor: AppColors.light.inputFill,
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.error, width: 1),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.inputFocusBorder, width: 1.5),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: BorderSide(color: AppColors.light.inputBorder, width: 1),
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: BorderSide(color: AppColors.light.inputBorder, width: 1),
+    ),
+    labelStyle: TextStyle(color: AppColors.light.textSecondary),
+  ),
+
+  bottomNavigationBarTheme: BottomNavigationBarThemeData(
+    backgroundColor: AppColors.light.bottomNavBackground,
+    type: BottomNavigationBarType.fixed,
+    selectedItemColor: AppColors.primaryColor,
+    unselectedItemColor: AppColors.light.navUnselected,
+    showUnselectedLabels: true,
+    selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+    unselectedLabelStyle: const TextStyle(fontSize: 10),
+  ),
+
+  cardTheme: CardThemeData(
+    color: AppColors.light.cardBackground,
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: AppColors.light.inputBorder, width: 1),
+    ),
+  ),
+
+  dividerTheme: DividerThemeData(color: AppColors.light.inputBorder, thickness: 1),
+
+  textTheme: TextTheme(
+    bodyLarge: TextStyle(color: AppColors.light.textPrimary),
+    bodyMedium: TextStyle(color: AppColors.light.textSecondary),
+    titleLarge: TextStyle(
+      color: AppColors.light.textPrimary,
       fontWeight: FontWeight.w700,
     ),
   ),
