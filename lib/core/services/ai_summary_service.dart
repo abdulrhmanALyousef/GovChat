@@ -24,8 +24,6 @@ class AiSummaryService {
   static final AiSummaryService instance = AiSummaryService._();
 
   static const String _remoteConfigKey = 'gemini_api_key';
-  static const String _fallbackApiKey =
-      'AIzaSyB5vMP-GFtjmw2ptn9cAtHbSZ4-Km2dlcc';
 
   /// Stable v1 endpoint — NOT v1beta.
   static const String _baseUrl =
@@ -244,9 +242,9 @@ Expected output style: clean, human-readable, concise, accurate, structured when
       debugPrint('[AI_SUMMARY] Remote Config fetch failed: $e');
     }
 
-    // 2. Fallback to hardcoded key.
-    debugPrint('[AI_SUMMARY] API key loaded (fallback)');
-    return _fallbackApiKey;
+    // 2. No key available — Remote Config must supply it.
+    debugPrint('[AI_SUMMARY] No API key available — set gemini_api_key in Firebase Remote Config');
+    return '';
   }
 
   // ── Dynamic model resolution ───────────────────────────────────────────────
@@ -401,6 +399,7 @@ Expected output style: clean, human-readable, concise, accurate, structured when
 
     // ── 3. Load API key and build prompt ────────────────────────────────
     final apiKey = await _loadApiKey();
+    if (apiKey.isEmpty) throw Exception('Gemini API key not configured. Set gemini_api_key in Firebase Remote Config.');
     final transcript = decrypted.join('\n');
     final isArabic = languageCode == 'ar';
 
@@ -726,6 +725,7 @@ Important rules:
 
     // Build prompt.
     final apiKey = await _loadApiKey();
+    if (apiKey.isEmpty) throw Exception('Gemini API key not configured. Set gemini_api_key in Firebase Remote Config.');
     final isArabic = languageCode == 'ar';
     var transcript = sections.join('\n\n');
 
