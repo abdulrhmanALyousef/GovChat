@@ -1,9 +1,8 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 import '../../models/chat_message.dart';
 import '../../models/chat_summary.dart';
@@ -12,26 +11,22 @@ import '../services/encryption/e2ee_crypto.dart';
 import '../services/encryption/e2ee_key_store.dart';
 import '../services/encryption/e2ee_manager.dart';
 
-/// Provides AI-powered chat summarisation via Gemini REST API (v1 stable).
+/// Provides AI-powered chat summarisation via a secure Cloud Function proxy.
 ///
 /// Only successfully decrypted text messages are included in the transcript.
 /// Undecryptable and media messages are silently excluded.
 ///
-/// Uses direct HTTP to `v1` endpoint — the `google_generative_ai` SDK is
-/// NOT used because it hardcodes `v1beta` which returns 404 for current models.
+/// The Gemini API key never leaves the server — the Cloud Function
+/// `generateAiSummary` handles the actual Gemini call using Secret Manager.
 class AiSummaryService {
   AiSummaryService._();
   static final AiSummaryService instance = AiSummaryService._();
 
-  static const String _remoteConfigKey = 'gemini_api_key';
-  static const String _fallbackApiKey = 'AIzaSyAxMqN2JRzUVQMpE-Ctrnj2zJ-aqpJ7yF8'; // TODO: remove before production
-
-  /// Stable v1 endpoint — NOT v1beta.
-  static const String _baseUrl =
-      'https://generativelanguage.googleapis.com/v1/models';
-
-  /// Cached model name resolved from the API. Populated once per session.
-  String? _resolvedModel;
+  final _callable = FirebaseFunctions.instanceFor(region: 'us-central1')
+      .httpsCallable(
+    'generateAiSummary',
+    options: HttpsCallableOptions(timeout: const Duration(seconds: 90)),
+  );
 
   static String _systemPrompt(String langCode) {
     final isArabic = langCode == 'ar';
@@ -223,101 +218,6 @@ Expected output style: clean, human-readable, concise, accurate, structured when
 
   static final _dataUri = RegExp(r'data:[a-z]+/[a-z0-9.+-]+;base64,\S+');
 
-  // ── API key loading ───────────────────────────────────────────────────────
-
-  Future<String> _loadApiKey() async {
-    // 1. Try Firebase Remote Config first.
-    try {
-      final rc = FirebaseRemoteConfig.instance;
-      await rc.setConfigSettings(RemoteConfigSettings(
-        fetchTimeout: const Duration(seconds: 15),
-        minimumFetchInterval: const Duration(hours: 1),
-      ));
-      await rc.fetchAndActivate();
-      final remoteKey = rc.getString(_remoteConfigKey);
-      if (remoteKey.isNotEmpty) {
-        debugPrint('[AI_SUMMARY] API key loaded (Remote Config)');
-        return remoteKey;
-      }
-    } catch (e) {
-      debugPrint('[AI_SUMMARY] Remote Config fetch failed: $e');
-    }
-
-    // 2. Fallback for testing — remove before production.
-    debugPrint('[AI_SUMMARY] API key loaded (fallback)');
-    return _fallbackApiKey;
-  }
-
-  // ── Dynamic model resolution ───────────────────────────────────────────────
-
-  /// Fetches available models from the Gemini API and picks the best
-  /// Flash text model. Result is cached in [_resolvedModel] for the session.
-  ///
-  /// Selection priority:
-  ///   1. Model whose ID contains "flash" and supports "generateContent".
-  ///   2. Prefer models with "gemini-2" over "gemini-1".
-  ///   3. Among equal-generation matches, prefer shorter IDs (base aliases).
-  Future<String> _resolveModel(String apiKey) async {
-    if (_resolvedModel != null) {
-      debugPrint('[AI_SUMMARY] using cached model=$_resolvedModel');
-      return _resolvedModel!;
-    }
-
-    final url = '$_baseUrl?key=$apiKey';
-    debugPrint('[AI_SUMMARY] fetching available models');
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode != 200) {
-      debugPrint('[AI_SUMMARY] models.list failed (${response.statusCode}): '
-          '${response.body}');
-      throw Exception(
-        'Failed to list Gemini models (${response.statusCode}). '
-        'Check API key and billing.',
-      );
-    }
-
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final models = (body['models'] as List?) ?? [];
-
-    // Filter to flash models that support generateContent.
-    final flashModels = models.where((m) {
-      final id = (m['name'] as String? ?? '').toLowerCase();
-      final methods = (m['supportedGenerationMethods'] as List?) ?? [];
-      return id.contains('flash') &&
-          methods.any((method) => method == 'generateContent');
-    }).toList();
-
-    if (flashModels.isEmpty) {
-      debugPrint('[AI_SUMMARY] no flash models available');
-      throw Exception(
-        'No Gemini Flash models available for this API key. '
-        'Check Google AI Studio for model access.',
-      );
-    }
-
-    // Sort: prefer gemini-2 over gemini-1, then shorter names (base aliases).
-    flashModels.sort((a, b) {
-      final aId = (a['name'] as String).toLowerCase();
-      final bId = (b['name'] as String).toLowerCase();
-      final aGen2 = aId.contains('gemini-2');
-      final bGen2 = bId.contains('gemini-2');
-      if (aGen2 != bGen2) return aGen2 ? -1 : 1;
-      return aId.length.compareTo(bId.length);
-    });
-
-    // The API returns "models/gemini-2.0-flash" — strip the "models/" prefix.
-    final fullName = flashModels.first['name'] as String;
-    _resolvedModel =
-        fullName.startsWith('models/') ? fullName.substring(7) : fullName;
-
-    debugPrint('[AI_SUMMARY] resolved model=$_resolvedModel');
-    return _resolvedModel!;
-  }
-
   // ── Sanitisation ──────────────────────────────────────────────────────────
 
   String _sanitize(String raw) {
@@ -398,9 +298,7 @@ Expected output style: clean, human-readable, concise, accurate, structured when
       throw Exception('No decryptable messages available for summary.');
     }
 
-    // ── 3. Load API key and build prompt ────────────────────────────────
-    final apiKey = await _loadApiKey();
-    if (apiKey.isEmpty) throw Exception('Gemini API key not configured. Set gemini_api_key in Firebase Remote Config.');
+    // ── 3. Build prompt and call Cloud Function ──────────────────────────
     final transcript = decrypted.join('\n');
     final isArabic = languageCode == 'ar';
 
@@ -443,52 +341,16 @@ Required JSON structure:
 $jsonHints
 ''';
 
-    // ── 4. Resolve model dynamically and call Gemini v1 stable REST API ──
-    final model = await _resolveModel(apiKey);
-    final endpoint = '$_baseUrl/$model:generateContent?key=$apiKey';
+    // ── 4. Call Gemini via secure Cloud Function ────────────────────────
+    debugPrint('[AI_SUMMARY] sending request via Cloud Function');
 
-    debugPrint('[AI_SUMMARY] model=$model  endpoint=v1 (stable)');
-    debugPrint('[AI_SUMMARY] sending request');
+    final result = await _callable.call<Map<String, dynamic>>({
+      'prompt': prompt,
+      'maxOutputTokens': 1024,
+    });
 
-    final response = await http.post(
-      Uri.parse(endpoint),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'contents': [
-          {
-            'parts': [
-              {'text': prompt},
-            ],
-          },
-        ],
-        'generationConfig': {
-          'temperature': 0.2,
-          'maxOutputTokens': 1024,
-        },
-      }),
-    );
-
-    debugPrint('[AI_SUMMARY] response received  status=${response.statusCode}');
-
-    if (response.statusCode != 200) {
-      debugPrint('[AI_SUMMARY] error body: ${response.body}');
-      throw Exception(
-        'Gemini API error (${response.statusCode}). '
-        'Check API key, billing, and model availability.',
-      );
-    }
-
-    // ── 5. Parse JSON response ──────────────────────────────────────────
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final candidates = body['candidates'] as List?;
-    final candidate =
-        (candidates != null && candidates.isNotEmpty) ? candidates.first : null;
-    final parts =
-        (candidate as Map<String, dynamic>?)?['content']?['parts'] as List?;
-    final rawText =
-        (parts != null && parts.isNotEmpty ? parts.first['text'] : null)
-                as String? ??
-            '';
+    final rawText = (result.data['text'] as String?) ?? '';
+    debugPrint('[AI_SUMMARY] model=${result.data['model']}');
 
     if (rawText.isEmpty) {
       debugPrint('[AI_SUMMARY] empty response from Gemini');
@@ -589,9 +451,6 @@ Important rules:
         .collection('ai_summaries')
         .doc('inbox_latest');
   }
-
-  /// Persistent HTTP client for inbox requests — avoids connection churn.
-  final http.Client _httpClient = http.Client();
 
   /// Generates an inbox-level summary across all provided conversations.
   ///
@@ -721,8 +580,6 @@ Important rules:
     }
 
     // Build prompt.
-    final apiKey = await _loadApiKey();
-    if (apiKey.isEmpty) throw Exception('Gemini API key not configured. Set gemini_api_key in Firebase Remote Config.');
     final isArabic = languageCode == 'ar';
     var transcript = sections.join('\n\n');
 
@@ -772,84 +629,23 @@ Required JSON structure:
 $jsonHints
 ''';
 
-    final requestBody = jsonEncode({
-      'contents': [
-        {
-          'parts': [
-            {'text': prompt},
-          ],
-        },
-      ],
-      'generationConfig': {
-        'temperature': 0.2,
-        'maxOutputTokens': 2048,
-      },
+    debugPrint(
+      '[AI_SUMMARY:INBOX] prompt: ${prompt.length} chars, '
+      '~${(prompt.length / 4).round()} tokens (est)',
+    );
+
+    // Call Gemini via secure Cloud Function.
+    debugPrint('[AI_SUMMARY:INBOX] sending request via Cloud Function');
+
+    final result = await _callable.call<Map<String, dynamic>>({
+      'prompt': prompt,
+      'maxOutputTokens': 2048,
     });
 
-    debugPrint(
-      '[AI_SUMMARY:INBOX] payload: ${requestBody.length} bytes, '
-      '~${(requestBody.length / 4).round()} tokens (est)',
-    );
-
-    // Call Gemini with retry + timeout.
-    final model = await _resolveModel(apiKey);
-    final endpoint = '$_baseUrl/$model:generateContent?key=$apiKey';
-    final uri = Uri.parse(endpoint);
-
-    http.Response response;
-    const maxRetries = 2;
-
-    for (var attempt = 0; ; attempt++) {
-      try {
-        debugPrint(
-          '[AI_SUMMARY:INBOX] request attempt=${attempt + 1} to $model',
-        );
-
-        response = await _httpClient
-            .post(uri, headers: {'Content-Type': 'application/json'}, body: requestBody)
-            .timeout(const Duration(seconds: 60));
-        break; // Success — exit retry loop.
-      } catch (e) {
-        debugPrint('[AI_SUMMARY:INBOX] request failed (attempt ${attempt + 1}): $e');
-        if (attempt >= maxRetries) {
-          throw Exception(
-            'Network error after ${maxRetries + 1} attempts. '
-            'Please check your connection and try again.',
-          );
-        }
-        // Exponential backoff: 2s, 4s.
-        await Future.delayed(Duration(seconds: 2 << attempt));
-      }
-    }
-
-    debugPrint(
-      '[AI_SUMMARY:INBOX] response status=${response.statusCode} '
-      'in ${sw.elapsedMilliseconds}ms',
-    );
-
-    if (response.statusCode != 200) {
-      debugPrint('[AI_SUMMARY:INBOX] error: ${response.body}');
-      throw Exception(
-        'Gemini API error (${response.statusCode}). '
-        'Check API key, billing, and model availability.',
-      );
-    }
-
-    // Parse response — reuse the same extraction logic as per-chat summaries.
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final candidates = body['candidates'] as List?;
-    debugPrint('[AI_SUMMARY:INBOX] candidates=${candidates?.length ?? 0}');
-
-    final candidate =
-        (candidates != null && candidates.isNotEmpty) ? candidates.first : null;
-    final parts =
-        (candidate as Map<String, dynamic>?)?['content']?['parts'] as List?;
-    final rawText =
-        (parts != null && parts.isNotEmpty ? parts.first['text'] : null)
-                as String? ??
-            '';
-
+    final rawText = (result.data['text'] as String?) ?? '';
+    debugPrint('[AI_SUMMARY:INBOX] model=${result.data['model']}');
     debugPrint('[AI_SUMMARY:INBOX] rawText length=${rawText.length}');
+    debugPrint('[AI_SUMMARY:INBOX] done in ${sw.elapsedMilliseconds}ms');
 
     if (rawText.isEmpty) {
       throw Exception('Gemini returned an empty response. Please try again.');
