@@ -22,6 +22,9 @@ const resendApiKey = defineSecret("RESEND_API_KEY");
 // Authentica.sa API key from Firebase Secret Manager
 const authenticaApiKey = defineSecret("AUTHENTICA_API_KEY");
 
+// Gemini API key from Firebase Secret Manager
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
+
 // Authentica.sa API base URL
 const AUTHENTICA_BASE = "https://api.authentica.sa/api/v2";
 
@@ -1757,5 +1760,133 @@ exports.onAnnouncementCreated = onDocumentCreated(
           "[FCM] announcement " + announcementId +
           " sent to " + tokenToUid.size + " employees in org " + orgId,
       );
+    },
+);
+
+// ── Gemini AI Summary (secure proxy) ────────────────────────────────────────
+
+const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1/models";
+
+/**
+ * Fetches available Gemini Flash models and returns the best one.
+ * Prefers gemini-2 over gemini-1, shorter names (base aliases) first.
+ * @param {string} apiKey
+ * @return {Promise<string>} model name without "models/" prefix
+ */
+async function resolveGeminiModel(apiKey) {
+  const url = `${GEMINI_BASE_URL}?key=${apiKey}`;
+  const res = await fetch(url, {headers: {"Content-Type": "application/json"}});
+
+  if (!res.ok) {
+    throw new HttpsError(
+        "internal",
+        `Failed to list Gemini models (${res.status}).`,
+    );
+  }
+
+  const body = await res.json();
+  const models = body.models || [];
+
+  const flashModels = models.filter((m) => {
+    const id = (m.name || "").toLowerCase();
+    const methods = m.supportedGenerationMethods || [];
+    return id.includes("flash") && methods.includes("generateContent");
+  });
+
+  if (flashModels.length === 0) {
+    throw new HttpsError(
+        "internal",
+        "No Gemini Flash models available for this API key.",
+    );
+  }
+
+  flashModels.sort((a, b) => {
+    const aId = a.name.toLowerCase();
+    const bId = b.name.toLowerCase();
+    const aGen2 = aId.includes("gemini-2");
+    const bGen2 = bId.includes("gemini-2");
+    if (aGen2 !== bGen2) return aGen2 ? -1 : 1;
+    return aId.length - bId.length;
+  });
+
+  const fullName = flashModels[0].name;
+  return fullName.startsWith("models/") ? fullName.substring(7) : fullName;
+}
+
+/**
+ * Secure Gemini proxy — receives pre-decrypted messages from the client,
+ * calls the Gemini API with the key from Secret Manager, and returns the
+ * raw AI text response. The client handles prompt building and response
+ * parsing.
+ *
+ * Input:  { prompt: string, maxOutputTokens?: number }
+ * Output: { success: true, text: string, model: string }
+ */
+exports.generateAiSummary = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+      secrets: [geminiApiKey],
+    },
+    async (request) => {
+      const {prompt, maxOutputTokens} = request.data || {};
+
+      if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
+        throw new HttpsError("invalid-argument", "prompt is required.");
+      }
+
+      const validTokens = typeof maxOutputTokens === "number" &&
+        maxOutputTokens > 0 &&
+        maxOutputTokens <= 8192;
+      const tokens = validTokens ? maxOutputTokens : 1024;
+
+      const apiKey = geminiApiKey.value();
+      if (!apiKey) {
+        throw new HttpsError(
+            "internal",
+            "GEMINI_API_KEY not configured in Secret Manager.",
+        );
+      }
+
+      const model = await resolveGeminiModel(apiKey);
+      const endpoint =
+        `${GEMINI_BASE_URL}/${model}:generateContent?key=${apiKey}`;
+
+      const geminiRes = await fetch(endpoint, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          contents: [{parts: [{text: prompt}]}],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: tokens,
+          },
+        }),
+      });
+
+      if (!geminiRes.ok) {
+        const errBody = await geminiRes.text();
+        console.error("[generateAiSummary] Gemini error:", errBody);
+        throw new HttpsError(
+            "internal",
+            `Gemini API error (${geminiRes.status}).`,
+        );
+      }
+
+      const body = await geminiRes.json();
+      const candidates = body.candidates || [];
+      const first = candidates.length > 0 ? candidates[0] : {};
+      const parts = (first.content && first.content.parts) || [];
+      const rawText = (parts.length > 0 && parts[0].text) || "";
+
+      if (!rawText) {
+        throw new HttpsError(
+            "internal",
+            "Gemini returned an empty response.",
+        );
+      }
+
+      return {success: true, text: rawText, model};
     },
 );
