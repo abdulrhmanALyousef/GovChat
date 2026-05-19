@@ -6,6 +6,7 @@ import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../core/services/activity_log_service.dart';
 import '../../core/services/encryption/e2ee_backup_service.dart';
+import '../../core/services/encryption/e2ee_key_store.dart';
 import '../../core/services/encryption/e2ee_manager.dart';
 import '../../core/services/logging_service.dart';
 import '../../core/services/otp_service.dart';
@@ -137,7 +138,24 @@ class LoginController extends ChangeNotifier {
       //    Then checks if a backup exists and prompts restore.
       await E2eeManager.initializeKeys(uid);
 
-      if (E2eeManager.backupAvailable && context.mounted) {
+      // Show restore prompt if:
+      //   a) initializeKeys detected a backup (no local keys yet), OR
+      //   b) local keys exist but the user never completed restore
+      //      (they skipped previously — we re-prompt each login).
+      final restoreDone =
+          PreferencesManager().getBool('e2ee_restore_done_$uid') ?? false;
+      bool shouldPromptRestore = E2eeManager.backupAvailable;
+
+      if (!shouldPromptRestore && !restoreDone) {
+        // Local keys exist (from a prior skip) — re-check cloud backup.
+        try {
+          shouldPromptRestore = await E2eeBackupService.hasBackup(uid);
+        } catch (_) {
+          shouldPromptRestore = false;
+        }
+      }
+
+      if (shouldPromptRestore && context.mounted) {
         await _tryRestoreE2eeKeys(context, uid);
       }
 
@@ -258,16 +276,23 @@ class LoginController extends ChangeNotifier {
   ///
   /// If the user restores: keys are saved and conversation keys are written
   /// to secure storage with their original identifiers.
-  /// If the user skips: fresh keys are generated (old messages lost).
+  /// If the user skips: fresh keys are generated so they can chat this
+  /// session, but we do NOT mark restore as complete — the prompt will
+  /// reappear on the next login.
   Future<void> _tryRestoreE2eeKeys(BuildContext context, String uid) async {
     if (!context.mounted) return;
 
     final manifest = await showE2eeRestoreDialog(context, uid);
 
     if (manifest == null) {
-      // User chose to skip — generate fresh keys now.
+      // User chose to skip for this session.
       debugPrint('[Login] User skipped restore — generating fresh keys');
-      await E2eeManager.generateFreshKeys(uid);
+      // Generate fresh keys so the user can send new messages.
+      // Do NOT set e2ee_restore_done — prompt will reappear next login.
+      final hasKeys = await E2eeKeyStore.hasKeyPair();
+      if (!hasKeys) {
+        await E2eeManager.generateFreshKeys(uid);
+      }
       return;
     }
 
@@ -285,20 +310,23 @@ class LoginController extends ChangeNotifier {
         return;
       }
 
-      // 2. Verify public key fingerprint matches.
+      // 2. Mark restore as done — stop prompting on future logins.
+      await PreferencesManager().setBool('e2ee_restore_done_$uid', true);
+
+      // 3. Verify public key fingerprint matches.
       if (!result.fingerprintMatch) {
         debugPrint('[Login] WARNING: Public key fingerprint mismatch after '
             'restore — backup may be from a different key generation');
       }
 
-      // 3. Verify Firestore public key matches restored key.
+      // 4. Verify Firestore public key matches restored key.
       final firestorePubKey = await _verifyRestoredKeyInFirestore(uid);
       if (firestorePubKey != null &&
           firestorePubKey != result.restoredPublicKey) {
         debugPrint('[Login] WARNING: Firestore key mismatch — re-publishing');
       }
 
-      // 4. Verify conversation keys are actually readable.
+      // 5. Verify conversation keys are actually readable.
       if (result.hasConversationKeys && !result.allKeysVerified) {
         debugPrint('[Login] WARNING: Some conversation keys failed '
             'verification — '
@@ -306,7 +334,7 @@ class LoginController extends ChangeNotifier {
             'readable. Old messages may show as encrypted.');
       }
 
-      // 5. Log restore diagnostics.
+      // 6. Log restore diagnostics.
       debugPrint('[Login] Restore diagnostics: '
           'v${result.manifestVersion} '
           'convKeys=${result.conversationKeysRestored}/'

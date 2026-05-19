@@ -375,7 +375,7 @@ class _MessageItem extends StatelessWidget {
                           : senderName,
                       style: GoogleFonts.manrope(
                         color: message.senderRole == 'admin'
-                            ? const Color(0xFFEF4444)
+                            ? AppColors.error
                             : context.colors.textMuted,
                         fontSize: AppSizes.sp10,
                         fontWeight: message.senderRole == 'admin'
@@ -993,7 +993,7 @@ class _TextInputRow extends StatelessWidget {
             opacity: mediaEnabled ? 1.0 : 0.4,
             child: _CircleIconButton(
               icon: mediaEnabled ? LucideIcons.paperclip : LucideIcons.lock,
-              color: Colors.white,
+              color: context.colors.textPrimary,
               backgroundColor: context.colors.cardBackground,
               onTap: () {
                 if (!mediaEnabled) {
@@ -1072,7 +1072,7 @@ class _TextInputRow extends StatelessWidget {
                       opacity: mediaEnabled ? 1.0 : 0.4,
                       child: _CircleIconButton(
                         icon: mediaEnabled ? LucideIcons.mic : LucideIcons.micOff,
-                        color: Colors.white,
+                        color: AppColors.primaryColor,
                         backgroundColor: AppColors.primaryColor.withValues(
                           alpha: 0.15,
                         ),
@@ -1274,7 +1274,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.camera,
                   label: l.takePhotoOption,
-                  color: Colors.white,
+                  color: AppColors.primaryColor,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.captureAndSendImage();
@@ -1283,7 +1283,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.image,
                   label: l.choosePhotoOption,
-                  color: Colors.white,
+                  color: AppColors.primaryColor,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.pickAndSendImage();
@@ -1298,7 +1298,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.video,
                   label: l.recordVideoOption,
-                  color: Colors.white,
+                  color: AppColors.primaryColor,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.captureAndSendVideo();
@@ -1307,7 +1307,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.film,
                   label: l.chooseVideoOption,
-                  color: Colors.white,
+                  color: AppColors.primaryColor,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.pickAndSendVideo();
