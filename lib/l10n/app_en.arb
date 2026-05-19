@@ -82,6 +82,7 @@
   "newChatButton": "NEW CHAT",
   "noConversationsYet": "No conversations yet",
   "noMessagesYet": "No messages yet",
+  "encryptedMessage": "Encrypted message",
   "orgChatLabel": "ORG CHAT",
   "groupChatLabel": "GROUP CHAT",
   "privateChatLabel": "PRIVATE",

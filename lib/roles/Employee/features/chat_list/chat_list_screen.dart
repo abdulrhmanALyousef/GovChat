@@ -378,11 +378,12 @@ class _LastMessagePreview extends StatelessWidget {
       );
     }
 
-    // Text message fallback.
+    // Text message: show decrypted preview or encrypted fallback.
+    // We reach here only when msgType != null, meaning messages exist.
     final lastMsg = conversation.lastMessage;
     if (lastMsg == null || lastMsg.isEmpty) {
       return Text(
-        l.noMessagesYet,
+        l.encryptedMessage,
         style: GoogleFonts.manrope(
           color: context.colors.textMuted,
           fontSize: AppSizes.sp12,

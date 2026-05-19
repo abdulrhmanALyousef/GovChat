@@ -248,9 +248,16 @@ class _MessagesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Hide messages that are still encrypted or failed decryption.
+    final visible = messages.where((m) {
+      if (m.text.startsWith('[Decryption error:')) return false;
+      if (m.isEncrypted && m.text.isEmpty) return false;
+      return true;
+    }).toList();
+
     // Extra item at top for loading indicator when paginating.
     final hasLoadingHeader = controller.isLoadingMore;
-    final totalItems = messages.length + (hasLoadingHeader ? 1 : 0);
+    final totalItems = visible.length + (hasLoadingHeader ? 1 : 0);
 
     return ListView.builder(
       controller: scrollController,
@@ -261,7 +268,7 @@ class _MessagesList extends StatelessWidget {
       // Stable keys prevent unnecessary rebuilds when the list shifts.
       findChildIndexCallback: (key) {
         if (key is ValueKey<String>) {
-          final idx = messages.indexWhere((m) => m.id == key.value);
+          final idx = visible.indexWhere((m) => m.id == key.value);
           return idx == -1 ? null : idx + (hasLoadingHeader ? 1 : 0);
         }
         return null;
@@ -284,7 +291,7 @@ class _MessagesList extends StatelessWidget {
           );
         }
         final msgIndex = hasLoadingHeader ? index - 1 : index;
-        final message = messages[msgIndex];
+        final message = visible[msgIndex];
         final isMine = message.senderId == myDisplayId;
         final profile = controller.getSenderProfile(
           message.senderUid,
@@ -470,49 +477,6 @@ class _MessageItem extends StatelessWidget {
           mediaDuration: message.mediaDuration,
         );
       case MessageType.text:
-        // Encrypted but not yet decrypted — show lock placeholder.
-        if (message.isEncrypted && message.text.isEmpty) {
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(LucideIcons.lock, size: AppSizes.sp14, color: context.colors.textMuted),
-              SizedBox(width: AppSizes.pw6),
-              Flexible(
-                child: Text(
-                  'Encrypted message',
-                  textDirection: Directionality.of(context),
-                  style: GoogleFonts.manrope(
-                    color: context.colors.textMuted,
-                    fontSize: AppSizes.sp14,
-                    fontStyle: FontStyle.italic,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
-          );
-        }
-        if (message.text.startsWith('[Decryption error:')) {
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(LucideIcons.lock, size: AppSizes.sp14, color: context.colors.textMuted),
-              SizedBox(width: AppSizes.pw6),
-              Flexible(
-                child: Text(
-                  'This message cannot be decrypted',
-                  textDirection: Directionality.of(context),
-                  style: GoogleFonts.manrope(
-                    color: context.colors.textMuted,
-                    fontSize: AppSizes.sp14,
-                    fontStyle: FontStyle.italic,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
-          );
-        }
         return Text(
           message.text,
           textDirection: Directionality.of(context),

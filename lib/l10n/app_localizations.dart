@@ -590,6 +590,12 @@ abstract class AppLocalizations {
   /// **'No messages yet'**
   String get noMessagesYet;
 
+  /// No description provided for @encryptedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted message'**
+  String get encryptedMessage;
+
   /// No description provided for @orgChatLabel.
   ///
   /// In en, this message translates to:

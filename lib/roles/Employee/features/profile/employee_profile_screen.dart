@@ -570,15 +570,6 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                               themeProvider.themeMode == ThemeMode.light,
                           onTap: () => themeProvider.setTheme(ThemeMode.light),
                         ),
-                        SizedBox(width: AppSizes.w8),
-                        _ThemeOption(
-                          label: l.themeSystem,
-                          icon: Icons.brightness_auto_outlined,
-                          selected:
-                              themeProvider.themeMode == ThemeMode.system,
-                          onTap: () =>
-                              themeProvider.setTheme(ThemeMode.system),
-                        ),
                       ],
                     ),
                   ],
