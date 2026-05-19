@@ -170,9 +170,12 @@ class AppColors extends ThemeExtension<AppColors> {
 
 /// Shortcut: `context.colors.scaffoldBackground`
 extension AppColorsX on BuildContext {
-  // Falls back to dark palette when no extension is registered (e.g. during
-  // theme transitions or widget builds that happen before MaterialApp applies
-  // its theme — never crash on a missing extension).
+  // Falls back based on current brightness when no extension is registered
+  // (e.g. during theme transitions, dialog overlays, or widget builds that
+  // happen before MaterialApp applies its theme).
   AppColors get colors =>
-      Theme.of(this).extension<AppColors>() ?? AppColors.dark;
+      Theme.of(this).extension<AppColors>() ??
+      (Theme.of(this).brightness == Brightness.light
+          ? AppColors.light
+          : AppColors.dark);
 }

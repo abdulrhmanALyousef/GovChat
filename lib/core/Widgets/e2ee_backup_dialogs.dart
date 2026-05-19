@@ -13,10 +13,14 @@ import '../theme/App_color.dart';
 ///
 /// Returns the user's chosen password on confirmation, or `null` if cancelled.
 Future<String?> showE2eeBackupDialog(BuildContext context) {
+  final theme = Theme.of(context);
   return showDialog<String>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const _BackupPasswordDialog(),
+    builder: (_) => Theme(
+      data: theme,
+      child: const _BackupPasswordDialog(),
+    ),
   );
 }
 
@@ -26,10 +30,14 @@ Future<String?> showE2eeBackupDialog(BuildContext context) {
 /// Returns a [BackupManifest] on success (contains identity key + all
 /// conversation keys), or `null` if the user taps "Skip".
 Future<BackupManifest?> showE2eeRestoreDialog(BuildContext context, String uid) {
+  final theme = Theme.of(context);
   return showDialog<BackupManifest>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => _RestorePasswordDialog(uid: uid),
+    builder: (_) => Theme(
+      data: theme,
+      child: _RestorePasswordDialog(uid: uid),
+    ),
   );
 }
 
