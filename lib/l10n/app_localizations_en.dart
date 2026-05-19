@@ -262,6 +262,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noMessagesYet => 'No messages yet';
 
   @override
+  String get encryptedMessage => 'Encrypted message';
+
+  @override
   String get orgChatLabel => 'ORG CHAT';
 
   @override

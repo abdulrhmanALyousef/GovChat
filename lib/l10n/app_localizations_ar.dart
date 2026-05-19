@@ -258,7 +258,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noConversationsYet => 'لا توجد محادثات بعد';
 
   @override
-  String get noMessagesYet => 'لا توجد رسائل بعد';
+  String get noMessagesYet => 'لا توجد رسائل حالياً';
+
+  @override
+  String get encryptedMessage => 'رسالة مشفرة';
 
   @override
   String get orgChatLabel => 'دردشة المنظمة';

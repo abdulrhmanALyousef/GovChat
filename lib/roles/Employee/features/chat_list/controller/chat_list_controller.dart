@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -17,41 +18,30 @@ class ChatListController extends ChangeNotifier {
 
   final EmployeeModel employee;
 
-  /// Sorted list shown in the UI: department chat first, then private chats
-  /// ordered by most-recent message descending.
   List<ConversationModel> conversations = [];
   bool isLoading = true;
 
-  // In-memory store keyed by conversation ID.
   final Map<String, ConversationModel> _convMap = {};
 
-  // Firestore stream for private_chats collection.
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
   _privateChatsSubscription;
 
-  // Per-conversation last-message subscriptions, keyed by conversation ID.
   final Map<String, StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>
   _lastMessageSubs = {};
 
-  // Per-conversation profile subscriptions for private chats (other user's doc).
   final Map<String, StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>>
   _profileSubs = {};
 
-  // Employee profile cache: uid → {name, avatarUrl, displayId}.
-  // Populated by a live stream on all employees in the org.
   final Map<String, Map<String, String>> _profileCache = {};
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
   _employeesSubscription;
 
-  /// Resolve a sender's display name from their UID or displayId.
   String _resolveSenderName(String? senderUid, String? senderId) {
-    // Try by UID first.
     if (senderUid != null && _profileCache.containsKey(senderUid)) {
       final name = _profileCache[senderUid]!['name'] ?? '';
       if (name.isNotEmpty) return name;
     }
-    // Fall back to displayId match.
     if (senderId != null) {
       for (final p in _profileCache.values) {
         if (p['displayId'] == senderId) {
@@ -79,27 +69,41 @@ class ChatListController extends ChangeNotifier {
         .where('organizationId', isEqualTo: employee.organizationId)
         .snapshots()
         .listen((snapshot) {
+          final validUids = <String>{};
           for (final doc in snapshot.docs) {
             final data = doc.data();
+            validUids.add(doc.id);
             _profileCache[doc.id] = {
               'name': (data['name'] as String?) ?? '',
               'avatarUrl': (data['avatarUrl'] as String?) ?? '',
               'displayId': (data['displayId'] as String?) ?? '',
             };
           }
-          // Re-resolve all lastSenderName values with fresh data.
+
+          // Remove private chats whose other user is no longer a valid employee.
+          final staleIds = <String>[];
+          for (final entry in _convMap.entries) {
+            final conv = entry.value;
+            if (conv.type == 'private' &&
+                conv.otherUid.isNotEmpty &&
+                !validUids.contains(conv.otherUid)) {
+              staleIds.add(entry.key);
+            }
+          }
+          for (final id in staleIds) {
+            debugPrint('[INBOX] pruning stale private chat $id');
+            _onPrivateChatRemoved(id);
+          }
+
           _refreshLastSenderNames();
           notifyListeners();
         }, onError: (_) {});
   }
 
-  /// Walk all conversations and re-resolve lastSenderName, plus refresh
-  /// private chat names and avatars from the profile cache.
   void _refreshLastSenderNames() {
     for (final entry in _convMap.entries) {
       var conv = entry.value;
 
-      // Re-resolve last sender name.
       if (conv.lastSenderId != null) {
         final resolved = _resolveSenderName(null, conv.lastSenderId);
         if (resolved != conv.lastSenderName) {
@@ -108,7 +112,6 @@ class ChatListController extends ChangeNotifier {
         }
       }
 
-      // Refresh private chat name and avatar from the profile cache.
       if (conv.type == 'private' && conv.otherUid.isNotEmpty) {
         final profile = _profileCache[conv.otherUid];
         if (profile != null) {
@@ -195,8 +198,6 @@ class ChatListController extends ChangeNotifier {
           _onPrivateChatRemoved(change.doc.id);
           break;
         case DocumentChangeType.modified:
-          // Structural chat metadata changes are rare; last-message stream
-          // handles the preview updates independently.
           break;
       }
     }
@@ -216,7 +217,52 @@ class ChatListController extends ChangeNotifier {
       orElse: () => '',
     );
 
-    // Prefer fresh data from profile cache over stale participantNames.
+    if (otherId.isEmpty || otherId == myId) return;
+
+    if (!_profileCache.containsKey(otherId)) {
+      _verifyAndAddPrivateChat(chatId, data, otherId);
+      return;
+    }
+
+    _addVerifiedPrivateChat(chatId, data, otherId);
+  }
+
+  void _verifyAndAddPrivateChat(
+    String chatId,
+    Map<String, dynamic> data,
+    String otherId,
+  ) async {
+    try {
+      final doc = await FirebaseService.instance.firestore
+          .collection('employees')
+          .doc(otherId)
+          .get();
+
+      if (!doc.exists) return;
+
+      final empData = doc.data()!;
+      final orgId = empData['organizationId'] as String? ?? '';
+      if (orgId != employee.organizationId) return;
+
+      _profileCache[otherId] = {
+        'name': (empData['name'] as String?) ?? '',
+        'avatarUrl': (empData['avatarUrl'] as String?) ?? '',
+        'displayId': (empData['displayId'] as String?) ?? '',
+      };
+
+      _addVerifiedPrivateChat(chatId, data, otherId);
+      _rebuildList();
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  void _addVerifiedPrivateChat(
+    String chatId,
+    Map<String, dynamic> data,
+    String otherId,
+  ) {
+    if (_convMap.containsKey(chatId)) return;
+
     final cached = _profileCache[otherId];
     final cachedName = cached?['name'] ?? '';
     final cachedAvatar = cached?['avatarUrl'] ?? '';
@@ -247,8 +293,6 @@ class ChatListController extends ChangeNotifier {
     _subscribeToOtherProfile(chatId, otherId);
   }
 
-  /// Live-stream the other participant's employee doc so that name and avatar
-  /// stay up to date when they edit their profile.
   void _subscribeToOtherProfile(String chatId, String otherId) {
     if (otherId.isEmpty) return;
     _profileSubs[chatId]?.cancel();
@@ -259,8 +303,25 @@ class ChatListController extends ChangeNotifier {
         .listen((doc) {
           final existing = _convMap[chatId];
           if (existing == null) return;
+
+          if (!doc.exists) {
+            _onPrivateChatRemoved(chatId);
+            _rebuildList();
+            notifyListeners();
+            return;
+          }
+
           final data = doc.data();
           if (data == null) return;
+
+          final orgId = data['organizationId'] as String? ?? '';
+          if (orgId != employee.organizationId) {
+            _onPrivateChatRemoved(chatId);
+            _rebuildList();
+            notifyListeners();
+            return;
+          }
+
           final name = (data['name'] as String?) ?? '';
           final avatarUrl = (data['avatarUrl'] as String?) ?? '';
           _convMap[chatId] = existing.copyWith(
@@ -342,58 +403,83 @@ class ChatListController extends ChangeNotifier {
   void _subscribeToLastMessage(String convId, String messagesPath) {
     _lastMessageSubs[convId]?.cancel();
 
+    // Fetch a small window so we can fall back to an older decryptable message
+    // if the newest one can't be decrypted yet.
     _lastMessageSubs[convId] = FirebaseService.instance.firestore
         .collection(messagesPath)
         .orderBy('createdAt', descending: true)
-        .limit(1)
+        .limit(5)
         .snapshots()
         .listen((snapshot) async {
           final existing = _convMap[convId];
           if (existing == null) return;
           if (snapshot.docs.isEmpty) return;
 
-          final data = snapshot.docs.first.data();
-          final isEncrypted = data['isEncrypted'] as bool? ?? false;
-          final rawText = data['text'] as String?;
-          final messageType = data['messageType'] as String? ?? 'text';
+          // Always use the newest message for timestamp and metadata.
+          final newest = snapshot.docs.first.data();
+          final newestType = newest['messageType'] as String? ?? 'text';
+          final timestamp = ConversationModel.timestampToDateTime(
+            newest['createdAt'],
+          );
+          final senderId = newest['senderId'] as String?;
+          final senderUid = newest['senderUid'] as String?;
+          final senderName = _resolveSenderName(senderUid, senderId);
 
-          // For media messages, the preview is handled by the UI
-          // based on lastMessageType — no need to decrypt.
-          String? displayText;
-          if (messageType == 'text') {
-            if (isEncrypted) {
-              final msgId = snapshot.docs.first.id;
-              displayText = await _decryptLastMessage(data, existing, msgId);
+          // Walk through recent messages to find the best preview text.
+          String? preview;
+          String? previewType;
+
+          for (final doc in snapshot.docs) {
+            final data = doc.data();
+            final msgType = data['messageType'] as String? ?? 'text';
+            final isEncrypted = data['isEncrypted'] as bool? ?? false;
+            final isDeleted = data['isDeleted'] as bool? ?? false;
+            if (isDeleted) continue;
+
+            // Media message: use type label as preview.
+            if (msgType != 'text') {
+              preview = '';
+              previewType = msgType;
+              break;
+            }
+
+            // Plain text (not encrypted).
+            if (!isEncrypted) {
+              final raw = data['text'] as String? ?? '';
+              if (raw.isNotEmpty) {
+                preview = _truncate(raw);
+                previewType = 'text';
+                break;
+              }
+              continue;
+            }
+
+            // Encrypted text: try to decrypt.
+            final decrypted = await _tryDecrypt(data, existing, doc.id);
+            if (decrypted != null) {
+              preview = decrypted;
+              previewType = 'text';
+              break;
             }
           }
 
-          final senderId = data['senderId'] as String?;
-          final senderUid = data['senderUid'] as String?;
-          final senderName = _resolveSenderName(senderUid, senderId);
-
-          _convMap[convId] = existing.copyWith(
-            lastMessage:
-                displayText ??
-                (messageType != 'text'
-                    ? ''
-                    : isEncrypted
-                    ? '[Encrypted message]'
-                    : rawText),
-            lastMessageType: messageType,
+          final fresh = _convMap[convId];
+          if (fresh == null) return;
+          _convMap[convId] = fresh.copyWith(
+            lastMessage: preview ?? fresh.lastMessage,
+            lastMessageType: previewType ?? newestType,
             lastSenderId: senderId,
             lastSenderName: senderName,
-            lastMessageTime: ConversationModel.timestampToDateTime(
-              data['createdAt'],
-            ),
+            lastMessageTime: timestamp,
           );
           _rebuildList();
           notifyListeners();
         }, onError: (_) {});
   }
 
-  /// Try to decrypt the last message preview.
-  /// Returns null if decryption fails (caller falls back to placeholder).
-  Future<String?> _decryptLastMessage(
+  /// Attempt to decrypt a message preview. Returns plaintext or null.
+  /// Lightweight: uses cached keys or single Firestore reads. Never hangs.
+  Future<String?> _tryDecrypt(
     Map<String, dynamic> data,
     ConversationModel conv,
     String messageId,
@@ -403,51 +489,100 @@ class ChatListController extends ChangeNotifier {
     if (encryptedText == null || iv == null) return null;
 
     try {
-      // Derive the conversation path from the messages path.
+      // 1. Already decrypted elsewhere (e.g. chat screen)?
+      final cached = E2eeManager.getCachedDecryptedText(messageId);
+      if (cached != null) return _truncate(cached);
+
       final convPath = conv.messagesCollectionPath.replaceAll('/messages', '');
 
-      // Try loading from secure storage first (fast path).
-      var key = await E2eeKeyStore.getConversationKey(convPath);
-
-      // If not cached, derive/fetch the key.
-      if (key == null) {
-        final uid = E2eeManager.currentUid;
-        if (uid == null) return null;
-
-        key = await E2eeManager.getConversationKey(
-          conversationPath: convPath,
-          currentUid: uid,
-          memberUids: const [],
-          isPrivateChat: conv.type == 'private',
-        );
-      }
-
+      // 2. Get conversation key: memory → storage → lightweight derivation.
+      var key = E2eeKeyStore.getConversationKeyCached(convPath);
+      key ??= await E2eeKeyStore.getConversationKey(convPath);
+      key ??= await _lightweightKeyLookup(conv, convPath);
       if (key == null) return null;
 
-      final decrypted = await E2eeManager.decryptMessage(
+      // 3. Decrypt.
+      final decrypted = await E2eeCrypto.decrypt(
         EncryptedPayload(ciphertext: encryptedText, nonce: iv),
         key,
-      );
+      ).timeout(const Duration(seconds: 5));
 
-      // Store the FULL plaintext in the shared cache so the chat screen
-      // can display it immediately without re-decrypting.
       E2eeManager.cacheDecryptedText(messageId, decrypted);
-
-      // Truncate for preview.
-      if (decrypted.length > 80) {
-        return '${decrypted.substring(0, 80)}…';
-      }
-      return decrypted;
+      return _truncate(decrypted);
     } catch (e) {
-      debugPrint('[E2EE] last message decrypt failed for ${conv.id}: $e');
+      debugPrint('[INBOX] decrypt failed for ${conv.id}: $e');
       return null;
     }
   }
 
+  /// Get a conversation key without entering the heavy group-key creation flow.
+  Future<Uint8List?> _lightweightKeyLookup(
+    ConversationModel conv,
+    String convPath,
+  ) async {
+    final myPrivateKey = await E2eeKeyStore.getPrivateKey();
+    if (myPrivateKey == null) return null;
+
+    if (conv.type == 'private' && conv.otherUid.isNotEmpty) {
+      final theirPub = await _fetchPublicKey(conv.otherUid);
+      if (theirPub == null) return null;
+
+      final aesKey = await E2eeCrypto.deriveSharedKey(
+        myPrivateKeyB64: myPrivateKey,
+        theirPublicKeyB64: theirPub,
+        info: 'govchat:private:$convPath',
+      );
+      await E2eeKeyStore.saveConversationKey(convPath, aesKey);
+      return aesKey;
+    }
+
+    // Group / dept / org: read own wrapped-key doc.
+    final uid = E2eeManager.currentUid;
+    if (uid == null) return null;
+
+    final doc = await FirebaseService.instance.firestore
+        .doc('$convPath/groupKey/$uid')
+        .get();
+    if (!doc.exists) return null;
+
+    final d = doc.data()!;
+    final wrappedKey = d['wrappedKey'] as String?;
+    final nonce = d['nonce'] as String?;
+    final creatorPub = d['creatorPublicKey'] as String?;
+    if (wrappedKey == null || nonce == null || creatorPub == null) return null;
+
+    final groupKey = await E2eeCrypto.unwrapGroupKey(
+      wrappedKey: EncryptedPayload(ciphertext: wrappedKey, nonce: nonce),
+      myPrivateKeyB64: myPrivateKey,
+      senderPublicKeyB64: creatorPub,
+      info: 'govchat:group:$convPath',
+    );
+    await E2eeKeyStore.saveConversationKey(convPath, groupKey);
+    return groupKey;
+  }
+
+  Future<String?> _fetchPublicKey(String uid) async {
+    var doc = await FirebaseService.instance.firestore
+        .collection('employees')
+        .doc(uid)
+        .get();
+    var pubKey = doc.data()?['e2eePublicKey'] as String?;
+    if (pubKey != null && pubKey.isNotEmpty) return pubKey;
+
+    doc = await FirebaseService.instance.firestore
+        .collection('users')
+        .doc(uid)
+        .get();
+    pubKey = doc.data()?['e2eePublicKey'] as String?;
+    return (pubKey != null && pubKey.isNotEmpty) ? pubKey : null;
+  }
+
+  static String _truncate(String text) {
+    return text.length > 80 ? '${text.substring(0, 80)}…' : text;
+  }
+
   // ─── List ordering ────────────────────────────────────────────────────────
 
-  /// All conversations sorted by most-recent message, newest first.
-  /// Conversations with no messages yet sink to the bottom.
   void _rebuildList() {
     conversations = _convMap.values.toList()
       ..sort((a, b) {
