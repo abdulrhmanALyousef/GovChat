@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Firebase Cloud Functions for GovChat
  * Creates admin users with temp passwords via Resend
  */
@@ -58,6 +58,192 @@ function generateTempPassword() {
   }
   return pwd;
 }
+
+/**
+ * Deletes an array of Firestore DocumentSnapshots in Firestore batches
+ * (max 500 ops per batch commit).
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} docs
+ * @return {Promise<void>}
+ */
+async function batchDeleteDocs(db, docs) {
+  if (!docs || docs.length === 0) return;
+  const BATCH_SIZE = 500;
+  for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+    const chunk = docs.slice(i, i + BATCH_SIZE);
+    const batch = db.batch();
+    chunk.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+}
+
+/**
+ * Cloud Function: Delete Organization (cascading hard delete)
+ *
+ * Deletes:
+ *   - employees/{uid} where organizationId == orgId
+ *   - users/{uid}    where organizationId == orgId
+ *   - accessRequests  where organizationId == orgId
+ *   - announcements   where organizationId == orgId
+ *   - projectGroups   where organizationId == orgId (+messages subcollection)
+ *   - logs            where organizationId == orgId
+ *   - organizations/{orgId} and ALL subcollections via recursiveDelete
+ *     (departments, departments/deptId/messages, private_chats, org_chats,
+ *      settings, groupKey, etc.)
+ *   - Firebase Auth accounts for all employees and admin
+ *
+ * Only primary_admin callers are authorised.
+ */
+exports.deleteOrganization = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+      timeoutSeconds: 300,
+    },
+    async (request) => {
+      // 1. Auth gate
+      if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Authentication required.");
+      }
+      const callerUid = request.auth.uid;
+
+      if (!request.data || !request.data.organizationId) {
+        throw new HttpsError("invalid-argument", "organizationId is required.");
+      }
+      const orgId = request.data.organizationId;
+
+      const db = admin.firestore();
+
+      // 2. Verify primary_admin role
+      const callerDoc = await db.collection("users").doc(callerUid).get();
+      if (!callerDoc.exists || callerDoc.data().role !== "primary_admin") {
+        throw new HttpsError(
+            "permission-denied",
+            "Only primary admins can delete organizations.",
+        );
+      }
+      const callerData = callerDoc.data();
+
+      // 3. Fetch org (for metadata + auth UID)
+      const orgDoc = await db.collection("organizations").doc(orgId).get();
+      if (!orgDoc.exists) {
+        throw new HttpsError("not-found", "Organization not found.");
+      }
+      const orgData = orgDoc.data();
+      const orgName = orgData.name || "";
+      const adminUid = orgData.adminUid || "";
+
+      console.log(
+          `[deleteOrganization] Starting full deletion of org=${orgId}` +
+          ` ("${orgName}") by uid=${callerUid}`,
+      );
+
+      try {
+        // 4. Collect UIDs for Auth deletion
+        const [employeesSnap, usersSnap] = await Promise.all([
+          db.collection("employees").where("organizationId", "==", orgId).get(),
+          db.collection("users").where("organizationId", "==", orgId).get(),
+        ]);
+
+        const employeeUids = employeesSnap.docs.map((d) => d.id);
+        const userUids = usersSnap.docs.map((d) => d.id);
+        const authUidSet = new Set([...employeeUids, ...userUids]);
+        if (adminUid) authUidSet.add(adminUid);
+
+        // ── 5. Parallel query for flat collections ───────────────────────────
+        const [requestsSnap, announcementsSnap, projectGroupsSnap, logsSnap] =
+          await Promise.all([
+            db.collection("accessRequests")
+                .where("organizationId", "==", orgId).get(),
+            db.collection("announcements")
+                .where("organizationId", "==", orgId).get(),
+            db.collection("projectGroups")
+                .where("organizationId", "==", orgId).get(),
+            db.collection("logs")
+                .where("organizationId", "==", orgId).get(),
+          ]);
+
+        // ── 6. Delete flat collections (batched) ─────────────────────────────
+        await Promise.all([
+          batchDeleteDocs(db, employeesSnap.docs),
+          batchDeleteDocs(db, usersSnap.docs),
+          batchDeleteDocs(db, requestsSnap.docs),
+          batchDeleteDocs(db, announcementsSnap.docs),
+          batchDeleteDocs(db, logsSnap.docs),
+        ]);
+
+        // ── 7. Delete projectGroups + their messages subcollections ──────────
+        await Promise.all(
+            projectGroupsSnap.docs.map((g) => db.recursiveDelete(g.ref)),
+        );
+
+        // ── 8. Recursively delete organizations/{orgId} (all subcollections) ─
+        await db.recursiveDelete(
+            db.collection("organizations").doc(orgId),
+        );
+
+        // ── 9. Delete Firebase Auth accounts (up to 1000 per call) ───────────
+        const authUids = Array.from(authUidSet);
+        for (let i = 0; i < authUids.length; i += 1000) {
+          const batch = authUids.slice(i, i + 1000);
+          const result = await admin.auth().deleteUsers(batch);
+          if (result.errors && result.errors.length > 0) {
+            console.warn(
+                `[deleteOrganization] ${result.errors.length} Auth UIDs` +
+                " could not be deleted:",
+                result.errors.map((e) => e.index + ": " + e.error.message),
+            );
+          }
+        }
+
+        // 10. Write audit log
+        await db.collection("logs").add({
+          actionType: "org_deleted",
+          category: "organizations",
+          severity: "critical",
+          organizationId: orgId,
+          organizationName: orgName,
+          targetId: orgId,
+          descriptionKey: "org_deleted",
+          performedBy: {
+            userId: callerUid,
+            role: "primary_admin",
+            email: callerData.email || "",
+          },
+          metadata: {
+            orgName: orgName,
+            employeesDeleted: employeeUids.length,
+            usersDeleted: userUids.length,
+            groupsDeleted: projectGroupsSnap.size,
+            requestsDeleted: requestsSnap.size,
+            announcementsDeleted: announcementsSnap.size,
+          },
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log(
+            `[deleteOrganization] Done — org=${orgId} ("${orgName}")` +
+            ` employees=${employeeUids.length}` +
+            ` authAccounts=${authUids.length}` +
+            ` groups=${projectGroupsSnap.size}`,
+        );
+
+        return {
+          success: true,
+          message: `Organization "${orgName}" permanently deleted.`,
+        };
+      } catch (error) {
+        console.error("[deleteOrganization] error:", error.message, error);
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError(
+            "internal",
+            error.message || "Failed to delete organization.",
+        );
+      }
+    },
+);
 
 /**
  * Cloud Function: Create Admin with Temp Password
