@@ -96,7 +96,7 @@ GovChat is designed with security as a first-class requirement, informed by OWAS
 | **Session Security** | 5-minute inactivity timeout; session cleared on logout and role mismatch |
 | **Dependency Hygiene** | `flutter_lints` enforced; private package registry (`publish_to: none`) |
 
-**GitHub Secret Protection:** No credentials, API keys, or service account files are committed to the repository. Firebase configuration is generated per environment and excluded via `.gitignore`.
+**GitHub Secret Protection:** No credentials, API keys, or service account files are committed to the repository. Firebase configuration is generated per environment and excluded via `.gitignore`. A full security audit is available in [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md).
 
 ---
 
@@ -166,6 +166,20 @@ GovChat is designed with security as a first-class requirement, informed by OWAS
 
 ---
 
+## Demo Accounts
+
+A sandboxed demo organization is available for evaluating GovChat without setting up your own Firebase project. These accounts use isolated test data with no access to real user information.
+
+| Role | Email | Password |
+|------|-------|----------|
+| Employee | `demo.employee@govchat.demo` | `Demo@GovChat1` |
+
+> **Note:** Demo accounts are read-only and operate in an isolated demo organization. No real data is accessible. The demo environment resets periodically.
+
+To request an admin-level demo for the web dashboard, contact the team directly.
+
+---
+
 ## Installation
 
 ### Prerequisites
@@ -174,15 +188,16 @@ GovChat is designed with security as a first-class requirement, informed by OWAS
 - Dart SDK `^3.10.7`
 - Node.js 24
 - Firebase CLI (`npm install -g firebase-tools`)
-- A Firebase project with Firestore, Auth, Storage, and Functions enabled
+- FlutterFire CLI (`dart pub global activate flutterfire_cli`)
+- A Firebase project with **Firestore**, **Auth**, **Storage**, and **Functions** enabled
 
 ### Steps
 
 **1. Clone the repository**
 
 ```bash
-git clone https://github.com/<org>/govchat.git
-cd govchat
+git clone https://github.com/abdulrhmanALyousef/GovChat.git
+cd GovChat
 ```
 
 **2. Install Flutter dependencies**
@@ -193,14 +208,27 @@ flutter pub get
 
 **3. Configure Firebase**
 
+Firebase credential files are gitignored. You must generate them for your own project:
+
 ```bash
 firebase login
 flutterfire configure
 ```
 
-This generates `lib/firebase_options.dart`. Do not commit this file if it contains environment-specific values.
+This generates:
+- `lib/firebase_options.dart`
+- `android/app/google-services.json`
+- `ios/Runner/GoogleService-Info.plist`
 
-**4. Install Cloud Functions dependencies**
+Template files (`.example` suffix) are provided for reference. Do **not** commit the generated files.
+
+**4. Deploy Firestore Security Rules**
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+**5. Install Cloud Functions dependencies**
 
 ```bash
 cd functions
@@ -208,13 +236,21 @@ npm install
 cd ..
 ```
 
-**5. Set Cloud Function secrets**
+**6. Set Cloud Function secrets in Firebase Secret Manager**
 
 ```bash
 firebase functions:secrets:set RESEND_API_KEY
+firebase functions:secrets:set AUTHENTICA_API_KEY
+firebase functions:secrets:set GEMINI_API_KEY
 ```
 
-**6. Run the application**
+**7. Deploy Cloud Functions**
+
+```bash
+firebase deploy --only functions
+```
+
+**8. Run the application**
 
 ```bash
 # List available devices
@@ -224,7 +260,7 @@ flutter devices
 flutter run -d <device_id>
 ```
 
-**7. (Optional) Start the Firebase emulator**
+**9. (Optional) Start the Firebase emulator**
 
 ```bash
 firebase emulators:start --only functions
@@ -306,30 +342,42 @@ govchat/
 
 ## Roadmap
 
+- [ ] **Firebase App Check** — Prevent unauthorized app access even with API keys
+- [ ] **Firebase SDK Upgrade** — Migrate to firebase_core 4.x and related packages
 - [ ] **Advanced Security Auditing** — Immutable, cryptographically signed audit trail with tamper detection
-- [ ] **AI-Powered Moderation** — Automated flagging of policy-violating content using on-device or cloud ML
-- [ ] **End-to-End Encrypted Group Messaging** — Extend E2EE to department-wide group channels
-- [ ] **Performance Optimization** — Firestore query pagination, lazy loading, and read cost reduction
-- [ ] **Admin Dashboard Improvements** — Analytics widgets, exportable reports, and bulk user management
-- [ ] **Monitoring and Observability** — Firebase Crashlytics, Performance Monitoring, and custom alerting
-- [ ] **Push Notifications** — Firebase Cloud Messaging for real-time message and request alerts
-- [ ] **Web Platform Support** — Full Flutter Web build with PWA capabilities
+- [ ] **AI-Powered Moderation** — Automated flagging of policy-violating content
+- [ ] **Performance Optimization** — Firestore query pagination, lazy loading, read cost reduction
+- [ ] **Admin Dashboard Analytics** — Exportable reports, bulk user management
+- [ ] **Monitoring and Observability** — Firebase Crashlytics and Performance Monitoring
+- [ ] **CSP / Security Headers** — `Strict-Transport-Security`, `X-Frame-Options` in Next.js middleware
 
 ---
 
 ## Contributing
 
-1. Fork the repository and create a feature branch from `develop`:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-2. Make your changes. Ensure `flutter analyze` and `flutter test` both pass.
-3. Format all code: `dart format lib test`
-4. Commit with a descriptive message following conventional commits.
-5. Open a pull request against `develop` with a clear description of the change and its motivation.
-6. At least one team member must review and approve before merge.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full contribution guide.
 
-Please do not commit secrets, credentials, or `firebase_options.dart` with production values.
+Quick summary:
+1. Fork and create a feature branch from `develop`
+2. Ensure `flutter analyze` and `flutter test` pass
+3. Run `dart format lib test`
+4. Open a PR against `develop`
+
+**Never commit secrets, credentials, or Firebase configuration files.**
+
+---
+
+## Changelog
+
+See [`CHANGELOG.md`](CHANGELOG.md) for a full list of changes by version.
+
+---
+
+## Security
+
+See [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md) for the complete security audit report.
+
+To report a vulnerability, contact the team directly — do not open a public GitHub issue.
 
 ---
 
@@ -340,5 +388,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ---
 
 <div align="center">
-  <sub>Built with Flutter and Firebase &mdash; GovChat &copy; 2025</sub>
+  <sub>GovChat v1.0.0 &mdash; Built with Flutter and Firebase &mdash; &copy; 2026</sub>
 </div>

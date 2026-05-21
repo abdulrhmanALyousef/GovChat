@@ -8,8 +8,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function employeeDoc() {
+      return get(/databases/$(database)/documents/employees/$(request.auth.uid)).data;
+    }
+
     function userRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return userDoc().role;
     }
 
     function isPrimaryAdmin() {
@@ -28,8 +36,20 @@ service cloud.firestore {
       return isAuthenticated() && (userRole() == 'admin' || userRole() == 'primary_admin');
     }
 
+    // Returns the organizationId for admin/primary_admin callers (stored in users/)
     function adminOrgId() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.organizationId;
+      return userDoc().organizationId;
+    }
+
+    // Returns the organizationId for employee callers (stored in employees/)
+    function employeeOrgId() {
+      return employeeDoc().organizationId;
+    }
+
+    // True when the caller belongs to orgId regardless of role
+    function callerBelongsToOrg(orgId) {
+      return (isAdminOrAbove() && adminOrgId() == orgId)
+          || (isEmployee() && employeeOrgId() == orgId);
     }
 
     // ── Users ─────────────────────────────────────────────────────────────────
@@ -45,33 +65,36 @@ service cloud.firestore {
 
     // ── Organizations ─────────────────────────────────────────────────────────
     match /organizations/{orgId} {
-      allow read: if isAuthenticated();
+      // Each user may only read their own organization; primary_admin reads all
+      allow read: if isPrimaryAdmin() || callerBelongsToOrg(orgId);
       allow create, update, delete: if isPrimaryAdmin();
 
-      // Organization settings — admin can manage settings for their own org
+      // Organization settings — scoped to org members only
       match /settings/{settingDoc} {
-        allow read: if isAuthenticated();
+        allow read: if isPrimaryAdmin() || callerBelongsToOrg(orgId);
         allow write: if (isAdmin() && adminOrgId() == orgId) || isPrimaryAdmin();
       }
 
-      // Department messages
+      // Department messages — scoped to org members only
       match /departments/{deptId}/messages/{msgId} {
-        allow read: if isAuthenticated();
-        allow write: if isEmployee() || isAdminOrAbove();
+        allow read: if callerBelongsToOrg(orgId);
+        allow write: if (isEmployee() && employeeOrgId() == orgId)
+                      || (isAdminOrAbove() && adminOrgId() == orgId);
       }
 
-      // Org-wide chat
+      // Org-wide chat — scoped to org members only
       match /org_chats/{chatId}/messages/{msgId} {
-        allow read: if isAuthenticated();
-        allow write: if isEmployee() || isAdminOrAbove();
+        allow read: if callerBelongsToOrg(orgId);
+        allow write: if (isEmployee() && employeeOrgId() == orgId)
+                      || (isAdminOrAbove() && adminOrgId() == orgId);
       }
 
-      // Private chats
+      // Private chats — scoped to org members only
       match /private_chats/{chatId}/messages/{msgId} {
-        allow read, write: if isAuthenticated();
+        allow read, write: if callerBelongsToOrg(orgId);
       }
 
-      // E2EE group keys
+      // E2EE group keys — only the key owner reads their own key
       match /{conversationPath=**}/groupKey/{uid} {
         allow read: if request.auth.uid == uid || isAdminOrAbove();
         allow write: if isAuthenticated();
@@ -80,10 +103,11 @@ service cloud.firestore {
 
     // ── Employees ─────────────────────────────────────────────────────────────
     match /employees/{uid} {
+      // Employees may read only members of their own org (needed for E2EE key lookup)
       allow read: if request.auth.uid == uid
                    || isPrimaryAdmin()
                    || (isAdminOrAbove() && resource.data.organizationId == adminOrgId())
-                   || isEmployee();
+                   || (isEmployee() && resource.data.organizationId == employeeOrgId());
       allow create: if isAuthenticated();
       allow update: if request.auth.uid == uid
                      || isPrimaryAdmin()
@@ -110,7 +134,10 @@ service cloud.firestore {
 
     // ── Project Groups ────────────────────────────────────────────────────────
     match /projectGroups/{groupId} {
-      allow read: if isAuthenticated();
+      // Scoped to org members — employees read groups in their org; admins in their org
+      allow read: if isPrimaryAdmin()
+                   || (isAdminOrAbove() && resource.data.organizationId == adminOrgId())
+                   || (isEmployee() && resource.data.organizationId == employeeOrgId());
       allow create: if isAdmin() && request.resource.data.organizationId == adminOrgId();
       allow update: if isAdmin() && resource.data.organizationId == adminOrgId();
       allow delete: if (isAdmin() && resource.data.organizationId == adminOrgId())
@@ -128,12 +155,9 @@ service cloud.firestore {
 
     // ── Announcements ─────────────────────────────────────────────────────────
     match /announcements/{announcementId} {
-      // Primary admin: full access across all orgs
-      // Admin: read + write only for their own org
-      // Employee: read-only (org isolation enforced client-side via organizationId query filter)
       allow read: if isPrimaryAdmin()
                    || (isAdmin() && resource.data.organizationId == adminOrgId())
-                   || isEmployee();
+                   || (isEmployee() && resource.data.organizationId == employeeOrgId());
       allow create: if isAdmin()
                      && request.resource.data.organizationId == adminOrgId();
       allow update, delete: if (isAdmin() && resource.data.organizationId == adminOrgId())
