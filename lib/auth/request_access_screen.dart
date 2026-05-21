@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:projects/l10n/app_localizations.dart';
@@ -28,7 +28,7 @@ class _RequestAccessView extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: context.colors.scaffoldBackground,
       body: SafeArea(
         child: Form(
           key: controller.formKey,
@@ -58,7 +58,7 @@ class _RequestAccessView extends StatelessWidget {
                             style: GoogleFonts.manrope(
                               fontSize: AppSizes.sp14,
                               fontWeight: FontWeight.w900,
-                              color: AppColors.textTitle,
+                              color: context.colors.textTitle,
                               letterSpacing: 2,
                             ),
                           ),
@@ -71,7 +71,7 @@ class _RequestAccessView extends StatelessWidget {
                           style: GoogleFonts.manrope(
                             fontSize: AppSizes.sp11,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textMuted,
+                            color: context.colors.textMuted,
                             letterSpacing: 1,
                           ),
                         ),
@@ -113,7 +113,7 @@ class _RequestAccessView extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp28,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.textTitle,
+                          color: context.colors.textTitle,
                         ),
                       ),
                       SizedBox(height: AppSizes.h8),
@@ -122,7 +122,7 @@ class _RequestAccessView extends StatelessWidget {
                         l.requestAccessSubtitle,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp13,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                           height: 1.5,
                         ),
                       ),
@@ -130,12 +130,14 @@ class _RequestAccessView extends StatelessWidget {
 
                       // ── Info Cards ──
                       _buildInfoCard(
+                        context: context,
                         icon: Icons.shield_outlined,
                         title: l.endToEndEncryptionTitle,
                         subtitle: l.endToEndEncryptionSubtitle,
                       ),
                       SizedBox(height: AppSizes.h12),
                       _buildInfoCard(
+                        context: context,
                         icon: Icons.verified_outlined,
                         title: l.complianceReadyTitle,
                         subtitle: l.complianceReadySubtitle,
@@ -143,7 +145,7 @@ class _RequestAccessView extends StatelessWidget {
                       SizedBox(height: AppSizes.h32),
 
                       // ── Form ──
-                      _buildLabel(l.firstNameLabel),
+                      _buildLabel(context, l.firstNameLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.firstNameController,
@@ -158,7 +160,7 @@ class _RequestAccessView extends StatelessWidget {
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(l.middleNameOptionalLabel),
+                      _buildLabel(context, l.middleNameOptionalLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.middleNameController,
@@ -166,7 +168,7 @@ class _RequestAccessView extends StatelessWidget {
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(l.lastNameLabel),
+                      _buildLabel(context, l.lastNameLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.lastNameController,
@@ -181,7 +183,7 @@ class _RequestAccessView extends StatelessWidget {
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(l.emailAddressLabel),
+                      _buildLabel(context, l.emailAddressLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.emailController,
@@ -196,7 +198,7 @@ class _RequestAccessView extends StatelessWidget {
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(l.passwordLabel),
+                      _buildLabel(context, l.passwordLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.passwordController,
@@ -216,7 +218,7 @@ class _RequestAccessView extends StatelessWidget {
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(l.nationalIdLabel),
+                      _buildLabel(context, l.nationalIdLabel),
                       SizedBox(height: AppSizes.h8),
                       TextFieldForLogin(
                         controller: controller.nationalIdController,
@@ -227,13 +229,33 @@ class _RequestAccessView extends StatelessWidget {
                       ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(l.organizationLabel),
+                      _buildLabel(context, l.phoneNumberLabel),
+                      SizedBox(height: AppSizes.h8),
+                      TextFieldForLogin(
+                        controller: controller.phoneController,
+                        hintText: l.phoneNumberHint,
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return l.phoneNumberRequired;
+                          }
+                          if (!RegExp(r'^05[0-9]{8}$')
+                              .hasMatch(v.trim())) {
+                            return l.phoneNumberInvalid;
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: AppSizes.h16),
+
+                      _buildLabel(context, l.organizationLabel),
                       SizedBox(height: AppSizes.h8),
                       controller.isLoadingOrgs
                           ? Container(
                               height: AppSizes.h48,
                               decoration: BoxDecoration(
-                                color: AppColors.inputFill,
+                                color: context.colors.inputFill,
                                 borderRadius: BorderRadius.circular(
                                   AppSizes.r12,
                                 ),
@@ -250,6 +272,7 @@ class _RequestAccessView extends StatelessWidget {
                               ),
                             )
                           : _buildDropdown(
+                              context: context,
                               value: controller.selectedOrganizationId,
                               hint: l.selectOrganizationHint,
                               items: controller.organizations
@@ -264,9 +287,10 @@ class _RequestAccessView extends StatelessWidget {
                             ),
                       SizedBox(height: AppSizes.h16),
 
-                      _buildLabel(l.departmentLabel),
+                      _buildLabel(context, l.departmentLabel),
                       SizedBox(height: AppSizes.h8),
                       _buildDropdown(
+                        context: context,
                         value: controller.selectedDepartment,
                         hint: l.selectDepartmentHint,
                         items: controller.departments
@@ -360,9 +384,9 @@ class _RequestAccessView extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.all(AppSizes.ph14),
                         decoration: BoxDecoration(
-                          color: AppColors.cardBackground,
+                          color: context.colors.cardBackground,
                           borderRadius: BorderRadius.circular(AppSizes.r12),
-                          border: Border.all(color: AppColors.inputBorder),
+                          border: Border.all(color: context.colors.inputBorder),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,7 +402,7 @@ class _RequestAccessView extends StatelessWidget {
                                 l.submitDisclaimer,
                                 style: GoogleFonts.manrope(
                                   fontSize: AppSizes.sp12,
-                                  color: AppColors.textSecondary,
+                                  color: context.colors.textSecondary,
                                   height: 1.5,
                                 ),
                               ),
@@ -400,7 +424,7 @@ class _RequestAccessView extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     border: Border(
-                      top: BorderSide(color: AppColors.inputBorder),
+                      top: BorderSide(color: context.colors.inputBorder),
                     ),
                   ),
                   child: Column(
@@ -408,9 +432,9 @@ class _RequestAccessView extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildFooterLink(l.privacyPolicyLink),
-                          _buildFooterLink(l.systemStatusLink),
-                          _buildFooterLink(l.helpDeskLink),
+                          _buildFooterLink(context, l.privacyPolicyLink),
+                          _buildFooterLink(context, l.systemStatusLink),
+                          _buildFooterLink(context, l.helpDeskLink),
                         ],
                       ),
                       SizedBox(height: AppSizes.h12),
@@ -418,7 +442,7 @@ class _RequestAccessView extends StatelessWidget {
                         l.copyright,
                         style: GoogleFonts.manrope(
                           fontSize: AppSizes.sp9,
-                          color: AppColors.hintText,
+                          color: context.colors.hintText,
                           letterSpacing: 0.5,
                         ),
                         textAlign: TextAlign.center,
@@ -435,6 +459,7 @@ class _RequestAccessView extends StatelessWidget {
   }
 
   Widget _buildInfoCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -442,9 +467,9 @@ class _RequestAccessView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.colors.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,7 +485,7 @@ class _RequestAccessView extends StatelessWidget {
                   style: GoogleFonts.manrope(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textTitle,
+                    color: context.colors.textTitle,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -468,7 +493,7 @@ class _RequestAccessView extends StatelessWidget {
                   subtitle,
                   style: GoogleFonts.manrope(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                     height: 1.4,
                   ),
                 ),
@@ -497,19 +522,20 @@ class _RequestAccessView extends StatelessWidget {
     }
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(BuildContext context, String text) {
     return Text(
       text,
       style: GoogleFonts.manrope(
         fontSize: 11,
         fontWeight: FontWeight.w700,
-        color: AppColors.textMuted,
+        color: context.colors.textMuted,
         letterSpacing: 1.2,
       ),
     );
   }
 
   Widget _buildDropdown({
+    required BuildContext context,
     required String? value,
     required String hint,
     required List<DropdownMenuItem<String>> items,
@@ -518,13 +544,13 @@ class _RequestAccessView extends StatelessWidget {
     return DropdownButtonFormField<String>(
       initialValue: value,
       onChanged: onChanged,
-      dropdownColor: AppColors.cardBackground,
-      style: GoogleFonts.manrope(color: AppColors.textPrimary, fontSize: 14),
+      dropdownColor: context.colors.cardBackground,
+      style: GoogleFonts.manrope(color: context.colors.textPrimary, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.manrope(color: AppColors.hintText, fontSize: 14),
+        hintStyle: GoogleFonts.manrope(color: context.colors.hintText, fontSize: 14),
         filled: true,
-        fillColor: AppColors.inputFill,
+        fillColor: context.colors.inputFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.r12),
           borderSide: BorderSide.none,
@@ -542,20 +568,20 @@ class _RequestAccessView extends StatelessWidget {
           vertical: 14,
         ),
       ),
-      icon: const Icon(
+      icon: Icon(
         Icons.keyboard_arrow_down,
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
       ),
       items: items,
     );
   }
 
-  Widget _buildFooterLink(String text) {
+  Widget _buildFooterLink(BuildContext context, String text) {
     return Text(
       text,
       style: GoogleFonts.manrope(
         fontSize: 9,
-        color: AppColors.hintText,
+        color: context.colors.hintText,
         letterSpacing: 1,
         fontWeight: FontWeight.w600,
       ),

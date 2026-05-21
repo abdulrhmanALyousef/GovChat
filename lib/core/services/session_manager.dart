@@ -7,6 +7,7 @@ import '../datasource/local_data/preferences_manager.dart';
 import '../datasource/remote_data/firebase_service.dart';
 import 'encryption/e2ee_manager.dart';
 import 'logging_service.dart';
+import 'push_notification_service.dart';
 
 class SessionManager {
   SessionManager._();
@@ -23,30 +24,39 @@ class SessionManager {
     final user = FirebaseService.instance.currentUser;
     if (user != null) {
       final orgId = _preferences.getString('organizationId') ?? '';
-      final role = _preferences.getString('role') ?? '';
       final isInactivity = reason != null &&
           (reason.contains('inactivity') || reason.contains('عدم النشاط'));
       if (orgId.isNotEmpty) {
+        final name = _preferences.getString('name') ?? '';
+        final displayId = _preferences.getString('displayId') ?? '';
         LoggingService.instance.log(
           organizationId: orgId,
           actionType: isInactivity ? 'auto_logout_inactivity' : 'logout',
-          descriptionKey: isInactivity ? 'logAutoLogoutInactivity' : 'logLogout',
           performedByUserId: user.uid,
-          performedByRole: role.isNotEmpty ? role : 'employee',
+          performedByRole: 'employee',
           performedByEmail: user.email ?? '',
-          performedByName: user.email,
+          performedByName: name.isNotEmpty ? name : null,
+          performedByEmployeeId: displayId.isNotEmpty ? displayId : null,
+          metadata: isInactivity ? {'reason': 'session_inactivity_timeout'} : const {},
         );
       }
+    }
+
+    // Delete FCM token before signing out while we still have the uid
+    final currentUser = FirebaseService.instance.currentUser;
+    if (currentUser != null) {
+      PushNotificationService.instance.deleteToken(currentUser.uid).ignore();
     }
 
     try {
       await FirebaseService.instance.auth.signOut();
     } catch (_) {
-      error = l?.failedToSignOut ?? 'Failed to sign out. Check your connection and try again.';
+      error = l?.failedToSignOut ??
+          'Failed to sign out. Check your connection and try again.';
     }
 
     await _preferences.clear();
-    E2eeManager.clearCache(); // Evict in-memory key caches
+    E2eeManager.clearCache();
 
     if (!context.mounted) return;
 
@@ -64,6 +74,9 @@ class SessionManager {
     );
   }
 
+  /// Validates the current Firebase user against the employees collection.
+  /// The mobile app is employee-only — presence of an active employees/{uid}
+  /// document is the sole authorization check.
   Future<bool> ensureRole(
     BuildContext context, {
     required List<String> allowedRoles,
@@ -71,22 +84,26 @@ class SessionManager {
   }) async {
     final l = AppLocalizations.of(context);
     final user = FirebaseAuth.instance.currentUser;
+
     if (user == null) {
       if (!context.mounted) return false;
-      await logout(context, reason: l?.sessionExpired ?? 'Session expired. Please sign in again.');
+      await logout(
+        context,
+        reason: l?.sessionExpired ?? 'Session expired. Please sign in again.',
+      );
       return false;
     }
 
-    final doc = await FirebaseService.instance.firestore
-        .collection('users')
+    // Mobile app is employee-only. Validate ONLY from employees collection.
+    final empDoc = await FirebaseService.instance.firestore
+        .collection('employees')
         .doc(user.uid)
         .get();
 
     if (!context.mounted) return false;
 
-    final data = doc.data();
+    final data = empDoc.data();
     if (data == null) {
-      if (!context.mounted) return false;
       await logout(context, reason: l?.accountDataMissing ?? 'Account data missing. Please sign in.');
       return false;
     }
@@ -98,10 +115,33 @@ class SessionManager {
       return false;
     }
 
-    final status = (data['status'] ?? 'active') as String;
+    // Normalise 'approved' → 'active' written during the transition period.
+    String status = (data['status'] ?? 'active') as String;
+    if (status == 'approved') {
+      status = 'active';
+      FirebaseService.instance.firestore
+          .collection('employees')
+          .doc(user.uid)
+          .update({'status': 'active'})
+          .ignore();
+    }
+
     if (status != 'active') {
       if (!context.mounted) return false;
-      await logout(context, reason: l?.accountStatusMessage(status) ?? 'Account is $status.');
+      await logout(
+        context,
+        reason: l?.accountStatusMessage(status) ?? 'Account is $status.',
+      );
+      return false;
+    }
+
+    // phoneVerified must be true — set during access-request OTP flow.
+    // Defaults to true for legacy records that pre-date the field (run
+    // migrateEmployees Cloud Function to backfill those docs).
+    final phoneVerified = (data['phoneVerified'] ?? true) as bool;
+    if (!phoneVerified) {
+      if (!context.mounted) return false;
+      await logout(context, reason: l?.employeePhoneRequired ?? 'Phone verification required.');
       return false;
     }
 
@@ -109,7 +149,11 @@ class SessionManager {
       final orgId = (data['organizationId'] ?? '') as String;
       if (orgId != expectedOrganizationId) {
         if (!context.mounted) return false;
-        await logout(context, reason: l?.organizationMismatchDetected ?? 'Organization mismatch detected.');
+        await logout(
+          context,
+          reason: l?.organizationMismatchDetected ??
+              'Organization mismatch detected.',
+        );
         return false;
       }
     }

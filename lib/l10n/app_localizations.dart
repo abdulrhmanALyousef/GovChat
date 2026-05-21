@@ -590,6 +590,12 @@ abstract class AppLocalizations {
   /// **'No messages yet'**
   String get noMessagesYet;
 
+  /// No description provided for @encryptedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted message'**
+  String get encryptedMessage;
+
   /// No description provided for @orgChatLabel.
   ///
   /// In en, this message translates to:
@@ -1883,8 +1889,14 @@ abstract class AppLocalizations {
   /// No description provided for @changePasswordDescription.
   ///
   /// In en, this message translates to:
-  /// **'Verify your identity via email to update your password.'**
+  /// **'Verify your identity via OTP to update your password.'**
   String get changePasswordDescription;
+
+  /// No description provided for @cpNoPhoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone verification required. Please contact your administrator to add a verified phone number to your account.'**
+  String get cpNoPhoneMessage;
 
   /// No description provided for @verificationCodeTitle.
   ///
@@ -2785,6 +2797,990 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Access request submitted'**
   String get logDescRequestSubmitted;
+
+  /// No description provided for @noAnnouncementsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Official announcements from your organization will appear here.'**
+  String get noAnnouncementsDesc;
+
+  /// No description provided for @announcementPostedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted'**
+  String get announcementPostedLabel;
+
+  /// No description provided for @announcementExpiresLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires'**
+  String get announcementExpiresLabel;
+
+  /// No description provided for @announcementPriorityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get announcementPriorityNormal;
+
+  /// No description provided for @announcementPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get announcementPriorityHigh;
+
+  /// No description provided for @announcementPriorityUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get announcementPriorityUrgent;
+
+  /// No description provided for @logAnnouncementCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement created'**
+  String get logAnnouncementCreated;
+
+  /// No description provided for @logAnnouncementUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement updated'**
+  String get logAnnouncementUpdated;
+
+  /// No description provided for @logAnnouncementDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement deleted'**
+  String get logAnnouncementDeleted;
+
+  /// No description provided for @phoneNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PHONE NUMBER'**
+  String get phoneNumberLabel;
+
+  /// No description provided for @phoneNumberHint.
+  ///
+  /// In en, this message translates to:
+  /// **'0597123456'**
+  String get phoneNumberHint;
+
+  /// No description provided for @phoneNumberRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is required'**
+  String get phoneNumberRequired;
+
+  /// No description provided for @phoneNumberInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid Saudi mobile number (e.g. 0597123456)'**
+  String get phoneNumberInvalid;
+
+  /// No description provided for @employeePhoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account does not have a verified phone number. Please contact your administrator.'**
+  String get employeePhoneRequired;
+
+  /// No description provided for @mobileEmployeeOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This app is for employees only. Admins must sign in via the GovChat web dashboard.'**
+  String get mobileEmployeeOnly;
+
+  /// No description provided for @otpVerificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP Verification'**
+  String get otpVerificationTitle;
+
+  /// No description provided for @otpVerificationSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A 4-digit code has been sent to'**
+  String get otpVerificationSubtitle;
+
+  /// No description provided for @otpLoginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-Factor Authentication'**
+  String get otpLoginTitle;
+
+  /// No description provided for @otpLoginSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'For your security, enter the OTP sent to your registered phone.'**
+  String get otpLoginSubtitle;
+
+  /// No description provided for @otpEnterCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 4-digit OTP'**
+  String get otpEnterCode;
+
+  /// No description provided for @otpVerifyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'VERIFY OTP'**
+  String get otpVerifyButton;
+
+  /// No description provided for @otpResendButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Code'**
+  String get otpResendButton;
+
+  /// No description provided for @otpResendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String otpResendIn(int seconds);
+
+  /// No description provided for @otpSendingCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending OTP...'**
+  String get otpSendingCode;
+
+  /// No description provided for @otpVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying...'**
+  String get otpVerifying;
+
+  /// No description provided for @otpInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid OTP. Please try again.'**
+  String get otpInvalidCode;
+
+  /// No description provided for @otpExpiredCode.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP expired. Please request a new one.'**
+  String get otpExpiredCode;
+
+  /// No description provided for @otpTooManyAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many failed attempts. Please request a new code.'**
+  String get otpTooManyAttempts;
+
+  /// No description provided for @otpSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send OTP. Check your phone number and try again.'**
+  String get otpSendFailed;
+
+  /// No description provided for @otpVerificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP verification failed. Please try again.'**
+  String get otpVerificationFailed;
+
+  /// No description provided for @otpAttemptsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} attempts remaining'**
+  String otpAttemptsLeft(int count);
+
+  /// No description provided for @logOtpSent.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP sent to phone'**
+  String get logOtpSent;
+
+  /// No description provided for @logOtpVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP verified successfully'**
+  String get logOtpVerified;
+
+  /// No description provided for @logOtpFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP verification failed'**
+  String get logOtpFailed;
+
+  /// No description provided for @logPasswordResetViaSms.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset via SMS OTP'**
+  String get logPasswordResetViaSms;
+
+  /// No description provided for @fpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot Password'**
+  String get fpTitle;
+
+  /// No description provided for @fpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your registered email address. We\'ll send a one-time code to your verified phone number.'**
+  String get fpSubtitle;
+
+  /// No description provided for @fpIdentifyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'SEND OTP'**
+  String get fpIdentifyButton;
+
+  /// No description provided for @fpEmployeeNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No active employee account found with this email address.'**
+  String get fpEmployeeNotFound;
+
+  /// No description provided for @fpPasswordResetSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset successfully! Please sign in with your new password.'**
+  String get fpPasswordResetSuccess;
+
+  /// No description provided for @fpResetPasswordButton.
+  ///
+  /// In en, this message translates to:
+  /// **'RESET PASSWORD'**
+  String get fpResetPasswordButton;
+
+  /// No description provided for @newReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New Reminder'**
+  String get newReminderTitle;
+
+  /// No description provided for @editReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Reminder'**
+  String get editReminderTitle;
+
+  /// No description provided for @reminderDetailsSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'REMINDER DETAILS'**
+  String get reminderDetailsSectionLabel;
+
+  /// No description provided for @reminderTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'TITLE'**
+  String get reminderTitleLabel;
+
+  /// No description provided for @reminderTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder title'**
+  String get reminderTitleHint;
+
+  /// No description provided for @reminderDescLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DESCRIPTION (OPTIONAL)'**
+  String get reminderDescLabel;
+
+  /// No description provided for @reminderDescHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more details…'**
+  String get reminderDescHint;
+
+  /// No description provided for @priorityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PRIORITY'**
+  String get priorityLabel;
+
+  /// No description provided for @priorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get priorityLow;
+
+  /// No description provided for @priorityMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get priorityMedium;
+
+  /// No description provided for @priorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get priorityHigh;
+
+  /// No description provided for @scheduleSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SCHEDULE'**
+  String get scheduleSectionLabel;
+
+  /// No description provided for @dueDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DUE DATE'**
+  String get dueDateLabel;
+
+  /// No description provided for @dueTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DUE TIME'**
+  String get dueTimeLabel;
+
+  /// No description provided for @remindBeforeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'REMIND BEFORE'**
+  String get remindBeforeLabel;
+
+  /// No description provided for @remindAtTime.
+  ///
+  /// In en, this message translates to:
+  /// **'At time'**
+  String get remindAtTime;
+
+  /// No description provided for @remind15Min.
+  ///
+  /// In en, this message translates to:
+  /// **'15 min'**
+  String get remind15Min;
+
+  /// No description provided for @remind1Hour.
+  ///
+  /// In en, this message translates to:
+  /// **'1 hour'**
+  String get remind1Hour;
+
+  /// No description provided for @remind1Day.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day'**
+  String get remind1Day;
+
+  /// No description provided for @remind2Days.
+  ///
+  /// In en, this message translates to:
+  /// **'2 days'**
+  String get remind2Days;
+
+  /// No description provided for @repeatSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'REPEAT'**
+  String get repeatSectionLabel;
+
+  /// No description provided for @repeatNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get repeatNone;
+
+  /// No description provided for @repeatDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get repeatDaily;
+
+  /// No description provided for @repeatWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get repeatWeekly;
+
+  /// No description provided for @repeatMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get repeatMonthly;
+
+  /// No description provided for @repeatCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get repeatCustom;
+
+  /// No description provided for @repeatEveryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Every'**
+  String get repeatEveryLabel;
+
+  /// No description provided for @repeatDaysLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'day(s)'**
+  String get repeatDaysLabel;
+
+  /// No description provided for @notificationSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'NOTIFICATION'**
+  String get notificationSectionLabel;
+
+  /// No description provided for @notificationEnabledLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable notification'**
+  String get notificationEnabledLabel;
+
+  /// No description provided for @notificationEnabledDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'You will be notified at the scheduled time.'**
+  String get notificationEnabledDesc;
+
+  /// No description provided for @notificationDisabledDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'No notification will be sent.'**
+  String get notificationDisabledDesc;
+
+  /// No description provided for @createReminderButton.
+  ///
+  /// In en, this message translates to:
+  /// **'CREATE REMINDER'**
+  String get createReminderButton;
+
+  /// No description provided for @deleteReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Reminder'**
+  String get deleteReminderTitle;
+
+  /// No description provided for @deleteReminderConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This reminder will be permanently deleted. This action cannot be undone.'**
+  String get deleteReminderConfirm;
+
+  /// No description provided for @searchRemindersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search reminders…'**
+  String get searchRemindersHint;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get filterActive;
+
+  /// No description provided for @filterOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get filterOverdue;
+
+  /// No description provided for @filterCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get filterCompleted;
+
+  /// No description provided for @filterHighPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'High Priority'**
+  String get filterHighPriority;
+
+  /// No description provided for @noRemindersYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No reminders yet'**
+  String get noRemindersYet;
+
+  /// No description provided for @noRemindersDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + to create your first reminder.'**
+  String get noRemindersDesc;
+
+  /// No description provided for @noSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get noSearchResults;
+
+  /// No description provided for @noSearchResultsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different search term or filter.'**
+  String get noSearchResultsDesc;
+
+  /// No description provided for @logReminderCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder created'**
+  String get logReminderCreated;
+
+  /// No description provided for @logReminderUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder updated'**
+  String get logReminderUpdated;
+
+  /// No description provided for @logReminderCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder marked as completed'**
+  String get logReminderCompleted;
+
+  /// No description provided for @logReminderDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder deleted'**
+  String get logReminderDeleted;
+
+  /// No description provided for @reminderPastDateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date and time must be in the future. Please select a later date or time.'**
+  String get reminderPastDateError;
+
+  /// No description provided for @mediaSharingDisabledMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Media sharing is disabled by your organization administrator.'**
+  String get mediaSharingDisabledMessage;
+
+  /// No description provided for @logMediaSharingEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Media sharing enabled'**
+  String get logMediaSharingEnabled;
+
+  /// No description provided for @logMediaSharingDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Media sharing disabled'**
+  String get logMediaSharingDisabled;
+
+  /// No description provided for @encryptionKeySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Encryption Key Backup'**
+  String get encryptionKeySection;
+
+  /// No description provided for @encryptionKeyBackupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Securely back up your encryption key to restore your messages on a new device.'**
+  String get encryptionKeyBackupDescription;
+
+  /// No description provided for @backupKeyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup Key'**
+  String get backupKeyButton;
+
+  /// No description provided for @backupSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Encryption key backed up successfully'**
+  String get backupSuccessMessage;
+
+  /// No description provided for @backupFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to back up encryption key'**
+  String get backupFailedMessage;
+
+  /// No description provided for @backupKeyPasswordDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Backup Password'**
+  String get backupKeyPasswordDialogTitle;
+
+  /// No description provided for @backupKeyPasswordDialogDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a strong password to protect your encryption key backup. You will need it to restore your messages on another device.'**
+  String get backupKeyPasswordDialogDescription;
+
+  /// No description provided for @backupPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter password'**
+  String get backupPasswordHint;
+
+  /// No description provided for @confirmBackupPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get confirmBackupPasswordHint;
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters'**
+  String get passwordTooShort;
+
+  /// No description provided for @restoreKeyPasswordDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Encryption Key'**
+  String get restoreKeyPasswordDialogTitle;
+
+  /// No description provided for @restoreKeyPasswordDialogDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'An encryption key backup was found for your account. Enter your backup password to restore access to your messages.'**
+  String get restoreKeyPasswordDialogDescription;
+
+  /// No description provided for @restoreFailedWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password. Please try again.'**
+  String get restoreFailedWrongPassword;
+
+  /// No description provided for @restoreFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to restore encryption key'**
+  String get restoreFailedMessage;
+
+  /// No description provided for @skipRestoreButton.
+  ///
+  /// In en, this message translates to:
+  /// **'SKIP'**
+  String get skipRestoreButton;
+
+  /// No description provided for @restoreKeyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'RESTORE'**
+  String get restoreKeyButton;
+
+  /// No description provided for @notificationsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'NOTIFICATIONS'**
+  String get notificationsLabel;
+
+  /// No description provided for @notifNewMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New message'**
+  String get notifNewMessage;
+
+  /// No description provided for @notifNewPrivateMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New private message'**
+  String get notifNewPrivateMessage;
+
+  /// No description provided for @notifNewAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'New Announcement'**
+  String get notifNewAnnouncement;
+
+  /// No description provided for @notifViewAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'View announcement'**
+  String get notifViewAnnouncement;
+
+  /// No description provided for @notifChatChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get notifChatChannel;
+
+  /// No description provided for @notifAnnouncementChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get notifAnnouncementChannel;
+
+  /// No description provided for @notifSystemChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get notifSystemChannel;
+
+  /// No description provided for @logNotificationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notification sent'**
+  String get logNotificationSent;
+
+  /// No description provided for @logNotificationOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification opened'**
+  String get logNotificationOpened;
+
+  /// No description provided for @logNotificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notification failed'**
+  String get logNotificationFailed;
+
+  /// No description provided for @aiSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Chat Summary'**
+  String get aiSummaryTitle;
+
+  /// No description provided for @aiSummaryGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate'**
+  String get aiSummaryGenerate;
+
+  /// No description provided for @aiSummaryRegenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerate'**
+  String get aiSummaryRegenerate;
+
+  /// No description provided for @aiSummaryEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No summary yet'**
+  String get aiSummaryEmptyTitle;
+
+  /// No description provided for @aiSummaryEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Generate to create an AI-powered summary of this conversation.'**
+  String get aiSummaryEmptySubtitle;
+
+  /// No description provided for @aiSummaryGenerateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Summary'**
+  String get aiSummaryGenerateButton;
+
+  /// No description provided for @aiSummaryMainPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Main Points'**
+  String get aiSummaryMainPoints;
+
+  /// No description provided for @aiSummaryDecisions.
+  ///
+  /// In en, this message translates to:
+  /// **'Important Decisions'**
+  String get aiSummaryDecisions;
+
+  /// No description provided for @aiSummaryTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks & Action Items'**
+  String get aiSummaryTasks;
+
+  /// No description provided for @aiSummaryDeadlines.
+  ///
+  /// In en, this message translates to:
+  /// **'Deadlines & Commitments'**
+  String get aiSummaryDeadlines;
+
+  /// No description provided for @aiSummaryTone.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall Tone'**
+  String get aiSummaryTone;
+
+  /// No description provided for @aiSummaryGeneratedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated {date}'**
+  String aiSummaryGeneratedAt(String date);
+
+  /// No description provided for @inboxSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All Your Conversations'**
+  String get inboxSummaryTitle;
+
+  /// No description provided for @inboxSummarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI-powered overview of all your conversations'**
+  String get inboxSummarySubtitle;
+
+  /// No description provided for @inboxSummaryGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate'**
+  String get inboxSummaryGenerate;
+
+  /// No description provided for @inboxSummaryRegenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerate'**
+  String get inboxSummaryRegenerate;
+
+  /// No description provided for @inboxSummaryEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No inbox summary yet'**
+  String get inboxSummaryEmptyTitle;
+
+  /// No description provided for @inboxSummaryEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Generate to create an AI-powered summary of recent activity across all your chats.'**
+  String get inboxSummaryEmptySubtitle;
+
+  /// No description provided for @inboxSummaryGenerateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize Inbox'**
+  String get inboxSummaryGenerateButton;
+
+  /// No description provided for @inboxSummaryAnalysing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysing conversations…'**
+  String get inboxSummaryAnalysing;
+
+  /// No description provided for @inboxSummaryHighlights.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Highlights'**
+  String get inboxSummaryHighlights;
+
+  /// No description provided for @inboxSummaryUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent & Action Required'**
+  String get inboxSummaryUrgent;
+
+  /// No description provided for @inboxSummaryDecisions.
+  ///
+  /// In en, this message translates to:
+  /// **'Decisions Made'**
+  String get inboxSummaryDecisions;
+
+  /// No description provided for @inboxSummaryPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Items'**
+  String get inboxSummaryPending;
+
+  /// No description provided for @inboxSummaryPerChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Per-Chat Breakdown'**
+  String get inboxSummaryPerChat;
+
+  /// No description provided for @inboxSummaryTrends.
+  ///
+  /// In en, this message translates to:
+  /// **'Communication Trends'**
+  String get inboxSummaryTrends;
+
+  /// No description provided for @inboxSummaryGeneratedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated {date}'**
+  String inboxSummaryGeneratedAt(String date);
+
+  /// No description provided for @splashTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'SECURE INTERNAL COMMUNICATION'**
+  String get splashTagline;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get onboardingGetStarted;
+
+  /// No description provided for @onboarding1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure Communication'**
+  String get onboarding1Title;
+
+  /// No description provided for @onboarding1Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Military-grade end-to-end encryption keeps every message private and protected.'**
+  String get onboarding1Subtitle;
+
+  /// No description provided for @onboarding2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Team Collaboration'**
+  String get onboarding2Title;
+
+  /// No description provided for @onboarding2Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordinate seamlessly across departments with real-time messaging and group channels.'**
+  String get onboarding2Subtitle;
+
+  /// No description provided for @onboarding3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay Informed'**
+  String get onboarding3Title;
+
+  /// No description provided for @onboarding3Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive critical announcements and organization-wide updates the moment they happen.'**
+  String get onboarding3Subtitle;
+
+  /// No description provided for @onboarding4Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Identity'**
+  String get onboarding4Title;
+
+  /// No description provided for @onboarding4Subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'OTP authentication ensures only authorized personnel can access the system.'**
+  String get onboarding4Subtitle;
+
+  /// No description provided for @themeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get themeLabel;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
 }
 
 class _AppLocalizationsDelegate

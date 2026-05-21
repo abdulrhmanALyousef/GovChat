@@ -1,9 +1,10 @@
-/**
+﻿/**
  * Firebase Cloud Functions for GovChat
  * Creates admin users with temp passwords via Resend
  */
 
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
+const {onDocumentCreated} = require("firebase-functions/v2/firestore");
 const {setGlobalOptions} = require("firebase-functions/v2");
 const {defineSecret} = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -18,6 +19,34 @@ setGlobalOptions({maxInstances: 10, region: "us-central1"});
 // Resend API key from Firebase Secret Manager
 const resendApiKey = defineSecret("RESEND_API_KEY");
 
+// Authentica.sa API key from Firebase Secret Manager
+const authenticaApiKey = defineSecret("AUTHENTICA_API_KEY");
+
+// Gemini API key from Firebase Secret Manager
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
+
+// Authentica.sa API base URL
+const AUTHENTICA_BASE = "https://api.authentica.sa/api/v2";
+
+// OTP rate-limiting constants
+const OTP_SEND_COOLDOWN_SEC = 60;
+const OTP_SEND_MAX_PER_WINDOW = 5;
+const OTP_SEND_WINDOW_MIN = 10;
+const OTP_VERIFY_MAX_ATTEMPTS = 5;
+const OTP_VERIFY_WINDOW_MIN = 10;
+const OTP_VERIFICATION_TTL_MIN = 5;
+
+/**
+ * Converts a department name to a Firestore-safe slug.
+ * Must match the Flutter _slugDepartment() implementation exactly.
+ * @param {string} value
+ * @return {string}
+ */
+function slugDepartment(value) {
+  if (!value || !value.trim()) return "general";
+  return value.trim().replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase();
+}
+
 /**
  * Generates a random 8-digit temporary password
  * @return {string} The generated password
@@ -29,6 +58,192 @@ function generateTempPassword() {
   }
   return pwd;
 }
+
+/**
+ * Deletes an array of Firestore DocumentSnapshots in Firestore batches
+ * (max 500 ops per batch commit).
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} docs
+ * @return {Promise<void>}
+ */
+async function batchDeleteDocs(db, docs) {
+  if (!docs || docs.length === 0) return;
+  const BATCH_SIZE = 500;
+  for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+    const chunk = docs.slice(i, i + BATCH_SIZE);
+    const batch = db.batch();
+    chunk.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+}
+
+/**
+ * Cloud Function: Delete Organization (cascading hard delete)
+ *
+ * Deletes:
+ *   - employees/{uid} where organizationId == orgId
+ *   - users/{uid}    where organizationId == orgId
+ *   - accessRequests  where organizationId == orgId
+ *   - announcements   where organizationId == orgId
+ *   - projectGroups   where organizationId == orgId (+messages subcollection)
+ *   - logs            where organizationId == orgId
+ *   - organizations/{orgId} and ALL subcollections via recursiveDelete
+ *     (departments, departments/deptId/messages, private_chats, org_chats,
+ *      settings, groupKey, etc.)
+ *   - Firebase Auth accounts for all employees and admin
+ *
+ * Only primary_admin callers are authorised.
+ */
+exports.deleteOrganization = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+      timeoutSeconds: 300,
+    },
+    async (request) => {
+      // 1. Auth gate
+      if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Authentication required.");
+      }
+      const callerUid = request.auth.uid;
+
+      if (!request.data || !request.data.organizationId) {
+        throw new HttpsError("invalid-argument", "organizationId is required.");
+      }
+      const orgId = request.data.organizationId;
+
+      const db = admin.firestore();
+
+      // 2. Verify primary_admin role
+      const callerDoc = await db.collection("users").doc(callerUid).get();
+      if (!callerDoc.exists || callerDoc.data().role !== "primary_admin") {
+        throw new HttpsError(
+            "permission-denied",
+            "Only primary admins can delete organizations.",
+        );
+      }
+      const callerData = callerDoc.data();
+
+      // 3. Fetch org (for metadata + auth UID)
+      const orgDoc = await db.collection("organizations").doc(orgId).get();
+      if (!orgDoc.exists) {
+        throw new HttpsError("not-found", "Organization not found.");
+      }
+      const orgData = orgDoc.data();
+      const orgName = orgData.name || "";
+      const adminUid = orgData.adminUid || "";
+
+      console.log(
+          `[deleteOrganization] Starting full deletion of org=${orgId}` +
+          ` ("${orgName}") by uid=${callerUid}`,
+      );
+
+      try {
+        // 4. Collect UIDs for Auth deletion
+        const [employeesSnap, usersSnap] = await Promise.all([
+          db.collection("employees").where("organizationId", "==", orgId).get(),
+          db.collection("users").where("organizationId", "==", orgId).get(),
+        ]);
+
+        const employeeUids = employeesSnap.docs.map((d) => d.id);
+        const userUids = usersSnap.docs.map((d) => d.id);
+        const authUidSet = new Set([...employeeUids, ...userUids]);
+        if (adminUid) authUidSet.add(adminUid);
+
+        // ── 5. Parallel query for flat collections ───────────────────────────
+        const [requestsSnap, announcementsSnap, projectGroupsSnap, logsSnap] =
+          await Promise.all([
+            db.collection("accessRequests")
+                .where("organizationId", "==", orgId).get(),
+            db.collection("announcements")
+                .where("organizationId", "==", orgId).get(),
+            db.collection("projectGroups")
+                .where("organizationId", "==", orgId).get(),
+            db.collection("logs")
+                .where("organizationId", "==", orgId).get(),
+          ]);
+
+        // ── 6. Delete flat collections (batched) ─────────────────────────────
+        await Promise.all([
+          batchDeleteDocs(db, employeesSnap.docs),
+          batchDeleteDocs(db, usersSnap.docs),
+          batchDeleteDocs(db, requestsSnap.docs),
+          batchDeleteDocs(db, announcementsSnap.docs),
+          batchDeleteDocs(db, logsSnap.docs),
+        ]);
+
+        // ── 7. Delete projectGroups + their messages subcollections ──────────
+        await Promise.all(
+            projectGroupsSnap.docs.map((g) => db.recursiveDelete(g.ref)),
+        );
+
+        // ── 8. Recursively delete organizations/{orgId} (all subcollections) ─
+        await db.recursiveDelete(
+            db.collection("organizations").doc(orgId),
+        );
+
+        // ── 9. Delete Firebase Auth accounts (up to 1000 per call) ───────────
+        const authUids = Array.from(authUidSet);
+        for (let i = 0; i < authUids.length; i += 1000) {
+          const batch = authUids.slice(i, i + 1000);
+          const result = await admin.auth().deleteUsers(batch);
+          if (result.errors && result.errors.length > 0) {
+            console.warn(
+                `[deleteOrganization] ${result.errors.length} Auth UIDs` +
+                " could not be deleted:",
+                result.errors.map((e) => e.index + ": " + e.error.message),
+            );
+          }
+        }
+
+        // 10. Write audit log
+        await db.collection("logs").add({
+          actionType: "org_deleted",
+          category: "organizations",
+          severity: "critical",
+          organizationId: orgId,
+          organizationName: orgName,
+          targetId: orgId,
+          descriptionKey: "org_deleted",
+          performedBy: {
+            userId: callerUid,
+            role: "primary_admin",
+            email: callerData.email || "",
+          },
+          metadata: {
+            orgName: orgName,
+            employeesDeleted: employeeUids.length,
+            usersDeleted: userUids.length,
+            groupsDeleted: projectGroupsSnap.size,
+            requestsDeleted: requestsSnap.size,
+            announcementsDeleted: announcementsSnap.size,
+          },
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log(
+            `[deleteOrganization] Done — org=${orgId} ("${orgName}")` +
+            ` employees=${employeeUids.length}` +
+            ` authAccounts=${authUids.length}` +
+            ` groups=${projectGroupsSnap.size}`,
+        );
+
+        return {
+          success: true,
+          message: `Organization "${orgName}" permanently deleted.`,
+        };
+      } catch (error) {
+        console.error("[deleteOrganization] error:", error.message, error);
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError(
+            "internal",
+            error.message || "Failed to delete organization.",
+        );
+      }
+    },
+);
 
 /**
  * Cloud Function: Create Admin with Temp Password
@@ -396,6 +611,13 @@ exports.createEmployeeRequest = onCall(
             "Organization ID is required",
         );
       }
+      const phoneNumber = (data.phoneNumber || "").trim();
+      if (!phoneNumber) {
+        throw new HttpsError(
+            "invalid-argument",
+            "Phone number is required",
+        );
+      }
 
       const email = data.email;
       const firstName = data.firstName;
@@ -406,6 +628,39 @@ exports.createEmployeeRequest = onCall(
       const orgName = data.organizationName || "";
       const department = data.department || "";
       const password = data.password;
+
+      // Validate server-side that phone OTP was verified
+      const phoneKey = phoneNumber.replace(/[+\s-]/g, "");
+      const otpVerRef = admin.firestore()
+          .collection("otpVerifications").doc(phoneKey);
+      const otpVerDoc = await otpVerRef.get();
+
+      if (!otpVerDoc.exists) {
+        throw new HttpsError(
+            "failed-precondition",
+            "Phone not verified. Complete OTP verification first.",
+        );
+      }
+
+      const otpVerData = otpVerDoc.data();
+      const otpExpiresAt = otpVerData.expiresAt.toDate();
+      if (new Date() > otpExpiresAt) {
+        await otpVerRef.delete().catch(() => {});
+        throw new HttpsError(
+            "failed-precondition",
+            "OTP verification expired. Please verify your phone again.",
+        );
+      }
+
+      if (otpVerData.purpose !== "access_request") {
+        throw new HttpsError(
+            "failed-precondition",
+            "Invalid OTP verification context.",
+        );
+      }
+
+      // Consume the verification token (one-time use)
+      await otpVerRef.delete();
 
       const fullName = middleName ?
         firstName + " " + middleName + " " + lastName :
@@ -435,24 +690,42 @@ exports.createEmployeeRequest = onCall(
 
         const displayId = "EMP-" + uid.substring(0, 5).toUpperCase();
 
-        // 2. Save employee in users collection (pending)
+        // 2. Save employee in employees collection (pending)
+        const deptId = slugDepartment(department);
         await admin.firestore()
-            .collection("users").doc(uid).set({
+            .collection("employees").doc(uid).set({
               uid: uid,
               email: email,
-              role: "employee",
-              firstName: firstName,
-              middleName: middleName,
-              lastName: lastName,
-              fullName: fullName,
+              name: fullName,
               nationalId: nationalId,
               organizationId: orgId,
               organizationName: orgName,
               department: department,
+              departmentId: deptId,
               displayId: displayId,
+              role: "employee",
               status: "pending",
-              firstLogin: true,
-              mustChangePassword: false,
+              phoneNumber: phoneNumber,
+              phoneVerified: true,
+              createdAt:
+                admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+        // 2b. Create employees/{uid} (pending) so the mobile app can show
+        //     "account pending approval" immediately after sign-in attempt.
+        //     The admin approval flow will update this to status: "active".
+        await admin.firestore()
+            .collection("employees").doc(uid).set({
+              name: fullName,
+              email: email,
+              nationalId: nationalId,
+              organizationId: orgId,
+              organizationName: orgName,
+              department: department,
+              departmentId: "",
+              displayId: displayId,
+              role: "employee",
+              status: "pending",
               createdAt:
                 admin.firestore.FieldValue.serverTimestamp(),
             });
@@ -462,6 +735,7 @@ exports.createEmployeeRequest = onCall(
             .collection("accessRequests").add({
               uid: uid,
               email: email,
+              name: fullName,
               firstName: firstName,
               middleName: middleName,
               lastName: lastName,
@@ -473,6 +747,8 @@ exports.createEmployeeRequest = onCall(
               role: "employee",
               displayId: displayId,
               status: "pending",
+              phoneNumber: phoneNumber,
+              phoneVerified: true,
               createdAt:
                 admin.firestore.FieldValue.serverTimestamp(),
             });
@@ -553,6 +829,351 @@ exports.createEmployeeRequest = onCall(
             error.message || "Unexpected error",
         );
       }
+    },
+);
+
+/**
+ * One-time migration — safe to call multiple times.
+ * 1. Backfills phoneNumber + phoneVerified from users/{uid} into
+ *    employees/{uid} for records created before the architecture change.
+ * 2. Normalises status 'approved' → 'active' (canonical status standard).
+ *
+ * Deploy and call once:
+ *   firebase deploy --only functions:migrateEmployees
+ *   (call via Firebase Console or any authenticated client)
+ * Returns {phoneFixed, statusFixed, skipped, errors}.
+ */
+exports.migrateEmployees = onCall(
+    {enforceAppCheck: false, invoker: "public"},
+    async () => {
+      const db = admin.firestore();
+      const employeesSnap = await db.collection("employees").get();
+
+      let phoneFixed = 0;
+      let statusFixed = 0;
+      let skipped = 0;
+      const errors = [];
+
+      for (const empDoc of employeesSnap.docs) {
+        const uid = empDoc.id;
+        const empData = empDoc.data();
+        const updates = {};
+
+        // 1. Backfill missing phoneNumber from users/{uid}
+        if (!empData.phoneNumber || empData.phoneNumber.trim() === "") {
+          try {
+            const userDoc = await db.collection("users").doc(uid).get();
+            if (userDoc.exists) {
+              const phone = (userDoc.data().phoneNumber || "").trim();
+              if (phone) {
+                updates.phoneNumber = phone;
+                updates.phoneVerified = true;
+                phoneFixed++;
+              }
+            }
+          } catch (err) {
+            errors.push({uid, field: "phoneNumber", reason: err.message});
+          }
+        }
+
+        // 2. Normalise status 'approved' → 'active'
+        if (empData.status === "approved") {
+          updates.status = "active";
+          statusFixed++;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          try {
+            await db.collection("employees").doc(uid).update(updates);
+          } catch (err) {
+            errors.push({uid, field: "update", reason: err.message});
+          }
+        } else {
+          skipped++;
+        }
+      }
+
+      return {phoneFixed, statusFixed, skipped, errors};
+    },
+);
+
+/**
+ * Cloud Function: Send OTP via Authentica.sa SMS
+ * Rate-limited: 60 s cooldown, max 5 per 10-minute window.
+ * purpose: "access_request" | "login" | "password_reset"
+ */
+exports.sendOtp = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+      secrets: [authenticaApiKey],
+    },
+    async (request) => {
+      const data = request.data;
+
+      if (!data.phone || !data.purpose) {
+        throw new HttpsError(
+            "invalid-argument",
+            "phone and purpose are required",
+        );
+      }
+
+      const phone = data.phone.trim();
+      const purpose = data.purpose;
+      const phoneKey = phone.replace(/[+\s-]/g, "");
+      const now = new Date();
+
+      // Rate limiting: purpose-namespaced to avoid login blocking resend.
+      // Login: no per-send cooldown (user may retry immediately after going
+      // back), but capped at 10 sends per 10-minute window.
+      // Other purposes: 60-second cooldown + 5 sends per window.
+      const isLogin = purpose === "login";
+      const maxPerWindow = isLogin ? 10 : OTP_SEND_MAX_PER_WINDOW;
+      const attemptKey = `${purpose}_${phoneKey}`;
+      const attemptRef = admin.firestore()
+          .collection("otpAttempts").doc(attemptKey);
+      const attemptDoc = await attemptRef.get();
+
+      if (attemptDoc.exists) {
+        const att = attemptDoc.data();
+        const windowStart = att.windowStart.toDate();
+        const windowEnd = new Date(
+            windowStart.getTime() + OTP_SEND_WINDOW_MIN * 60 * 1000);
+        const lastSent = att.lastSentAt ? att.lastSentAt.toDate() : null;
+
+        if (now < windowEnd && att.count >= maxPerWindow) {
+          throw new HttpsError(
+              "resource-exhausted",
+              "Too many OTP requests. Please try again later.",
+          );
+        }
+
+        // 60-second cooldown only for non-login purposes (resend prevention)
+        if (!isLogin && lastSent) {
+          const cooldownEnd = new Date(
+              lastSent.getTime() + OTP_SEND_COOLDOWN_SEC * 1000);
+          if (now < cooldownEnd) {
+            const remainSec = Math.ceil((cooldownEnd - now) / 1000);
+            throw new HttpsError(
+                "resource-exhausted",
+                `Please wait ${remainSec}s before requesting a new code.`,
+            );
+          }
+        }
+
+        if (now >= windowEnd) {
+          await attemptRef.set({
+            count: 1,
+            windowStart: admin.firestore.Timestamp.fromDate(now),
+            lastSentAt: admin.firestore.Timestamp.fromDate(now),
+          });
+        } else {
+          await attemptRef.update({
+            count: admin.firestore.FieldValue.increment(1),
+            lastSentAt: admin.firestore.Timestamp.fromDate(now),
+          });
+        }
+      } else {
+        await attemptRef.set({
+          count: 1,
+          windowStart: admin.firestore.Timestamp.fromDate(now),
+          lastSentAt: admin.firestore.Timestamp.fromDate(now),
+        });
+      }
+
+      // Call Authentica.sa API (Node 24 built-in fetch)
+      let response;
+      try {
+        response = await fetch(`${AUTHENTICA_BASE}/send-otp`, {
+          method: "POST",
+          headers: {
+            "X-Authorization": authenticaApiKey.value(),
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({method: "sms", phone: phone}),
+        });
+      } catch (networkErr) {
+        console.error("Authentica network error:", networkErr);
+        throw new HttpsError("internal", "Failed to reach OTP service.");
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (_) {
+        result = {};
+      }
+
+      if (!response.ok || result.success !== true) {
+        console.error("Authentica sendOtp error:",
+            response.status, JSON.stringify(result));
+        throw new HttpsError(
+            "internal",
+            "Failed to send OTP. Please try again.",
+        );
+      }
+
+      // Log the OTP send (fire-and-forget, best-effort)
+      admin.firestore().collection("logs").add({
+        actionType: "otp_sent",
+        phone: phoneKey,
+        purpose: purpose,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      }).catch(() => {});
+
+      return {success: true, message: "OTP sent successfully."};
+    },
+);
+
+/**
+ * Cloud Function: Verify OTP via Authentica.sa
+ * Prevents brute-force with per-phone attempt tracking.
+ * For purpose "access_request": writes a short-lived verification token
+ * that createEmployeeRequest validates server-side.
+ */
+exports.verifyOtp = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+      secrets: [authenticaApiKey],
+    },
+    async (request) => {
+      const data = request.data;
+
+      if (!data.phone || !data.otp || !data.purpose) {
+        throw new HttpsError(
+            "invalid-argument",
+            "phone, otp, and purpose are required",
+        );
+      }
+
+      const phone = data.phone.trim();
+      const otp = data.otp.toString().trim();
+      const purpose = data.purpose;
+      const uid = data.uid || null;
+      const phoneKey = phone.replace(/[+\s-]/g, "");
+      const now = new Date();
+
+      // Brute-force check: verify attempts
+      const verifyRef = admin.firestore()
+          .collection("otpVerifyAttempts").doc(phoneKey);
+      const verifyDoc = await verifyRef.get();
+
+      if (verifyDoc.exists) {
+        const vAtt = verifyDoc.data();
+        const windowStart = vAtt.windowStart.toDate();
+        const windowEnd = new Date(
+            windowStart.getTime() + OTP_VERIFY_WINDOW_MIN * 60 * 1000);
+
+        if (now < windowEnd && vAtt.count >= OTP_VERIFY_MAX_ATTEMPTS) {
+          throw new HttpsError(
+              "resource-exhausted",
+              "Too many failed attempts. Please request a new OTP.",
+          );
+        }
+
+        if (now >= windowEnd) {
+          await verifyRef.delete().catch(() => {});
+        }
+      }
+
+      // Call Authentica.sa verify API
+      let response;
+      try {
+        response = await fetch(`${AUTHENTICA_BASE}/verify-otp`, {
+          method: "POST",
+          headers: {
+            "X-Authorization": authenticaApiKey.value(),
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({otp: otp, phone: phone}),
+        });
+      } catch (networkErr) {
+        console.error("Authentica network error:", networkErr);
+        throw new HttpsError("internal", "Failed to reach OTP service.");
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (_) {
+        result = {};
+      }
+
+      const verified = response.ok && result.status === true;
+
+      if (!verified) {
+        // Track failed attempt
+        const freshDoc = await verifyRef.get();
+        if (freshDoc.exists) {
+          const vAtt = freshDoc.data();
+          const windowStart = vAtt.windowStart.toDate();
+          const windowEnd = new Date(
+              windowStart.getTime() + OTP_VERIFY_WINDOW_MIN * 60 * 1000);
+          if (now < windowEnd) {
+            await verifyRef.update({
+              count: admin.firestore.FieldValue.increment(1),
+            });
+          } else {
+            await verifyRef.set({
+              count: 1,
+              windowStart: admin.firestore.Timestamp.fromDate(now),
+            });
+          }
+        } else {
+          await verifyRef.set({
+            count: 1,
+            windowStart: admin.firestore.Timestamp.fromDate(now),
+          });
+        }
+
+        admin.firestore().collection("logs").add({
+          actionType: "otp_failed",
+          phone: phoneKey,
+          purpose: purpose,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        }).catch(() => {});
+
+        return {success: false, message: "Invalid or expired OTP."};
+      }
+
+      // OTP verified — clear attempt counter
+      await verifyRef.delete().catch(() => {});
+
+      // For access_request: write a short-lived server-side verification token
+      // that createEmployeeRequest reads to confirm phone was verified.
+      if (purpose === "access_request") {
+        const expiresAt = new Date(
+            now.getTime() + OTP_VERIFICATION_TTL_MIN * 60 * 1000);
+        await admin.firestore()
+            .collection("otpVerifications").doc(phoneKey).set({
+              phone: phone,
+              purpose: purpose,
+              verifiedAt: admin.firestore.Timestamp.fromDate(now),
+              expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+            });
+      }
+
+      // For login/password_reset: stamp lastOtpVerificationAt if uid provided
+      if (uid && (purpose === "login" || purpose === "password_reset")) {
+        admin.firestore().collection("employees").doc(uid).update({
+          lastOtpVerificationAt: admin.firestore.Timestamp.fromDate(now),
+        }).catch(() => {});
+      }
+
+      admin.firestore().collection("logs").add({
+        actionType: "otp_verified",
+        phone: phoneKey,
+        purpose: purpose,
+        uid: uid,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      }).catch(() => {});
+
+      return {success: true, message: "OTP verified successfully."};
     },
 );
 
@@ -739,6 +1360,88 @@ exports.verifyPasswordResetCode = onCall(
 );
 
 /**
+ * Cloud Function: Reset Password With OTP
+ * Uses Firebase Admin SDK to update the password after confirming that
+ * verifyOtp already stamped lastOtpVerificationAt within the last 10 minutes.
+ * The OTP timestamp is deleted after use to prevent replay.
+ */
+exports.resetPasswordWithOtp = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+    },
+    async (request) => {
+      const data = request.data;
+
+      if (!data.uid || !data.newPassword) {
+        throw new HttpsError(
+            "invalid-argument",
+            "uid and newPassword are required",
+        );
+      }
+
+      const uid = data.uid;
+      const newPassword = data.newPassword;
+
+      if (typeof newPassword !== "string" || newPassword.length < 8) {
+        throw new HttpsError(
+            "invalid-argument",
+            "Password must be at least 8 characters",
+        );
+      }
+
+      // Verify employee exists and is active
+      const empRef = admin.firestore().collection("employees").doc(uid);
+      const empDoc = await empRef.get();
+
+      if (!empDoc.exists) {
+        throw new HttpsError("not-found", "Employee not found");
+      }
+
+      const empData = empDoc.data();
+
+      if (empData.status !== "active") {
+        throw new HttpsError("permission-denied", "Account is not active");
+      }
+
+      // Verify recent OTP — lastOtpVerificationAt must be within 10 minutes
+      const lastOtpAt = empData.lastOtpVerificationAt ?
+          empData.lastOtpVerificationAt.toDate() :
+          null;
+
+      const now = new Date();
+      const OTP_VALIDITY_MS = 10 * 60 * 1000;
+
+      if (!lastOtpAt || (now - lastOtpAt) > OTP_VALIDITY_MS) {
+        throw new HttpsError(
+            "failed-precondition",
+            "OTP verification has expired. Please request a new code.",
+        );
+      }
+
+      // Update password via Admin SDK (no recent-login requirement)
+      await admin.auth().updateUser(uid, {password: newPassword});
+
+      // Delete the OTP timestamp so it cannot be reused
+      await empRef.update({
+        lastOtpVerificationAt: admin.firestore.FieldValue.delete(),
+      });
+
+      // Audit log — fire-and-forget
+      admin.firestore().collection("logs").add({
+        actionType: "password_reset_completed",
+        uid: uid,
+        email: empData.email || "",
+        organizationId: empData.organizationId || "",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      }).catch(() => {});
+
+      return {success: true, message: "Password reset successfully."};
+    },
+);
+
+/**
  * Cloud Function: Send Access Approval Email
  */
 exports.sendAccessApprovedEmail = onCall(
@@ -821,5 +1524,555 @@ exports.sendAccessApprovedEmail = onCall(
             error.message || "Unexpected error",
         );
       }
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUSH NOTIFICATION HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FCM_COLOR = "#4ADE80";
+
+/**
+ * Send an FCM multicast message to up to 500 tokens per batch.
+ * Automatically removes stale tokens (registration-not-registered) from
+ * Firestore after a failed send.
+ *
+ * @param {string[]} tokens FCM registration tokens
+ * @param {object} payload FCM message payload (tokens key added internally)
+ * @param {Map} tokenToUid token to UID map for stale-token cleanup
+ * @return {Promise<void>}
+ */
+async function sendFcmMulticast(tokens, payload, tokenToUid) {
+  const chunks = [];
+  for (let i = 0; i < tokens.length; i += 500) {
+    chunks.push(tokens.slice(i, i + 500));
+  }
+  for (const chunk of chunks) {
+    try {
+      const msg = Object.assign({}, payload, {tokens: chunk});
+      const response = await admin.messaging().sendEachForMulticast(msg);
+
+      // Remove stale/invalid tokens from Firestore
+      const cleanups = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const errObj = resp.error || {};
+          const code = errObj.code || "";
+          if (
+            code === "messaging/registration-token-not-registered" ||
+            code === "messaging/invalid-registration-token"
+          ) {
+            const uid = tokenToUid && tokenToUid.get(chunk[idx]);
+            if (uid) {
+              cleanups.push(
+                  admin.firestore().collection("employees").doc(uid)
+                      .update({
+                        fcmToken: admin.firestore.FieldValue.delete(),
+                      })
+                      .catch(() => {}),
+              );
+            }
+          }
+        }
+      });
+      if (cleanups.length) await Promise.all(cleanups);
+    } catch (err) {
+      console.error("[FCM] sendEachForMulticast error:", err.message);
+    }
+  }
+}
+
+/**
+ * Standard Android + APNS overrides merged into the FCM payload.
+ * @param {object} payload Base FCM payload object (mutated and returned)
+ * @param {string} channelId Android notification channel ID
+ * @return {object} Payload with platform-specific config merged in
+ */
+function withPlatformConfig(payload, channelId) {
+  payload.android = {
+    priority: "high",
+    notification: {channelId: channelId, color: FCM_COLOR, priority: "high"},
+  };
+  payload.apns = {payload: {aps: {sound: "default", badge: 1}}};
+  return payload;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT NOTIFICATION TRIGGERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Department chat - notify all department members except the sender.
+ * Path: organizations/{orgId}/departments/{deptId}/messages/{msgId}
+ */
+exports.onDeptChatMessageCreated = onDocumentCreated(
+    {
+      document:
+        "organizations/{orgId}/departments/{deptId}/messages/{msgId}",
+      region: "asia-east1",
+    },
+    async (event) => {
+      const snapshot = event.data;
+      const data = snapshot && snapshot.data();
+      if (!data || data.isDeleted) return;
+
+      const orgId = event.params.orgId;
+      const deptId = event.params.deptId;
+      const senderUid = data.senderUid || "";
+      const senderId = data.senderId || "Unknown";
+      const conversationPath =
+        "organizations/" + orgId + "/departments/" + deptId + "/messages";
+
+      let senderName = senderId;
+      if (senderUid) {
+        const doc = await admin.firestore()
+            .collection("employees").doc(senderUid).get();
+        if (doc.exists) {
+          const docData = doc.data();
+          senderName = (docData && docData.name) || senderId;
+        }
+      }
+
+      const snap = await admin.firestore()
+          .collection("employees")
+          .where("organizationId", "==", orgId)
+          .where("departmentId", "==", deptId)
+          .where("status", "==", "active")
+          .get();
+
+      const tokenToUid = new Map();
+      snap.docs
+          .filter((doc) => doc.id !== senderUid)
+          .forEach((doc) => {
+            const token = doc.data().fcmToken;
+            if (token) tokenToUid.set(token, doc.id);
+          });
+
+      if (tokenToUid.size === 0) return;
+
+      await sendFcmMulticast(
+          Array.from(tokenToUid.keys()),
+          withPlatformConfig({
+            notification: {title: senderName, body: "New message"},
+            data: {
+              type: "chat",
+              conversationPath: conversationPath,
+              chatName: deptId,
+              senderDisplayId: senderId,
+              senderName: senderName,
+              organizationId: orgId,
+            },
+          }, "govchat_messages"),
+          tokenToUid,
+      );
+    },
+);
+
+/**
+ * Private (1-to-1) chat - notify the other participant.
+ * Path: organizations/{orgId}/private_chats/{chatId}/messages/{msgId}
+ */
+exports.onPrivateChatMessageCreated = onDocumentCreated(
+    {
+      document:
+        "organizations/{orgId}/private_chats/{chatId}/messages/{msgId}",
+      region: "asia-east1",
+    },
+    async (event) => {
+      const snapshot = event.data;
+      const data = snapshot && snapshot.data();
+      if (!data || data.isDeleted) return;
+
+      const orgId = event.params.orgId;
+      const chatId = event.params.chatId;
+      const senderUid = data.senderUid || "";
+      const senderId = data.senderId || "Unknown";
+      const conversationPath =
+        "organizations/" + orgId + "/private_chats/" + chatId + "/messages";
+
+      // Resolve other participant from the chat doc
+      const chatDoc = await admin.firestore()
+          .collection("organizations").doc(orgId)
+          .collection("private_chats").doc(chatId).get();
+      if (!chatDoc.exists) return;
+
+      const chatData = chatDoc.data() || {};
+      const participants = chatData.participants || [];
+      const recipientUid = participants.find((u) => u !== senderUid);
+      if (!recipientUid) return;
+
+      const recipientDoc = await admin.firestore()
+          .collection("employees").doc(recipientUid).get();
+      if (!recipientDoc.exists) return;
+
+      const recipientData = recipientDoc.data() || {};
+      const token = recipientData.fcmToken;
+      if (!token) return;
+
+      let senderName = senderId;
+      if (senderUid) {
+        const doc = await admin.firestore()
+            .collection("employees").doc(senderUid).get();
+        if (doc.exists) {
+          const docData = doc.data();
+          senderName = (docData && docData.name) || senderId;
+        }
+      }
+
+      const tokenToUid = new Map([[token, recipientUid]]);
+      await sendFcmMulticast(
+          [token],
+          withPlatformConfig({
+            notification: {title: senderName, body: "New private message"},
+            data: {
+              type: "chat",
+              conversationPath: conversationPath,
+              chatName: "Private",
+              senderDisplayId: senderId,
+              senderName: senderName,
+              organizationId: orgId,
+            },
+          }, "govchat_messages"),
+          tokenToUid,
+      );
+    },
+);
+
+/**
+ * Organization-wide chat - notify all org employees except the sender.
+ * Path: organizations/{orgId}/org_chats/{chatId}/messages/{msgId}
+ */
+exports.onOrgChatMessageCreated = onDocumentCreated(
+    {
+      document:
+        "organizations/{orgId}/org_chats/{chatId}/messages/{msgId}",
+      region: "asia-east1",
+    },
+    async (event) => {
+      const snapshot = event.data;
+      const data = snapshot && snapshot.data();
+      if (!data || data.isDeleted) return;
+
+      const orgId = event.params.orgId;
+      const chatId = event.params.chatId;
+      const senderUid = data.senderUid || "";
+      const senderId = data.senderId || "Unknown";
+      const conversationPath =
+        "organizations/" + orgId + "/org_chats/" + chatId + "/messages";
+
+      let senderName = senderId;
+      if (senderUid) {
+        const doc = await admin.firestore()
+            .collection("employees").doc(senderUid).get();
+        if (doc.exists) {
+          const docData = doc.data();
+          senderName = (docData && docData.name) || senderId;
+        }
+      }
+
+      const snap = await admin.firestore()
+          .collection("employees")
+          .where("organizationId", "==", orgId)
+          .where("status", "==", "active")
+          .get();
+
+      const tokenToUid = new Map();
+      snap.docs
+          .filter((doc) => doc.id !== senderUid)
+          .forEach((doc) => {
+            const token = doc.data().fcmToken;
+            if (token) tokenToUid.set(token, doc.id);
+          });
+
+      if (tokenToUid.size === 0) return;
+
+      const orgDoc = await admin.firestore()
+          .collection("organizations").doc(orgId).get();
+      const orgDocData = orgDoc.exists && orgDoc.data();
+      const chatName = (orgDocData && orgDocData.name) || "Org Chat";
+
+      await sendFcmMulticast(
+          Array.from(tokenToUid.keys()),
+          withPlatformConfig({
+            notification: {title: senderName, body: "New message in org chat"},
+            data: {
+              type: "chat",
+              conversationPath: conversationPath,
+              chatName: chatName,
+              senderDisplayId: senderId,
+              senderName: senderName,
+              organizationId: orgId,
+            },
+          }, "govchat_messages"),
+          tokenToUid,
+      );
+    },
+);
+
+/**
+ * Project group chat - notify all group members except the sender.
+ * Path: projectGroups/{groupId}/messages/{msgId}
+ */
+exports.onGroupChatMessageCreated = onDocumentCreated(
+    {
+      document: "projectGroups/{groupId}/messages/{msgId}",
+      region: "asia-east1",
+    },
+    async (event) => {
+      const snapshot = event.data;
+      const data = snapshot && snapshot.data();
+      if (!data || data.isDeleted) return;
+
+      const groupId = event.params.groupId;
+      const senderUid = data.senderUid || "";
+      const senderId = data.senderId || "Unknown";
+      const conversationPath = "projectGroups/" + groupId + "/messages";
+
+      const groupDoc = await admin.firestore()
+          .collection("projectGroups").doc(groupId).get();
+      if (!groupDoc.exists) return;
+
+      const groupData = groupDoc.data() || {};
+      const memberIds = groupData.memberIds || [];
+      const groupName = groupData.name || "Group";
+      const orgId = groupData.organizationId || "";
+
+      let senderName = senderId;
+      if (senderUid) {
+        const doc = await admin.firestore()
+            .collection("employees").doc(senderUid).get();
+        if (doc.exists) {
+          const docData = doc.data();
+          senderName = (docData && docData.name) || senderId;
+        }
+      }
+
+      const recipientUids = memberIds.filter((uid) => uid !== senderUid);
+      if (recipientUids.length === 0) return;
+
+      const empDocs = await Promise.all(
+          recipientUids.map((uid) =>
+            admin.firestore().collection("employees").doc(uid).get(),
+          ),
+      );
+
+      const tokenToUid = new Map();
+      empDocs.forEach((doc) => {
+        if (doc.exists) {
+          const d = doc.data() || {};
+          const token = d.fcmToken;
+          if (token) tokenToUid.set(token, doc.id);
+        }
+      });
+
+      if (tokenToUid.size === 0) return;
+
+      await sendFcmMulticast(
+          Array.from(tokenToUid.keys()),
+          withPlatformConfig({
+            notification: {
+              title: senderName + " · " + groupName,
+              body: "New message",
+            },
+            data: {
+              type: "chat",
+              conversationPath: conversationPath,
+              chatName: groupName,
+              senderDisplayId: senderId,
+              senderName: senderName,
+              organizationId: orgId,
+            },
+          }, "govchat_messages"),
+          tokenToUid,
+      );
+    },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANNOUNCEMENT NOTIFICATION TRIGGER
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * New announcement - notify all active employees in the organization.
+ * Path: announcements/{announcementId}
+ */
+exports.onAnnouncementCreated = onDocumentCreated(
+    {
+      document: "announcements/{announcementId}",
+      region: "asia-east1",
+    },
+    async (event) => {
+      const snapshot = event.data;
+      const data = snapshot && snapshot.data();
+      if (!data || data.isActive === false) return;
+
+      const orgId = data.organizationId || "";
+      if (!orgId) return;
+
+      const announcementId = event.params.announcementId;
+      const title = data.title || "New Announcement";
+      const preview = typeof data.content === "string" ?
+        data.content.substring(0, 120) : "";
+
+      const snap = await admin.firestore()
+          .collection("employees")
+          .where("organizationId", "==", orgId)
+          .where("status", "==", "active")
+          .get();
+
+      const tokenToUid = new Map();
+      snap.docs.forEach((doc) => {
+        const token = doc.data().fcmToken;
+        if (token) tokenToUid.set(token, doc.id);
+      });
+
+      if (tokenToUid.size === 0) return;
+
+      await sendFcmMulticast(
+          Array.from(tokenToUid.keys()),
+          withPlatformConfig({
+            notification: {title: title, body: preview || "View announcement"},
+            data: {
+              type: "announcement",
+              announcementId: announcementId,
+              organizationId: orgId,
+            },
+          }, "govchat_announcements"),
+          tokenToUid,
+      );
+
+      console.log(
+          "[FCM] announcement " + announcementId +
+          " sent to " + tokenToUid.size + " employees in org " + orgId,
+      );
+    },
+);
+
+// ── Gemini AI Summary (secure proxy) ────────────────────────────────────────
+
+const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1/models";
+
+/**
+ * Fetches available Gemini Flash models and returns the best one.
+ * Prefers gemini-2 over gemini-1, shorter names (base aliases) first.
+ * @param {string} apiKey
+ * @return {Promise<string>} model name without "models/" prefix
+ */
+async function resolveGeminiModel(apiKey) {
+  const url = `${GEMINI_BASE_URL}?key=${apiKey}`;
+  const res = await fetch(url, {headers: {"Content-Type": "application/json"}});
+
+  if (!res.ok) {
+    throw new HttpsError(
+        "internal",
+        `Failed to list Gemini models (${res.status}).`,
+    );
+  }
+
+  const body = await res.json();
+  const models = body.models || [];
+
+  const flashModels = models.filter((m) => {
+    const id = (m.name || "").toLowerCase();
+    const methods = m.supportedGenerationMethods || [];
+    return id.includes("flash") && methods.includes("generateContent");
+  });
+
+  if (flashModels.length === 0) {
+    throw new HttpsError(
+        "internal",
+        "No Gemini Flash models available for this API key.",
+    );
+  }
+
+  flashModels.sort((a, b) => {
+    const aId = a.name.toLowerCase();
+    const bId = b.name.toLowerCase();
+    const aGen2 = aId.includes("gemini-2");
+    const bGen2 = bId.includes("gemini-2");
+    if (aGen2 !== bGen2) return aGen2 ? -1 : 1;
+    return aId.length - bId.length;
+  });
+
+  const fullName = flashModels[0].name;
+  return fullName.startsWith("models/") ? fullName.substring(7) : fullName;
+}
+
+/**
+ * Secure Gemini proxy — receives pre-decrypted messages from the client,
+ * calls the Gemini API with the key from Secret Manager, and returns the
+ * raw AI text response. The client handles prompt building and response
+ * parsing.
+ *
+ * Input:  { prompt: string, maxOutputTokens?: number }
+ * Output: { success: true, text: string, model: string }
+ */
+exports.generateAiSummary = onCall(
+    {
+      enforceAppCheck: false,
+      cors: true,
+      invoker: "public",
+      secrets: [geminiApiKey],
+    },
+    async (request) => {
+      const {prompt, maxOutputTokens} = request.data || {};
+
+      if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
+        throw new HttpsError("invalid-argument", "prompt is required.");
+      }
+
+      const validTokens = typeof maxOutputTokens === "number" &&
+        maxOutputTokens > 0 &&
+        maxOutputTokens <= 8192;
+      const tokens = validTokens ? maxOutputTokens : 1024;
+
+      const apiKey = geminiApiKey.value();
+      if (!apiKey) {
+        throw new HttpsError(
+            "internal",
+            "GEMINI_API_KEY not configured in Secret Manager.",
+        );
+      }
+
+      const model = await resolveGeminiModel(apiKey);
+      const endpoint =
+        `${GEMINI_BASE_URL}/${model}:generateContent?key=${apiKey}`;
+
+      const geminiRes = await fetch(endpoint, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          contents: [{parts: [{text: prompt}]}],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: tokens,
+          },
+        }),
+      });
+
+      if (!geminiRes.ok) {
+        const errBody = await geminiRes.text();
+        console.error("[generateAiSummary] Gemini error:", errBody);
+        throw new HttpsError(
+            "internal",
+            `Gemini API error (${geminiRes.status}).`,
+        );
+      }
+
+      const body = await geminiRes.json();
+      const candidates = body.candidates || [];
+      const first = candidates.length > 0 ? candidates[0] : {};
+      const parts = (first.content && first.content.parts) || [];
+      const rawText = (parts.length > 0 && parts[0].text) || "";
+
+      if (!rawText) {
+        throw new HttpsError(
+            "internal",
+            "Gemini returned an empty response.",
+        );
+      }
+
+      return {success: true, text: rawText, model};
     },
 );

@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -38,7 +38,7 @@ class ChatImageBubble extends StatelessWidget {
             height: AppSizes.h200,
             color: isMine
                 ? AppColors.gradientEnd.withValues(alpha: 0.4)
-                : AppColors.cardBackground,
+                : context.colors.cardBackground,
             child: const Center(
               child: CircularProgressIndicator(
                 strokeWidth: 2,
@@ -49,10 +49,10 @@ class ChatImageBubble extends StatelessWidget {
           errorWidget: (ctx, url, err) => Container(
             width: AppSizes.w240,
             height: AppSizes.h200,
-            color: AppColors.cardBackground,
+            color: context.colors.cardBackground,
             child: Icon(
               LucideIcons.imageOff,
-              color: Colors.white,
+              color: context.colors.textMuted,
               size: AppSizes.sp32,
             ),
           ),
@@ -135,11 +135,11 @@ class ChatVideoBubble extends StatelessWidget {
               height: AppSizes.h200,
               color: isMine
                   ? AppColors.gradientEnd.withValues(alpha: 0.35)
-                  : AppColors.cardBackground,
+                  : context.colors.cardBackground,
               child: Center(
                 child: Icon(
                   LucideIcons.video,
-                  color: Colors.white,
+                  color: isMine ? AppColors.buttonText : context.colors.textMuted,
                   size: AppSizes.sp64,
                 ),
               ),
@@ -462,15 +462,15 @@ class _ChatVoiceBubbleState extends State<ChatVoiceBubble> {
   @override
   Widget build(BuildContext context) {
     final Color onBubble =
-        widget.isMine ? AppColors.buttonText : AppColors.textPrimary;
+        widget.isMine ? AppColors.buttonText : context.colors.textPrimary;
     final Color mutedOnBubble = widget.isMine
         ? AppColors.buttonText.withValues(alpha: 0.55)
-        : AppColors.textMuted;
+        : context.colors.textMuted;
     final Color activeBarColor =
         widget.isMine ? AppColors.buttonText : AppColors.primaryColor;
     final Color inactiveBarColor = widget.isMine
         ? AppColors.buttonText.withValues(alpha: 0.3)
-        : AppColors.textMuted.withValues(alpha: 0.35);
+        : context.colors.textMuted.withValues(alpha: 0.35);
 
     final double progress =
         _total.inMilliseconds > 0

@@ -262,6 +262,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noMessagesYet => 'No messages yet';
 
   @override
+  String get encryptedMessage => 'Encrypted message';
+
+  @override
   String get orgChatLabel => 'ORG CHAT';
 
   @override
@@ -951,7 +954,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get changePasswordDescription =>
-      'Verify your identity via email to update your password.';
+      'Verify your identity via OTP to update your password.';
+
+  @override
+  String get cpNoPhoneMessage =>
+      'Phone verification required. Please contact your administrator to add a verified phone number to your account.';
 
   @override
   String get verificationCodeTitle => 'Verification Code';
@@ -1412,4 +1419,530 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logDescRequestSubmitted => 'Access request submitted';
+
+  @override
+  String get noAnnouncementsDesc =>
+      'Official announcements from your organization will appear here.';
+
+  @override
+  String get announcementPostedLabel => 'Posted';
+
+  @override
+  String get announcementExpiresLabel => 'Expires';
+
+  @override
+  String get announcementPriorityNormal => 'Normal';
+
+  @override
+  String get announcementPriorityHigh => 'High';
+
+  @override
+  String get announcementPriorityUrgent => 'Urgent';
+
+  @override
+  String get logAnnouncementCreated => 'Announcement created';
+
+  @override
+  String get logAnnouncementUpdated => 'Announcement updated';
+
+  @override
+  String get logAnnouncementDeleted => 'Announcement deleted';
+
+  @override
+  String get phoneNumberLabel => 'PHONE NUMBER';
+
+  @override
+  String get phoneNumberHint => '0597123456';
+
+  @override
+  String get phoneNumberRequired => 'Phone number is required';
+
+  @override
+  String get phoneNumberInvalid =>
+      'Enter a valid Saudi mobile number (e.g. 0597123456)';
+
+  @override
+  String get employeePhoneRequired =>
+      'Your account does not have a verified phone number. Please contact your administrator.';
+
+  @override
+  String get mobileEmployeeOnly =>
+      'This app is for employees only. Admins must sign in via the GovChat web dashboard.';
+
+  @override
+  String get otpVerificationTitle => 'OTP Verification';
+
+  @override
+  String get otpVerificationSubtitle => 'A 4-digit code has been sent to';
+
+  @override
+  String get otpLoginTitle => 'Two-Factor Authentication';
+
+  @override
+  String get otpLoginSubtitle =>
+      'For your security, enter the OTP sent to your registered phone.';
+
+  @override
+  String get otpEnterCode => 'Enter 4-digit OTP';
+
+  @override
+  String get otpVerifyButton => 'VERIFY OTP';
+
+  @override
+  String get otpResendButton => 'Resend Code';
+
+  @override
+  String otpResendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get otpSendingCode => 'Sending OTP...';
+
+  @override
+  String get otpVerifying => 'Verifying...';
+
+  @override
+  String get otpInvalidCode => 'Invalid OTP. Please try again.';
+
+  @override
+  String get otpExpiredCode => 'OTP expired. Please request a new one.';
+
+  @override
+  String get otpTooManyAttempts =>
+      'Too many failed attempts. Please request a new code.';
+
+  @override
+  String get otpSendFailed =>
+      'Failed to send OTP. Check your phone number and try again.';
+
+  @override
+  String get otpVerificationFailed =>
+      'OTP verification failed. Please try again.';
+
+  @override
+  String otpAttemptsLeft(int count) {
+    return '$count attempts remaining';
+  }
+
+  @override
+  String get logOtpSent => 'OTP sent to phone';
+
+  @override
+  String get logOtpVerified => 'OTP verified successfully';
+
+  @override
+  String get logOtpFailed => 'OTP verification failed';
+
+  @override
+  String get logPasswordResetViaSms => 'Password reset via SMS OTP';
+
+  @override
+  String get fpTitle => 'Forgot Password';
+
+  @override
+  String get fpSubtitle =>
+      'Enter your registered email address. We\'ll send a one-time code to your verified phone number.';
+
+  @override
+  String get fpIdentifyButton => 'SEND OTP';
+
+  @override
+  String get fpEmployeeNotFound =>
+      'No active employee account found with this email address.';
+
+  @override
+  String get fpPasswordResetSuccess =>
+      'Password reset successfully! Please sign in with your new password.';
+
+  @override
+  String get fpResetPasswordButton => 'RESET PASSWORD';
+
+  @override
+  String get newReminderTitle => 'New Reminder';
+
+  @override
+  String get editReminderTitle => 'Edit Reminder';
+
+  @override
+  String get reminderDetailsSectionLabel => 'REMINDER DETAILS';
+
+  @override
+  String get reminderTitleLabel => 'TITLE';
+
+  @override
+  String get reminderTitleHint => 'Reminder title';
+
+  @override
+  String get reminderDescLabel => 'DESCRIPTION (OPTIONAL)';
+
+  @override
+  String get reminderDescHint => 'Add more details…';
+
+  @override
+  String get priorityLabel => 'PRIORITY';
+
+  @override
+  String get priorityLow => 'Low';
+
+  @override
+  String get priorityMedium => 'Medium';
+
+  @override
+  String get priorityHigh => 'High';
+
+  @override
+  String get scheduleSectionLabel => 'SCHEDULE';
+
+  @override
+  String get dueDateLabel => 'DUE DATE';
+
+  @override
+  String get dueTimeLabel => 'DUE TIME';
+
+  @override
+  String get remindBeforeLabel => 'REMIND BEFORE';
+
+  @override
+  String get remindAtTime => 'At time';
+
+  @override
+  String get remind15Min => '15 min';
+
+  @override
+  String get remind1Hour => '1 hour';
+
+  @override
+  String get remind1Day => '1 day';
+
+  @override
+  String get remind2Days => '2 days';
+
+  @override
+  String get repeatSectionLabel => 'REPEAT';
+
+  @override
+  String get repeatNone => 'None';
+
+  @override
+  String get repeatDaily => 'Daily';
+
+  @override
+  String get repeatWeekly => 'Weekly';
+
+  @override
+  String get repeatMonthly => 'Monthly';
+
+  @override
+  String get repeatCustom => 'Custom';
+
+  @override
+  String get repeatEveryLabel => 'Every';
+
+  @override
+  String get repeatDaysLabel => 'day(s)';
+
+  @override
+  String get notificationSectionLabel => 'NOTIFICATION';
+
+  @override
+  String get notificationEnabledLabel => 'Enable notification';
+
+  @override
+  String get notificationEnabledDesc =>
+      'You will be notified at the scheduled time.';
+
+  @override
+  String get notificationDisabledDesc => 'No notification will be sent.';
+
+  @override
+  String get createReminderButton => 'CREATE REMINDER';
+
+  @override
+  String get deleteReminderTitle => 'Delete Reminder';
+
+  @override
+  String get deleteReminderConfirm =>
+      'This reminder will be permanently deleted. This action cannot be undone.';
+
+  @override
+  String get searchRemindersHint => 'Search reminders…';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get filterActive => 'Active';
+
+  @override
+  String get filterOverdue => 'Overdue';
+
+  @override
+  String get filterCompleted => 'Completed';
+
+  @override
+  String get filterHighPriority => 'High Priority';
+
+  @override
+  String get noRemindersYet => 'No reminders yet';
+
+  @override
+  String get noRemindersDesc => 'Tap + to create your first reminder.';
+
+  @override
+  String get noSearchResults => 'No results found';
+
+  @override
+  String get noSearchResultsDesc => 'Try a different search term or filter.';
+
+  @override
+  String get logReminderCreated => 'Reminder created';
+
+  @override
+  String get logReminderUpdated => 'Reminder updated';
+
+  @override
+  String get logReminderCompleted => 'Reminder marked as completed';
+
+  @override
+  String get logReminderDeleted => 'Reminder deleted';
+
+  @override
+  String get reminderPastDateError =>
+      'Due date and time must be in the future. Please select a later date or time.';
+
+  @override
+  String get mediaSharingDisabledMessage =>
+      'Media sharing is disabled by your organization administrator.';
+
+  @override
+  String get logMediaSharingEnabled => 'Media sharing enabled';
+
+  @override
+  String get logMediaSharingDisabled => 'Media sharing disabled';
+
+  @override
+  String get encryptionKeySection => 'Encryption Key Backup';
+
+  @override
+  String get encryptionKeyBackupDescription =>
+      'Securely back up your encryption key to restore your messages on a new device.';
+
+  @override
+  String get backupKeyButton => 'Backup Key';
+
+  @override
+  String get backupSuccessMessage => 'Encryption key backed up successfully';
+
+  @override
+  String get backupFailedMessage => 'Failed to back up encryption key';
+
+  @override
+  String get backupKeyPasswordDialogTitle => 'Set Backup Password';
+
+  @override
+  String get backupKeyPasswordDialogDescription =>
+      'Choose a strong password to protect your encryption key backup. You will need it to restore your messages on another device.';
+
+  @override
+  String get backupPasswordHint => 'Enter password';
+
+  @override
+  String get confirmBackupPasswordHint => 'Confirm password';
+
+  @override
+  String get passwordTooShort => 'Password must be at least 8 characters';
+
+  @override
+  String get restoreKeyPasswordDialogTitle => 'Restore Encryption Key';
+
+  @override
+  String get restoreKeyPasswordDialogDescription =>
+      'An encryption key backup was found for your account. Enter your backup password to restore access to your messages.';
+
+  @override
+  String get restoreFailedWrongPassword =>
+      'Incorrect password. Please try again.';
+
+  @override
+  String get restoreFailedMessage => 'Failed to restore encryption key';
+
+  @override
+  String get skipRestoreButton => 'SKIP';
+
+  @override
+  String get restoreKeyButton => 'RESTORE';
+
+  @override
+  String get notificationsLabel => 'NOTIFICATIONS';
+
+  @override
+  String get notifNewMessage => 'New message';
+
+  @override
+  String get notifNewPrivateMessage => 'New private message';
+
+  @override
+  String get notifNewAnnouncement => 'New Announcement';
+
+  @override
+  String get notifViewAnnouncement => 'View announcement';
+
+  @override
+  String get notifChatChannel => 'Messages';
+
+  @override
+  String get notifAnnouncementChannel => 'Announcements';
+
+  @override
+  String get notifSystemChannel => 'System';
+
+  @override
+  String get logNotificationSent => 'Push notification sent';
+
+  @override
+  String get logNotificationOpened => 'Notification opened';
+
+  @override
+  String get logNotificationFailed => 'Push notification failed';
+
+  @override
+  String get aiSummaryTitle => 'AI Chat Summary';
+
+  @override
+  String get aiSummaryGenerate => 'Generate';
+
+  @override
+  String get aiSummaryRegenerate => 'Regenerate';
+
+  @override
+  String get aiSummaryEmptyTitle => 'No summary yet';
+
+  @override
+  String get aiSummaryEmptySubtitle =>
+      'Tap Generate to create an AI-powered summary of this conversation.';
+
+  @override
+  String get aiSummaryGenerateButton => 'Generate Summary';
+
+  @override
+  String get aiSummaryMainPoints => 'Main Points';
+
+  @override
+  String get aiSummaryDecisions => 'Important Decisions';
+
+  @override
+  String get aiSummaryTasks => 'Tasks & Action Items';
+
+  @override
+  String get aiSummaryDeadlines => 'Deadlines & Commitments';
+
+  @override
+  String get aiSummaryTone => 'Overall Tone';
+
+  @override
+  String aiSummaryGeneratedAt(String date) {
+    return 'Generated $date';
+  }
+
+  @override
+  String get inboxSummaryTitle => 'All Your Conversations';
+
+  @override
+  String get inboxSummarySubtitle =>
+      'AI-powered overview of all your conversations';
+
+  @override
+  String get inboxSummaryGenerate => 'Generate';
+
+  @override
+  String get inboxSummaryRegenerate => 'Regenerate';
+
+  @override
+  String get inboxSummaryEmptyTitle => 'No inbox summary yet';
+
+  @override
+  String get inboxSummaryEmptySubtitle =>
+      'Tap Generate to create an AI-powered summary of recent activity across all your chats.';
+
+  @override
+  String get inboxSummaryGenerateButton => 'Summarize Inbox';
+
+  @override
+  String get inboxSummaryAnalysing => 'Analysing conversations…';
+
+  @override
+  String get inboxSummaryHighlights => 'Key Highlights';
+
+  @override
+  String get inboxSummaryUrgent => 'Urgent & Action Required';
+
+  @override
+  String get inboxSummaryDecisions => 'Decisions Made';
+
+  @override
+  String get inboxSummaryPending => 'Pending Items';
+
+  @override
+  String get inboxSummaryPerChat => 'Per-Chat Breakdown';
+
+  @override
+  String get inboxSummaryTrends => 'Communication Trends';
+
+  @override
+  String inboxSummaryGeneratedAt(String date) {
+    return 'Generated $date';
+  }
+
+  @override
+  String get splashTagline => 'SECURE INTERNAL COMMUNICATION';
+
+  @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingGetStarted => 'Get Started';
+
+  @override
+  String get onboarding1Title => 'Secure Communication';
+
+  @override
+  String get onboarding1Subtitle =>
+      'Military-grade end-to-end encryption keeps every message private and protected.';
+
+  @override
+  String get onboarding2Title => 'Team Collaboration';
+
+  @override
+  String get onboarding2Subtitle =>
+      'Coordinate seamlessly across departments with real-time messaging and group channels.';
+
+  @override
+  String get onboarding3Title => 'Stay Informed';
+
+  @override
+  String get onboarding3Subtitle =>
+      'Receive critical announcements and organization-wide updates the moment they happen.';
+
+  @override
+  String get onboarding4Title => 'Verified Identity';
+
+  @override
+  String get onboarding4Subtitle =>
+      'OTP authentication ensures only authorized personnel can access the system.';
+
+  @override
+  String get themeLabel => 'Theme';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeSystem => 'System';
 }

@@ -1,15 +1,18 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:flutter_screenshot_blocker/flutter_screenshot_blocker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_size.dart';
-
+import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/services/ai_summary_service.dart';
 import '../../../../core/theme/app_color.dart';
+import '../../../../models/chat_summary.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/chat_message.dart'
     show ChatMessage, MessageStatus, MessageType;
@@ -67,7 +70,7 @@ class EmployeeChatScreen extends StatelessWidget {
 
 // ─── Main view ────────────────────────────────────────────────────────────────
 
-class _ChatView extends StatelessWidget {
+class _ChatView extends StatefulWidget {
   const _ChatView({
     required this.employee,
     this.chatTitle,
@@ -83,29 +86,36 @@ class _ChatView extends StatelessWidget {
   final String? otherUid;
 
   @override
+  State<_ChatView> createState() => _ChatViewState();
+}
+
+class _ChatViewState extends State<_ChatView> {
+  @override
   Widget build(BuildContext context) {
     final controller = context.watch<ChatController>();
     final l = AppLocalizations.of(context)!;
-    final fallbackTitle = chatTitle ?? employee.department;
-    final subtitle = chatSubtitle ?? l.groupChatTitle;
+    final fallbackTitle = widget.chatTitle ?? widget.employee.department;
+    final subtitle = widget.chatSubtitle ?? l.groupChatTitle;
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+    return ScreenshotBlockerWidget(
+      detectScreenshots: false,
+      child: Scaffold(
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new,
-            color: AppColors.textTitle,
+            color: context.colors.textTitle,
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: otherUid != null && otherUid!.isNotEmpty
+        title: widget.otherUid != null && widget.otherUid!.isNotEmpty
             ? StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
                     .collection('employees')
-                    .doc(otherUid)
+                    .doc(widget.otherUid)
                     .snapshots(),
                 builder: (context, snapshot) {
                   final name = snapshot.data?.data()?['name'] as String? ?? '';
@@ -116,7 +126,7 @@ class _ChatView extends StatelessWidget {
                       Text(
                         title,
                         style: GoogleFonts.manrope(
-                          color: AppColors.textTitle,
+                          color: context.colors.textTitle,
                           fontWeight: FontWeight.w800,
                           fontSize: AppSizes.sp16,
                         ),
@@ -124,7 +134,7 @@ class _ChatView extends StatelessWidget {
                       Text(
                         subtitle,
                         style: GoogleFonts.manrope(
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                           fontSize: AppSizes.sp10,
                           letterSpacing: 1.2,
                         ),
@@ -139,7 +149,7 @@ class _ChatView extends StatelessWidget {
                   Text(
                     fallbackTitle,
                     style: GoogleFonts.manrope(
-                      color: AppColors.textTitle,
+                      color: context.colors.textTitle,
                       fontWeight: FontWeight.w800,
                       fontSize: AppSizes.sp16,
                     ),
@@ -147,13 +157,25 @@ class _ChatView extends StatelessWidget {
                   Text(
                     subtitle,
                     style: GoogleFonts.manrope(
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                       fontSize: AppSizes.sp10,
                       letterSpacing: 1.2,
                     ),
                   ),
                 ],
               ),
+        actions: [
+          IconButton(
+            icon: Icon(LucideIcons.sparkles, color: context.colors.textTitle),
+            tooltip: 'Summarize Chat',
+            onPressed: () => _showSummarizeSheet(
+              context,
+              messages: controller.messages,
+              messagesPath: controller.effectiveMessagesPath,
+              chatTitle: fallbackTitle,
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Container(
@@ -162,8 +184,8 @@ class _ChatView extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.scaffoldBackground,
-                AppColors.sectionBackground.withValues(alpha: 0.6),
+                context.colors.scaffoldBackground,
+                context.colors.sectionBackground.withValues(alpha: 0.6),
               ],
             ),
           ),
@@ -180,7 +202,7 @@ class _ChatView extends StatelessWidget {
                   onEditTap: controller.startEditing,
                   onDeleteTap: controller.deleteMessage,
                   controller: controller,
-                  isPrivateChat: isPrivateChat,
+                  isPrivateChat: widget.isPrivateChat,
                 ),
               ),
               if (controller.typingDisplayIds.isNotEmpty)
@@ -198,6 +220,7 @@ class _ChatView extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -225,18 +248,57 @@ class _MessagesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Hide messages that are still encrypted or failed decryption.
+    final visible = messages.where((m) {
+      if (m.text.startsWith('[Decryption error:')) return false;
+      if (m.isEncrypted && m.text.isEmpty) return false;
+      return true;
+    }).toList();
+
+    // Extra item at top for loading indicator when paginating.
+    final hasLoadingHeader = controller.isLoadingMore;
+    final totalItems = visible.length + (hasLoadingHeader ? 1 : 0);
+
     return ListView.builder(
       controller: scrollController,
       padding: EdgeInsets.symmetric(horizontal: AppSizes.pw16),
-      itemCount: messages.length,
+      itemCount: totalItems,
+      // Keeps off-screen items alive to avoid rebuild cost.
+      cacheExtent: 500,
+      // Stable keys prevent unnecessary rebuilds when the list shifts.
+      findChildIndexCallback: (key) {
+        if (key is ValueKey<String>) {
+          final idx = visible.indexWhere((m) => m.id == key.value);
+          return idx == -1 ? null : idx + (hasLoadingHeader ? 1 : 0);
+        }
+        return null;
+      },
       itemBuilder: (context, index) {
-        final message = messages[index];
+        // Loading indicator at position 0 when paginating.
+        if (hasLoadingHeader && index == 0) {
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSizes.ph12),
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+            ),
+          );
+        }
+        final msgIndex = hasLoadingHeader ? index - 1 : index;
+        final message = visible[msgIndex];
         final isMine = message.senderId == myDisplayId;
         final profile = controller.getSenderProfile(
           message.senderUid,
           message.senderId,
         );
         return _MessageItem(
+          key: message.id != null ? ValueKey(message.id) : null,
           message: message,
           isMine: isMine,
           status: isMine ? message.statusFor(myDisplayId) : null,
@@ -255,6 +317,7 @@ class _MessagesList extends StatelessWidget {
 
 class _MessageItem extends StatelessWidget {
   const _MessageItem({
+    super.key,
     required this.message,
     required this.isMine,
     required this.onEditTap,
@@ -312,8 +375,8 @@ class _MessageItem extends StatelessWidget {
                           : senderName,
                       style: GoogleFonts.manrope(
                         color: message.senderRole == 'admin'
-                            ? const Color(0xFFEF4444)
-                            : AppColors.textMuted,
+                            ? AppColors.error
+                            : context.colors.textMuted,
                         fontSize: AppSizes.sp10,
                         fontWeight: message.senderRole == 'admin'
                             ? FontWeight.w700
@@ -340,7 +403,7 @@ class _MessageItem extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isMine
                             ? AppColors.primaryColor
-                            : AppColors.sectionBackground,
+                            : context.colors.sectionBackground,
                         borderRadius: BorderRadius.circular(AppSizes.r16),
                       ),
                       clipBehavior: Clip.antiAlias,
@@ -360,7 +423,7 @@ class _MessageItem extends StatelessWidget {
                     Text(
                       time,
                       style: GoogleFonts.manrope(
-                        color: AppColors.textMuted,
+                        color: context.colors.textMuted,
                         fontSize: AppSizes.sp10,
                       ),
                     ),
@@ -369,7 +432,7 @@ class _MessageItem extends StatelessWidget {
                       Text(
                         AppLocalizations.of(context)!.editedLabel,
                         style: GoogleFonts.manrope(
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                           fontSize: AppSizes.sp10,
                           fontStyle: FontStyle.italic,
                         ),
@@ -418,7 +481,7 @@ class _MessageItem extends StatelessWidget {
           message.text,
           textDirection: Directionality.of(context),
           style: GoogleFonts.manrope(
-            color: isMine ? AppColors.buttonText : AppColors.textPrimary,
+            color: isMine ? AppColors.buttonText : context.colors.textPrimary,
             fontSize: AppSizes.sp14,
             height: 1.4,
           ),
@@ -437,7 +500,7 @@ class _MessageItem extends StatelessWidget {
     final canEdit = message.messageType == MessageType.text;
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.cardBackground,
+      backgroundColor: context.colors.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r20)),
       ),
@@ -485,13 +548,13 @@ class _StatusIcon extends StatelessWidget {
         return Icon(
           Icons.check,
           size: AppSizes.sp12,
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
         );
       case MessageStatus.delivered:
         return Icon(
           Icons.done_all,
           size: AppSizes.sp12,
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
         );
       case MessageStatus.read:
         return Icon(
@@ -518,9 +581,9 @@ class _MessageAvatar extends StatelessWidget {
       width: 28,
       height: 28,
       decoration: BoxDecoration(
-        color: AppColors.sectionBackground,
+        color: context.colors.sectionBackground,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       clipBehavior: Clip.antiAlias,
       child: avatarUrl.isNotEmpty
@@ -582,7 +645,7 @@ class _MessageActionsSheet extends StatelessWidget {
             height: AppSizes.h4,
             margin: EdgeInsets.symmetric(vertical: AppSizes.ph12),
             decoration: BoxDecoration(
-              color: AppColors.textMuted.withValues(alpha: 0.4),
+              color: context.colors.textMuted.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(AppSizes.r4),
             ),
           ),
@@ -596,7 +659,7 @@ class _MessageActionsSheet extends StatelessWidget {
               title: Text(
                 l.editMessageTitle,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: AppSizes.sp14,
                 ),
@@ -638,14 +701,14 @@ class _DeleteConfirmationDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return AlertDialog(
-      backgroundColor: AppColors.cardBackground,
+      backgroundColor: context.colors.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.r16),
       ),
       title: Text(
         l.deleteMessageTitle,
         style: GoogleFonts.manrope(
-          color: AppColors.textTitle,
+          color: context.colors.textTitle,
           fontWeight: FontWeight.w800,
           fontSize: AppSizes.sp16,
         ),
@@ -653,7 +716,7 @@ class _DeleteConfirmationDialog extends StatelessWidget {
       content: Text(
         l.deleteMessageConfirm,
         style: GoogleFonts.manrope(
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
           fontSize: AppSizes.sp13,
           height: 1.5,
         ),
@@ -664,7 +727,7 @@ class _DeleteConfirmationDialog extends StatelessWidget {
           child: Text(
             l.cancelButton,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontWeight: FontWeight.w600,
               fontSize: AppSizes.sp14,
             ),
@@ -704,7 +767,7 @@ class _EditContextStrip extends StatelessWidget {
         horizontal: AppSizes.pw16,
         vertical: AppSizes.ph8,
       ),
-      color: AppColors.sectionBackground,
+      color: context.colors.sectionBackground,
       child: Row(
         children: [
           Container(
@@ -735,7 +798,7 @@ class _EditContextStrip extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.manrope(
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     fontSize: AppSizes.sp12,
                   ),
                 ),
@@ -745,7 +808,7 @@ class _EditContextStrip extends StatelessWidget {
           IconButton(
             icon: Icon(
               Icons.close,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               size: AppSizes.sp20,
             ),
             onPressed: controller.cancelEditing,
@@ -784,7 +847,7 @@ class _TypingIndicator extends StatelessWidget {
           Text(
             label,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp12,
               fontStyle: FontStyle.italic,
             ),
@@ -845,7 +908,7 @@ class _EncryptionPill extends StatelessWidget {
         vertical: AppSizes.ph8,
       ),
       decoration: BoxDecoration(
-        color: AppColors.sectionBackground,
+        color: context.colors.sectionBackground,
         borderRadius: BorderRadius.circular(AppSizes.r30),
       ),
       child: Row(
@@ -860,7 +923,7 @@ class _EncryptionPill extends StatelessWidget {
           Text(
             l.endToEndEncryptedChannel,
             style: GoogleFonts.manrope(
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
               fontSize: AppSizes.sp10,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
@@ -919,16 +982,27 @@ class _TextInputRow extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     final isEditing = controller.isEditing;
 
+    final mediaEnabled = controller.mediaSharingEnabled;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // Attach button (hidden in edit mode)
         if (!isEditing) ...[
-          _CircleIconButton(
-            icon: LucideIcons.paperclip,
-            color: Colors.white,
-            backgroundColor: AppColors.cardBackground,
-            onTap: () => _showAttachmentSheet(context, controller, l),
+          Opacity(
+            opacity: mediaEnabled ? 1.0 : 0.4,
+            child: _CircleIconButton(
+              icon: mediaEnabled ? LucideIcons.paperclip : LucideIcons.lock,
+              color: context.colors.textPrimary,
+              backgroundColor: context.colors.cardBackground,
+              onTap: () {
+                if (!mediaEnabled) {
+                  _showMediaDisabledSnackBar(context, l);
+                  return;
+                }
+                _showAttachmentSheet(context, controller, l);
+              },
+            ),
           ),
           SizedBox(width: AppSizes.w8),
         ],
@@ -941,15 +1015,15 @@ class _TextInputRow extends StatelessWidget {
               vertical: AppSizes.ph12,
             ),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: context.colors.cardBackground,
               borderRadius: BorderRadius.circular(AppSizes.r16),
-              border: Border.all(color: AppColors.inputBorder),
+              border: Border.all(color: context.colors.inputBorder),
             ),
             child: TextField(
               controller: controller.messageController,
               focusNode: controller.inputFocusNode,
               style: GoogleFonts.manrope(
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
                 fontSize: AppSizes.sp14,
               ),
               onChanged: (v) {
@@ -965,7 +1039,7 @@ class _TextInputRow extends StatelessWidget {
                 isCollapsed: true,
                 hintText: isEditing ? l.editMessageHint : l.typeAMessage,
                 hintStyle: GoogleFonts.manrope(
-                  color: AppColors.hintText,
+                  color: context.colors.hintText,
                   fontSize: AppSizes.sp14,
                 ),
                 border: InputBorder.none,
@@ -994,13 +1068,22 @@ class _TextInputRow extends StatelessWidget {
                       icon: Icons.send,
                       onTap: controller.sendMessage,
                     )
-                  : _CircleIconButton(
-                      icon: LucideIcons.mic,
-                      color: Colors.white,
-                      backgroundColor: AppColors.primaryColor.withValues(
-                        alpha: 0.15,
+                  : Opacity(
+                      opacity: mediaEnabled ? 1.0 : 0.4,
+                      child: _CircleIconButton(
+                        icon: mediaEnabled ? LucideIcons.mic : LucideIcons.micOff,
+                        color: AppColors.primaryColor,
+                        backgroundColor: AppColors.primaryColor.withValues(
+                          alpha: 0.15,
+                        ),
+                        onTap: () {
+                          if (!mediaEnabled) {
+                            _showMediaDisabledSnackBar(context, l);
+                            return;
+                          }
+                          controller.startVoiceRecording();
+                        },
                       ),
-                      onTap: controller.startVoiceRecording,
                     );
             },
           ),
@@ -1041,7 +1124,7 @@ class _RecordingBar extends StatelessWidget {
             height: AppSizes.h48,
             padding: EdgeInsets.symmetric(horizontal: AppSizes.pw12),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: context.colors.cardBackground,
               borderRadius: BorderRadius.circular(AppSizes.r16),
               border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
             ),
@@ -1091,9 +1174,9 @@ class _UploadingBar extends StatelessWidget {
       height: AppSizes.h48,
       padding: EdgeInsets.symmetric(horizontal: AppSizes.pw16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.colors.cardBackground,
         borderRadius: BorderRadius.circular(AppSizes.r16),
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1110,7 +1193,7 @@ class _UploadingBar extends StatelessWidget {
           Text(
             l.uploadingMedia,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp13,
             ),
           ),
@@ -1118,6 +1201,28 @@ class _UploadingBar extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── Media disabled snackbar ──────────────────────────────────────────────────
+
+void _showMediaDisabledSnackBar(BuildContext context, AppLocalizations l) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        l.mediaSharingDisabledMessage,
+        style: GoogleFonts.manrope(
+          color: Colors.white,
+          fontSize: AppSizes.sp13,
+        ),
+      ),
+      backgroundColor: AppColors.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.r12),
+      ),
+      duration: const Duration(seconds: 3),
+    ),
+  );
 }
 
 // ─── Attachment bottom sheet ──────────────────────────────────────────────────
@@ -1129,7 +1234,7 @@ void _showAttachmentSheet(
 ) {
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: AppColors.cardBackground,
+    backgroundColor: context.colors.cardBackground,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r20)),
     ),
@@ -1144,7 +1249,7 @@ void _showAttachmentSheet(
               height: AppSizes.h4,
               margin: EdgeInsets.symmetric(vertical: AppSizes.ph12),
               decoration: BoxDecoration(
-                color: AppColors.textMuted.withValues(alpha: 0.4),
+                color: context.colors.textMuted.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(AppSizes.r4),
               ),
             ),
@@ -1156,7 +1261,7 @@ void _showAttachmentSheet(
               child: Text(
                 l.mediaAttachmentTitle,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textTitle,
+                  color: context.colors.textTitle,
                   fontWeight: FontWeight.w700,
                   fontSize: AppSizes.sp14,
                 ),
@@ -1169,7 +1274,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.camera,
                   label: l.takePhotoOption,
-                  color: Colors.white,
+                  color: AppColors.primaryColor,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.captureAndSendImage();
@@ -1178,7 +1283,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.image,
                   label: l.choosePhotoOption,
-                  color: Colors.white,
+                  color: AppColors.primaryColor,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.pickAndSendImage();
@@ -1193,7 +1298,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.video,
                   label: l.recordVideoOption,
-                  color: Colors.white,
+                  color: AppColors.primaryColor,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.captureAndSendVideo();
@@ -1202,7 +1307,7 @@ void _showAttachmentSheet(
                 _AttachOption(
                   icon: LucideIcons.film,
                   label: l.chooseVideoOption,
-                  color: Colors.white,
+                  color: AppColors.primaryColor,
                   onTap: () {
                     Navigator.pop(sheetCtx);
                     controller.pickAndSendVideo();
@@ -1241,8 +1346,8 @@ class _AttachOption extends StatelessWidget {
           Container(
             width: AppSizes.h56,
             height: AppSizes.h56,
-            decoration: const BoxDecoration(
-              color: AppColors.sectionBackground,
+            decoration: BoxDecoration(
+              color: context.colors.sectionBackground,
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: AppSizes.sp28),
@@ -1251,7 +1356,7 @@ class _AttachOption extends StatelessWidget {
           Text(
             label,
             style: GoogleFonts.manrope(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: AppSizes.sp12,
               fontWeight: FontWeight.w600,
             ),
@@ -1455,6 +1560,450 @@ class _ErrorBanner extends StatelessWidget {
               Icons.close,
               color: AppColors.error,
               size: AppSizes.sp16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── AI Summary sheet ─────────────────────────────────────────────────────────
+
+void _showSummarizeSheet(
+  BuildContext context, {
+  required List<ChatMessage> messages,
+  required String messagesPath,
+  required String chatTitle,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: context.colors.cardBackground,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.r20)),
+    ),
+    builder: (_) => _SummaryChatSheet(
+      messages: messages,
+      messagesPath: messagesPath,
+      chatTitle: chatTitle,
+    ),
+  );
+}
+
+class _SummaryChatSheet extends StatefulWidget {
+  const _SummaryChatSheet({
+    required this.messages,
+    required this.messagesPath,
+    required this.chatTitle,
+  });
+
+  final List<ChatMessage> messages;
+  final String messagesPath;
+  final String chatTitle;
+
+  @override
+  State<_SummaryChatSheet> createState() => _SummaryChatSheetState();
+}
+
+class _SummaryChatSheetState extends State<_SummaryChatSheet> {
+  ChatSummary? _summary;
+  bool _loading = true;
+  bool _generating = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExisting();
+  }
+
+  Future<void> _loadExisting() async {
+    try {
+      final existing =
+          await AiSummaryService.instance.fetchSummary(widget.messagesPath);
+      if (mounted) {
+        setState(() {
+          _summary = existing;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _generate() async {
+    debugPrint('[AI_SUMMARY] summary button pressed — '
+        '${widget.messages.length} messages in view');
+
+    setState(() {
+      _generating = true;
+      _error = null;
+    });
+
+    try {
+      final langCode =
+          context.read<LocaleProvider>().locale.languageCode;
+      final result = await AiSummaryService.instance.summarize(
+        messages: widget.messages,
+        messagesPath: widget.messagesPath,
+        chatTitle: widget.chatTitle,
+        languageCode: langCode,
+      );
+      if (mounted) {
+        setState(() {
+          _summary = result;
+          _generating = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[AI_SUMMARY] generate error: $e');
+      if (mounted) {
+        setState(() {
+          _generating = false;
+          _error = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.75,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (_, scrollController) {
+        return Column(
+          children: [
+            // Drag handle
+            Padding(
+              padding: EdgeInsets.only(
+                top: AppSizes.ph12,
+                bottom: AppSizes.ph8,
+              ),
+              child: Container(
+                width: AppSizes.w42,
+                height: AppSizes.h4,
+                decoration: BoxDecoration(
+                  color: context.colors.textMuted.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(AppSizes.r4),
+                ),
+              ),
+            ),
+            // Header row
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSizes.pw16),
+              child: Row(
+                children: [
+                  const Icon(
+                    LucideIcons.sparkles,
+                    color: AppColors.primaryColor,
+                    size: 20,
+                  ),
+                  SizedBox(width: AppSizes.w8),
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context)!.aiSummaryTitle,
+                      style: GoogleFonts.manrope(
+                        color: context.colors.textTitle,
+                        fontWeight: FontWeight.w800,
+                        fontSize: AppSizes.sp16,
+                      ),
+                    ),
+                  ),
+                  if (!_generating)
+                    TextButton.icon(
+                      onPressed: _generate,
+                      icon: Icon(
+                        _summary == null
+                            ? LucideIcons.zap
+                            : LucideIcons.refreshCw,
+                        size: 14,
+                        color: AppColors.primaryColor,
+                      ),
+                      label: Text(
+                        _summary == null
+                            ? AppLocalizations.of(context)!.aiSummaryGenerate
+                            : AppLocalizations.of(context)!.aiSummaryRegenerate,
+                        style: GoogleFonts.manrope(
+                          color: AppColors.primaryColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: AppSizes.sp12,
+                        ),
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSizes.pw16,
+                      ),
+                      child: SizedBox(
+                        width: AppSizes.w16,
+                        height: AppSizes.h16,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Divider(
+              color: context.colors.inputBorder,
+              height: AppSizes.h2,
+              thickness: 1,
+            ),
+            // Body
+            Expanded(
+              child: _loading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryColor,
+                      ),
+                    )
+                  : _generating
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                color: AppColors.primaryColor,
+                              ),
+                              SizedBox(height: AppSizes.ph16),
+                              Text(
+                                'Analysing conversation…',
+                                style: GoogleFonts.manrope(
+                                  color: context.colors.textMuted,
+                                  fontSize: AppSizes.sp13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _summary == null
+                          ? _SummaryEmptyState(onGenerate: _generate)
+                          : _SummaryContent(
+                              summary: _summary!,
+                              error: _error,
+                              scrollController: scrollController,
+                            ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ── Empty state ────────────────────────────────────────────────────────────────
+
+class _SummaryEmptyState extends StatelessWidget {
+  const _SummaryEmptyState({required this.onGenerate});
+  final VoidCallback onGenerate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: AppSizes.pw24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              LucideIcons.fileText,
+              color: context.colors.textMuted,
+              size: AppSizes.sp40,
+            ),
+            SizedBox(height: AppSizes.ph16),
+            Text(
+              AppLocalizations.of(context)!.aiSummaryEmptyTitle,
+              style: GoogleFonts.manrope(
+                color: context.colors.textTitle,
+                fontWeight: FontWeight.w700,
+                fontSize: AppSizes.sp14,
+              ),
+            ),
+            SizedBox(height: AppSizes.ph8),
+            Text(
+              AppLocalizations.of(context)!.aiSummaryEmptySubtitle,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.manrope(
+                color: context.colors.textMuted,
+                fontSize: AppSizes.sp13,
+              ),
+            ),
+            SizedBox(height: AppSizes.ph24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onGenerate,
+                icon: const Icon(LucideIcons.sparkles, size: 16),
+                label: Text(
+                  AppLocalizations.of(context)!.aiSummaryGenerateButton,
+                  style: GoogleFonts.manrope(
+                    fontWeight: FontWeight.w700,
+                    fontSize: AppSizes.sp14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.buttonBackground,
+                  foregroundColor: AppColors.buttonText,
+                  padding: EdgeInsets.symmetric(vertical: AppSizes.ph14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.r12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Summary content ────────────────────────────────────────────────────────────
+
+class _SummaryContent extends StatelessWidget {
+  const _SummaryContent({
+    required this.summary,
+    required this.scrollController,
+    this.error,
+  });
+
+  final ChatSummary summary;
+  final ScrollController scrollController;
+  final String? error;
+
+  String _formatDate(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      controller: scrollController,
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.pw16,
+        AppSizes.ph8,
+        AppSizes.pw16,
+        AppSizes.ph24,
+      ),
+      children: [
+        if (error != null) ...[
+          Container(
+            margin: EdgeInsets.only(bottom: AppSizes.ph12),
+            padding: EdgeInsets.all(AppSizes.pw16),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppSizes.r12),
+              border: Border.all(
+                color: AppColors.error.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Text(
+              error!,
+              style: GoogleFonts.manrope(
+                color: AppColors.error,
+                fontSize: AppSizes.sp12,
+              ),
+            ),
+          ),
+        ],
+        _SummarySection(
+          icon: LucideIcons.messageSquare,
+          title: AppLocalizations.of(context)!.aiSummaryMainPoints,
+          body: summary.mainPoints,
+        ),
+        _SummarySection(
+          icon: LucideIcons.checkCircle,
+          title: AppLocalizations.of(context)!.aiSummaryDecisions,
+          body: summary.importantDecisions,
+        ),
+        _SummarySection(
+          icon: LucideIcons.clipboardList,
+          title: AppLocalizations.of(context)!.aiSummaryTasks,
+          body: summary.tasksAndActionItems,
+        ),
+        _SummarySection(
+          icon: LucideIcons.clock,
+          title: AppLocalizations.of(context)!.aiSummaryDeadlines,
+          body: summary.deadlinesAndCommitments,
+        ),
+        _SummarySection(
+          icon: LucideIcons.barChart2,
+          title: AppLocalizations.of(context)!.aiSummaryTone,
+          body: summary.overallTone,
+        ),
+        SizedBox(height: AppSizes.ph8),
+        Text(
+          AppLocalizations.of(context)!.aiSummaryGeneratedAt(
+              _formatDate(summary.generatedAt)),
+          textAlign: TextAlign.center,
+          style: GoogleFonts.manrope(
+            color: context.colors.textMuted,
+            fontSize: AppSizes.sp11,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummarySection extends StatelessWidget {
+  const _SummarySection({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: AppSizes.ph12),
+      padding: EdgeInsets.all(AppSizes.pw16),
+      decoration: BoxDecoration(
+        color: context.colors.sectionBackground,
+        borderRadius: BorderRadius.circular(AppSizes.r12),
+        border: Border.all(color: context.colors.inputBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppColors.primaryColor, size: AppSizes.sp14),
+              SizedBox(width: AppSizes.w6),
+              Text(
+                title,
+                style: GoogleFonts.manrope(
+                  color: AppColors.primaryColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: AppSizes.sp12,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSizes.ph8),
+          Text(
+            body.isNotEmpty ? body : '—',
+            style: GoogleFonts.manrope(
+              color: context.colors.textPrimary,
+              fontSize: AppSizes.sp13,
+              height: 1.5,
             ),
           ),
         ],

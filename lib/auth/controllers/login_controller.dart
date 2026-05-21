@@ -5,15 +5,18 @@ import 'package:projects/l10n/app_localizations.dart';
 import '../../core/datasource/local_data/preferences_manager.dart';
 import '../../core/datasource/remote_data/firebase_service.dart';
 import '../../core/services/activity_log_service.dart';
+import '../../core/services/encryption/e2ee_backup_service.dart';
+import '../../core/services/encryption/e2ee_key_store.dart';
 import '../../core/services/encryption/e2ee_manager.dart';
 import '../../core/services/logging_service.dart';
+import '../../core/services/otp_service.dart';
+import '../../core/services/push_notification_service.dart';
 import '../../core/services/session_manager.dart';
-import '../../models/admin_model.dart';
+import '../../core/Widgets/e2ee_backup_dialogs.dart';
 import '../../models/employee_model.dart';
-import '../../roles/Admin/features/Main/admin_main_screen.dart';
 import '../../roles/employee/features/main/employee_main_screen.dart';
-import '../../roles/primary Admin/Features/Main/main_screen.dart';
-import '../change_password_screen.dart';
+import '../otp_verification_screen.dart';
+import '../forgot_password_screen.dart';
 import '../request_access_screen.dart';
 
 class LoginController extends ChangeNotifier {
@@ -35,7 +38,7 @@ class LoginController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Sign in
+      // 1. Firebase Auth sign-in
       final credential = await FirebaseService.instance.auth
           .signInWithEmailAndPassword(
             email: emailController.text.trim(),
@@ -44,202 +47,212 @@ class LoginController extends ChangeNotifier {
 
       final uid = credential.user!.uid;
 
-      // 2. Get user data from Firestore
-      final doc = await FirebaseService.instance.firestore
-          .collection('users')
+      // 2. Mobile is employee-only — validate from employees collection only.
+      //    Admin/primary_admin accounts have no employees doc so they get a
+      //    generic invalid-credential error, preventing role/account leakage.
+      final empDoc = await FirebaseService.instance.firestore
+          .collection('employees')
           .doc(uid)
           .get();
 
-      if (!doc.exists) {
-        // No document found -> create one (primary_admin)
-        await FirebaseService.instance.firestore
-            .collection('users')
-            .doc(uid)
-            .set({
-              'uid': uid,
-              'email': credential.user!.email,
-              'role': 'primary_admin',
-              'firstLogin': false,
-              'mustChangePassword': false,
-              'createdAt': FieldValue.serverTimestamp(),
-            });
-
-        if (!context.mounted) return;
-
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const MainScreen()),
-          (route) => false,
-        );
-        return;
-      }
-
-      final user = AdminModel.fromJson(doc.data()!);
-
-      if (!context.mounted) return;
-
-      // 3. Enforce account status + role-specific checks
-      final status = doc.data()!['status'] ?? 'active';
-      if (user.role == 'employee') {
-        if (status == 'pending') {
-          await FirebaseService.instance.auth.signOut();
-          if ((user.organizationId ?? '').isNotEmpty) {
-            LoggingService.instance.log(
-              organizationId: user.organizationId!,
-              actionType: 'login_failure',
-              descriptionKey: 'logLoginFailure',
-              performedByUserId: uid,
-              performedByRole: 'employee',
-              performedByEmail: user.email,
-              performedByName: user.email,
-              metadata: {'reason': 'account_pending'},
-            );
-          }
-          errorMessage = l.accountPendingApproval;
-          isLoading = false;
-          notifyListeners();
-          return;
-        }
-        if (status == 'rejected') {
-          await FirebaseService.instance.auth.signOut();
-          if ((user.organizationId ?? '').isNotEmpty) {
-            LoggingService.instance.log(
-              organizationId: user.organizationId!,
-              actionType: 'login_failure',
-              descriptionKey: 'logLoginFailure',
-              performedByUserId: uid,
-              performedByRole: 'employee',
-              performedByEmail: user.email,
-              performedByName: user.email,
-              metadata: {'reason': 'account_rejected'},
-            );
-          }
-          errorMessage = l.accessRequestRejected;
-          isLoading = false;
-          notifyListeners();
-          return;
-        }
-      } else if (status != 'active') {
+      if (!empDoc.exists) {
         await FirebaseService.instance.auth.signOut();
-        errorMessage = l.accountIsStatus(status);
+        errorMessage = l.authErrorInvalidCredential;
         isLoading = false;
         notifyListeners();
         return;
       }
 
-      // 4. Initialize E2EE keys (generates X25519 key pair on first login,
-      //    restores public key to Firestore if device was changed).
-      //    Non-blocking: runs in background, does not delay login navigation.
-      E2eeManager.initializeKeys(uid).ignore();
+      final empData = empDoc.data()!;
 
-      // 5. Save user data in SharedPreferences
-      final prefs = PreferencesManager();
-      await prefs.setString('uid', user.uid);
-      await prefs.setString('email', user.email);
-      await prefs.setString('role', user.role);
-      await prefs.setBool('firstLogin', user.firstLogin);
-      await prefs.setBool('mustChangePassword', user.mustChangePassword);
-      if (user.organizationId != null) {
-        await prefs.setString('organizationId', user.organizationId!);
-      }
-      if (user.organizationName != null) {
-        await prefs.setString('organizationName', user.organizationName!);
-      }
-
-      // 5. Enforce password rotation for admins
-      if (!context.mounted) return;
-      final mustRotatePassword = user.firstLogin || user.mustChangePassword;
-      if (user.role == 'admin' && mustRotatePassword) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
-          (route) => false,
-        );
-        return;
-      }
-      if (user.role == 'primary_admin' && user.mustChangePassword) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
-          (route) => false,
-        );
+      // Safety guard: only docs with role == 'employee' may proceed.
+      final docRole = empData['role'] as String?;
+      if (docRole != 'employee') {
+        await FirebaseService.instance.auth.signOut();
+        errorMessage = l.authErrorInvalidCredential;
+        isLoading = false;
+        notifyListeners();
         return;
       }
 
-      // 6. Navigate based on role
-      Widget destination;
-      switch (user.role) {
-        case 'admin':
-          destination = const AdminMainScreen();
-          // Log admin login (org-scoped)
-          if ((user.organizationId ?? '').isNotEmpty) {
-            LoggingService.instance.log(
-              organizationId: user.organizationId!,
-              actionType: 'login_success',
-              descriptionKey: 'logLoginSuccess',
-              performedByUserId: uid,
-              performedByRole: 'admin',
-              performedByEmail: user.email,
-              performedByName: user.email,
-            );
+      final empOrgId = empData['organizationId'] as String? ?? '';
+
+      // 3. Enforce account status
+      final empStatus = empData['status'] as String? ?? 'pending';
+      switch (empStatus) {
+        case 'pending':
+          await FirebaseService.instance.auth.signOut();
+          if (empOrgId.isNotEmpty) {
+            LoggingService.instance
+                .log(
+                  organizationId: empOrgId,
+                  actionType: 'login_failure',
+                  performedByUserId: uid,
+                  performedByRole: 'employee',
+                  performedByEmail: empData['email'] as String? ?? '',
+                  performedByName: empData['name'] as String? ?? '',
+                  performedByEmployeeId: empData['displayId'] as String? ?? '',
+                  metadata: {'reason': 'account_pending', 'status': 'pending'},
+                )
+                .ignore();
           }
-          break;
-        case 'primary_admin':
-          destination = const MainScreen();
-          break;
-        case 'employee':
-          final employee = await _loadEmployeeProfile(uid, doc.data()!);
-          if (!context.mounted) return;
-          final orgIdFromUser = user.organizationId ?? '';
-          if (orgIdFromUser.isNotEmpty &&
-              employee.organizationId != orgIdFromUser) {
-            await SessionManager.instance.logout(
-              context,
-              reason: l.organizationMismatchSignIn,
-            );
-            return;
+          errorMessage = l.accountPendingApproval;
+          isLoading = false;
+          notifyListeners();
+          return;
+
+        case 'rejected':
+          await FirebaseService.instance.auth.signOut();
+          if (empOrgId.isNotEmpty) {
+            LoggingService.instance
+                .log(
+                  organizationId: empOrgId,
+                  actionType: 'login_failure',
+                  performedByUserId: uid,
+                  performedByRole: 'employee',
+                  performedByEmail: empData['email'] as String? ?? '',
+                  performedByName: empData['name'] as String? ?? '',
+                  performedByEmployeeId: empData['displayId'] as String? ?? '',
+                  metadata: {'reason': 'account_rejected', 'status': 'rejected'},
+                )
+                .ignore();
           }
-          // Prefer employee.organizationId — it is always populated by the
-          // approval flow. user.organizationId may be empty for employees
-          // because the users/{uid} doc is not updated with organizationId
-          // during approval (only employees/{uid} is).
-          final effectiveOrgId = employee.organizationId.isNotEmpty
-              ? employee.organizationId
-              : orgIdFromUser;
-          if (effectiveOrgId.isNotEmpty) {
-            LoggingService.instance.log(
-              organizationId: effectiveOrgId,
-              actionType: 'login_success',
-              descriptionKey: 'logLoginSuccess',
-              performedByUserId: uid,
-              performedByRole: 'employee',
-              performedByEmail: employee.email,
-              performedByName: employee.name,
-            );
-          }
-          destination = EmployeeMainScreen(employee: employee);
+          errorMessage = l.accessRequestRejected;
+          isLoading = false;
+          notifyListeners();
+          return;
+
+        case 'active':
           break;
+
         default:
-          errorMessage = l.unknownRoleError(user.role);
+          await FirebaseService.instance.auth.signOut();
+          errorMessage = l.accountIsStatus(empStatus);
           isLoading = false;
           notifyListeners();
           return;
       }
 
-      // Track login activity (fire-and-forget — never block navigation)
-      ActivityLogService.instance.log(
-        actionType: ActivityLogService.actionLogin,
-        userId: uid,
-        email: user.email,
-        role: user.role,
-        organizationId: user.organizationId,
-      );
-      ActivityLogService.instance.updateLoginActivity();
+      // 4. Initialize E2EE keys.
+      //    Generates a fresh X25519 key pair when none exists locally.
+      //    Then checks if a backup exists and prompts restore.
+      await E2eeManager.initializeKeys(uid);
+
+      // Show restore prompt if:
+      //   a) initializeKeys detected a backup (no local keys yet), OR
+      //   b) local keys exist but the user never completed restore
+      //      (they skipped previously — we re-prompt each login).
+      final restoreDone =
+          PreferencesManager().getBool('e2ee_restore_done_$uid') ?? false;
+      bool shouldPromptRestore = E2eeManager.backupAvailable;
+
+      if (!shouldPromptRestore && !restoreDone) {
+        // Local keys exist (from a prior skip) — re-check cloud backup.
+        try {
+          shouldPromptRestore = await E2eeBackupService.hasBackup(uid);
+        } catch (_) {
+          shouldPromptRestore = false;
+        }
+      }
+
+      if (shouldPromptRestore && context.mounted) {
+        await _tryRestoreE2eeKeys(context, uid);
+      }
+
+      // 4b. Upload FCM device token — fire-and-forget
+      PushNotificationService.instance.uploadToken(uid).ignore();
+
+      // 5. Persist session
+      final prefs = PreferencesManager();
+      await prefs.setString('uid', uid);
+      await prefs.setString('email', empData['email'] ?? '');
+      await prefs.setString('role', 'employee');
+      await prefs.setBool('firstLogin', false);
+      await prefs.setBool('mustChangePassword', false);
+      if (empOrgId.isNotEmpty) {
+        await prefs.setString('organizationId', empOrgId);
+      }
+      final empOrgName = empData['organizationName'] as String? ?? '';
+      if (empOrgName.isNotEmpty) {
+        await prefs.setString('organizationName', empOrgName);
+      }
+      // Persist actor fields used by SessionManager for audit logging.
+      final empName = empData['name'] as String? ?? '';
+      if (empName.isNotEmpty) await prefs.setString('name', empName);
+      final empDisplayId = empData['displayId'] as String? ?? '';
+      if (empDisplayId.isNotEmpty) await prefs.setString('displayId', empDisplayId);
+
+      // 6. OTP 2FA — legacy employees (no phoneNumber or phoneVerified != true) bypass.
+      final phoneNumber = empData['phoneNumber'] as String? ?? '';
+      final phoneVerified = empData['phoneVerified'] as bool? ?? false;
+
+      if (phoneNumber.isNotEmpty && phoneVerified) {
+        isLoading = false;
+        notifyListeners();
+
+        try {
+          await OtpService.instance.sendOtp(phone: phoneNumber, purpose: 'login');
+        } catch (e) {
+          await FirebaseService.instance.auth.signOut();
+          errorMessage = l.otpSendFailed;
+          notifyListeners();
+          return;
+        }
+
+        if (!context.mounted) return;
+
+        final otpVerified = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OtpVerificationScreen(
+                  phone: phoneNumber,
+                  purpose: 'login',
+                  uid: uid,
+                ),
+              ),
+            ) ??
+            false;
+
+        if (!context.mounted) return;
+
+        if (!otpVerified) {
+          await FirebaseService.instance.auth.signOut();
+          errorMessage = l.otpVerificationFailed;
+          isLoading = false;
+          notifyListeners();
+          return;
+        }
+
+        isLoading = true;
+        notifyListeners();
+      }
+
+      // 7. Load full employee profile (resolves departmentId, carries phone fields)
+      final employee = await _loadEmployeeProfile(uid, empData);
+      if (!context.mounted) return;
+
+      // 8. Audit logs
+      if (empOrgId.isNotEmpty) {
+        LoggingService.instance
+            .log(
+              organizationId: empOrgId,
+              actionType: 'login_success',
+              performedByUserId: uid,
+              performedByRole: 'employee',
+              performedByEmail: employee.email,
+              performedByName: employee.name,
+              performedByEmployeeId: employee.displayId,
+              performedByDepartmentId: employee.departmentId,
+            )
+            .ignore();
+      }
 
       if (!context.mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => destination),
+        MaterialPageRoute(
+          builder: (_) => EmployeeMainScreen(employee: employee),
+        ),
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
@@ -250,6 +263,106 @@ class LoginController extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+  }
+
+  /// Prompt the user to restore their E2EE keys from a Firestore backup.
+  ///
+  /// Called after [E2eeManager.initializeKeys] when a backup is detected.
+  /// At this point, NO keys have been generated yet — Firestore still has
+  /// the user's old public key, so group key docs are still unwrappable.
+  ///
+  /// The restore dialog decrypts the backup and returns a [BackupManifest]
+  /// containing both the identity key AND all conversation AES keys.
+  ///
+  /// If the user restores: keys are saved and conversation keys are written
+  /// to secure storage with their original identifiers.
+  /// If the user skips: fresh keys are generated so they can chat this
+  /// session, but we do NOT mark restore as complete — the prompt will
+  /// reappear on the next login.
+  Future<void> _tryRestoreE2eeKeys(BuildContext context, String uid) async {
+    if (!context.mounted) return;
+
+    final manifest = await showE2eeRestoreDialog(context, uid);
+
+    if (manifest == null) {
+      // User chose to skip for this session.
+      debugPrint('[Login] User skipped restore — generating fresh keys');
+      // Generate fresh keys so the user can send new messages.
+      // Do NOT set e2ee_restore_done — prompt will reappear next login.
+      final hasKeys = await E2eeKeyStore.hasKeyPair();
+      if (!hasKeys) {
+        await E2eeManager.generateFreshKeys(uid);
+      }
+      return;
+    }
+
+    try {
+      final result = await E2eeManager.restoreFromManifest(uid, manifest);
+      debugPrint('[Login] E2EE restore complete: $result');
+
+      // ── Post-restore validation ──────────────────────────────────────
+      // 1. Verify identity key persisted to secure storage.
+      final diag = await E2eeManager.diagnostics();
+      final hasKeys = diag['hasLocalKeyPair'] == true;
+      if (!hasKeys) {
+        debugPrint('[Login] CRITICAL: Identity key not persisted after restore');
+        await E2eeManager.generateFreshKeys(uid);
+        return;
+      }
+
+      // 2. Mark restore as done — stop prompting on future logins.
+      await PreferencesManager().setBool('e2ee_restore_done_$uid', true);
+
+      // 3. Verify public key fingerprint matches.
+      if (!result.fingerprintMatch) {
+        debugPrint('[Login] WARNING: Public key fingerprint mismatch after '
+            'restore — backup may be from a different key generation');
+      }
+
+      // 4. Verify Firestore public key matches restored key.
+      final firestorePubKey = await _verifyRestoredKeyInFirestore(uid);
+      if (firestorePubKey != null &&
+          firestorePubKey != result.restoredPublicKey) {
+        debugPrint('[Login] WARNING: Firestore key mismatch — re-publishing');
+      }
+
+      // 5. Verify conversation keys are actually readable.
+      if (result.hasConversationKeys && !result.allKeysVerified) {
+        debugPrint('[Login] WARNING: Some conversation keys failed '
+            'verification — '
+            '${result.conversationKeysVerified}/${result.conversationKeysRestored} '
+            'readable. Old messages may show as encrypted.');
+      }
+
+      // 6. Log restore diagnostics.
+      debugPrint('[Login] Restore diagnostics: '
+          'v${result.manifestVersion} '
+          'convKeys=${result.conversationKeysRestored}/'
+          '${result.conversationKeysInManifest} '
+          'verified=${result.conversationKeysVerified} '
+          'fingerprint=${result.fingerprintMatch ? "match" : "MISMATCH"}');
+    } catch (e) {
+      debugPrint('[Login] E2EE restore FAILED: $e');
+      // Restore failed — fall back to generating fresh keys so the user
+      // can at least send new messages.
+      debugPrint('[Login] Falling back to fresh key generation');
+      await E2eeManager.generateFreshKeys(uid);
+    }
+  }
+
+  /// Read back the public key from Firestore to confirm the restore write
+  /// actually persisted.  Returns null on error.
+  Future<String?> _verifyRestoredKeyInFirestore(String uid) async {
+    try {
+      final snap = await FirebaseService.instance.firestore
+          .collection('users')
+          .doc(uid)
+          .get(const GetOptions(source: Source.server));
+      return snap.data()?['e2eePublicKey'] as String?;
+    } catch (e) {
+      debugPrint('[Login] Firestore key verification failed: $e');
+      return null;
+    }
   }
 
   Future<EmployeeModel> _loadEmployeeProfile(
@@ -269,10 +382,11 @@ class LoginController extends ChangeNotifier {
             : _slugDepartment(employee.department);
 
         if (employee.departmentId.isEmpty) {
-          await FirebaseService.instance.firestore
+          FirebaseService.instance.firestore
               .collection('employees')
               .doc(uid)
-              .update({'departmentId': deptId});
+              .update({'departmentId': deptId})
+              .ignore();
         }
 
         return EmployeeModel(
@@ -289,6 +403,9 @@ class LoginController extends ChangeNotifier {
               : 'EMP-${uid.substring(0, 5).toUpperCase()}',
           status: employee.status,
           createdAt: employee.createdAt,
+          phoneNumber: employee.phoneNumber,
+          phoneVerified: employee.phoneVerified,
+          avatarUrl: employee.avatarUrl,
         );
       }
     } catch (_) {}
@@ -307,12 +424,15 @@ class LoginController extends ChangeNotifier {
           userData['displayId'] ?? 'EMP-${uid.substring(0, 5).toUpperCase()}',
       status: userData['status'] ?? 'active',
       createdAt: null,
+      phoneNumber: (userData['phoneNumber'] as String? ?? ''),
+      phoneVerified: (userData['phoneVerified'] as bool? ?? false),
+      avatarUrl: (userData['avatarUrl'] as String? ?? ''),
     );
   }
 
   String _slugDepartment(String value) {
     if (value.trim().isEmpty) return 'general';
-    return value.trim().replaceAll(' ', '_').toLowerCase();
+    return value.trim().replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_').toLowerCase();
   }
 
   String _mapAuthError(String code, AppLocalizations l) {
@@ -341,8 +461,11 @@ class LoginController extends ChangeNotifier {
     );
   }
 
-  void forgotPassword() {
-    // TODO: navigate to forgot password screen
+  void forgotPassword(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+    );
   }
 
   void clearError() {

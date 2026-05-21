@@ -11,10 +11,13 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_size.dart';
 import '../../../../core/datasource/remote_data/firebase_service.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/services/encryption/e2ee_manager.dart';
 import '../../../../core/services/session_manager.dart';
 import '../../../../core/theme/app_color.dart';
+import '../../../../core/Widgets/e2ee_backup_dialogs.dart';
 import '../../../../models/employee_model.dart';
-import 'verification_code_screen.dart';
+import 'employee_reset_password_screen.dart';
 
 class EmployeeProfileScreen extends StatefulWidget {
   const EmployeeProfileScreen({super.key, required this.employee});
@@ -29,6 +32,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
   late String _avatarUrl;
   late String _name;
   bool _uploading = false;
+  bool _backingUp = false;
 
   @override
   void initState() {
@@ -88,14 +92,57 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
     }
   }
 
+  Future<void> _backupEncryptionKey() async {
+    final l = AppLocalizations.of(context)!;
+    final uid = widget.employee.id ?? '';
+    if (uid.isEmpty) return;
+
+    if (!mounted) return;
+    final password = await showE2eeBackupDialog(context);
+    if (password == null || !mounted) return;
+
+    setState(() => _backingUp = true);
+
+    try {
+      await E2eeManager.createBackup(uid: uid, password: password);
+      E2eeManager.setBackupPassword(password);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l.backupSuccessMessage,
+              style: GoogleFonts.manrope(color: AppColors.buttonText),
+            ),
+            backgroundColor: AppColors.primaryColor,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l.backupFailedMessage,
+              style: GoogleFonts.manrope(),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _backingUp = false);
+    }
+  }
+
   Future<void> _editName() async {
     final controller = TextEditingController(text: _name);
     final l = AppLocalizations.of(context)!;
+    final colors = context.colors;
 
     final newName = await showDialog<String>(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: colors.cardBackground,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSizes.r20),
         ),
@@ -107,7 +154,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
               Text(
                 l.editNameTitle,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textTitle,
+                  color: colors.textTitle,
                   fontWeight: FontWeight.w800,
                   fontSize: AppSizes.sp18,
                 ),
@@ -117,19 +164,19 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                 controller: controller,
                 autofocus: true,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textPrimary,
+                  color: colors.textPrimary,
                   fontSize: AppSizes.sp14,
                 ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: AppColors.sectionBackground,
+                  fillColor: colors.sectionBackground,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppSizes.r12),
-                    borderSide: const BorderSide(color: AppColors.inputBorder),
+                    borderSide: BorderSide(color: colors.inputBorder),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppSizes.r12),
-                    borderSide: const BorderSide(color: AppColors.inputBorder),
+                    borderSide: BorderSide(color: colors.inputBorder),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppSizes.r12),
@@ -144,7 +191,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(ctx),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.inputBorder),
+                        side: BorderSide(color: colors.inputBorder),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppSizes.r12),
                         ),
@@ -153,7 +200,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                       child: Text(
                         l.cancelButton,
                         style: GoogleFonts.manrope(
-                          color: AppColors.textMuted,
+                          color: colors.textMuted,
                           fontWeight: FontWeight.w600,
                           fontSize: AppSizes.sp14,
                         ),
@@ -222,17 +269,19 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final localeProvider = context.watch<LocaleProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: colors.cardBackground,
         elevation: 0,
         centerTitle: true,
         title: Text(
           l.profileTitle,
           style: GoogleFonts.manrope(
-            color: AppColors.textPrimary,
+            color: colors.textPrimary,
             fontWeight: FontWeight.w800,
             fontSize: AppSizes.sp16,
           ),
@@ -249,9 +298,9 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                 width: double.infinity,
                 padding: EdgeInsets.all(AppSizes.ph20),
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
+                  color: colors.cardBackground,
                   borderRadius: BorderRadius.circular(AppSizes.r16),
-                  border: Border.all(color: AppColors.inputBorder),
+                  border: Border.all(color: colors.inputBorder),
                 ),
                 child: Row(
                   children: [
@@ -303,17 +352,17 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                                 ),
                               ),
                               child: _uploading
-                                  ? const SizedBox(
+                                  ? SizedBox(
                                       width: 12,
                                       height: 12,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 1.5,
-                                        color: AppColors.textPrimary,
+                                        color: colors.textPrimary,
                                       ),
                                     )
-                                  : const Icon(
+                                  : Icon(
                                       Icons.camera_alt_rounded,
-                                      color: AppColors.textPrimary,
+                                      color: colors.textPrimary,
                                       size: 12,
                                     ),
                             ),
@@ -334,7 +383,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                                   child: Text(
                                     _name,
                                     style: GoogleFonts.manrope(
-                                      color: AppColors.textTitle,
+                                      color: colors.textTitle,
                                       fontSize: AppSizes.sp18,
                                       fontWeight: FontWeight.w800,
                                     ),
@@ -343,7 +392,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                                 SizedBox(width: AppSizes.w6),
                                 Icon(
                                   Icons.edit_outlined,
-                                  color: AppColors.textMuted,
+                                  color: colors.textMuted,
                                   size: AppSizes.sp14,
                                 ),
                               ],
@@ -353,7 +402,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                           Text(
                             widget.employee.email,
                             style: GoogleFonts.manrope(
-                              color: AppColors.textMuted,
+                              color: colors.textMuted,
                               fontSize: AppSizes.sp12,
                             ),
                           ),
@@ -371,9 +420,9 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                 width: double.infinity,
                 padding: EdgeInsets.all(AppSizes.ph16),
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
+                  color: colors.cardBackground,
                   borderRadius: BorderRadius.circular(AppSizes.r16),
-                  border: Border.all(color: AppColors.inputBorder),
+                  border: Border.all(color: colors.inputBorder),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,7 +430,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                     Text(
                       l.employeeInfoSection,
                       style: GoogleFonts.manrope(
-                        color: AppColors.textMuted,
+                        color: colors.textMuted,
                         fontWeight: FontWeight.w700,
                         fontSize: AppSizes.sp12,
                         letterSpacing: 1.2,
@@ -418,9 +467,9 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                 width: double.infinity,
                 padding: EdgeInsets.all(AppSizes.ph16),
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
+                  color: colors.cardBackground,
                   borderRadius: BorderRadius.circular(AppSizes.r16),
-                  border: Border.all(color: AppColors.inputBorder),
+                  border: Border.all(color: colors.inputBorder),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -436,7 +485,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                         Text(
                           l.languageLabel,
                           style: GoogleFonts.manrope(
-                            color: AppColors.textTitle,
+                            color: colors.textTitle,
                             fontWeight: FontWeight.w600,
                             fontSize: AppSizes.sp14,
                           ),
@@ -451,9 +500,9 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                           vertical: AppSizes.ph6,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.sectionBackground,
+                          color: colors.sectionBackground,
                           borderRadius: BorderRadius.circular(AppSizes.r20),
-                          border: Border.all(color: AppColors.inputBorder),
+                          border: Border.all(color: colors.inputBorder),
                         ),
                         child: Text(
                           localeProvider.isArabic
@@ -473,14 +522,70 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
 
               SizedBox(height: AppSizes.ph16),
 
+              // ── Theme Switcher Card ──
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(AppSizes.ph16),
+                decoration: BoxDecoration(
+                  color: colors.cardBackground,
+                  borderRadius: BorderRadius.circular(AppSizes.r16),
+                  border: Border.all(color: colors.inputBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.palette_outlined,
+                          color: AppColors.primaryColor,
+                          size: AppSizes.sp20,
+                        ),
+                        SizedBox(width: AppSizes.w12),
+                        Text(
+                          l.themeLabel,
+                          style: GoogleFonts.manrope(
+                            color: colors.textTitle,
+                            fontWeight: FontWeight.w600,
+                            fontSize: AppSizes.sp14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: AppSizes.h12),
+                    Row(
+                      children: [
+                        _ThemeOption(
+                          label: l.themeDark,
+                          icon: Icons.dark_mode_outlined,
+                          selected:
+                              themeProvider.themeMode == ThemeMode.dark,
+                          onTap: () => themeProvider.setTheme(ThemeMode.dark),
+                        ),
+                        SizedBox(width: AppSizes.w8),
+                        _ThemeOption(
+                          label: l.themeLight,
+                          icon: Icons.light_mode_outlined,
+                          selected:
+                              themeProvider.themeMode == ThemeMode.light,
+                          onTap: () => themeProvider.setTheme(ThemeMode.light),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: AppSizes.ph16),
+
               // ── Change Password Card ──
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(AppSizes.ph16),
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
+                  color: colors.cardBackground,
                   borderRadius: BorderRadius.circular(AppSizes.r16),
-                  border: Border.all(color: AppColors.inputBorder),
+                  border: Border.all(color: colors.inputBorder),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,7 +605,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                               Text(
                                 l.changePasswordButton,
                                 style: GoogleFonts.manrope(
-                                  color: AppColors.textTitle,
+                                  color: colors.textTitle,
                                   fontWeight: FontWeight.w600,
                                   fontSize: AppSizes.sp14,
                                 ),
@@ -509,7 +614,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                               Text(
                                 l.changePasswordDescription,
                                 style: GoogleFonts.manrope(
-                                  color: AppColors.textMuted,
+                                  color: colors.textMuted,
                                   fontSize: AppSizes.sp11,
                                 ),
                               ),
@@ -527,9 +632,11 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => VerificationCodeScreen(
+                              builder: (_) => EmployeeResetPasswordScreen(
                                 uid: widget.employee.id ?? '',
                                 email: widget.employee.email,
+                                phoneNumber: widget.employee.phoneNumber,
+                                phoneVerified: widget.employee.phoneVerified,
                               ),
                             ),
                           );
@@ -561,14 +668,107 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
 
               SizedBox(height: AppSizes.ph16),
 
+              // ── Encryption Key Backup Card ──
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(AppSizes.ph16),
+                decoration: BoxDecoration(
+                  color: colors.cardBackground,
+                  borderRadius: BorderRadius.circular(AppSizes.r16),
+                  border: Border.all(color: colors.inputBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.key_outlined,
+                          color: AppColors.primaryColor,
+                          size: AppSizes.sp20,
+                        ),
+                        SizedBox(width: AppSizes.w12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.encryptionKeySection,
+                                style: GoogleFonts.manrope(
+                                  color: colors.textTitle,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: AppSizes.sp14,
+                                ),
+                              ),
+                              SizedBox(height: AppSizes.h2),
+                              Text(
+                                l.encryptionKeyBackupDescription,
+                                style: GoogleFonts.manrope(
+                                  color: colors.textMuted,
+                                  fontSize: AppSizes.sp11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: AppSizes.ph16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: AppSizes.h44,
+                      child: OutlinedButton.icon(
+                        onPressed: _backingUp ? null : _backupEncryptionKey,
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: _backingUp
+                                ? colors.inputBorder
+                                : AppColors.primaryColor,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSizes.r12),
+                          ),
+                        ),
+                        icon: _backingUp
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primaryColor,
+                                ),
+                              )
+                            : Icon(
+                                Icons.backup_outlined,
+                                color: AppColors.primaryColor,
+                                size: AppSizes.sp18,
+                              ),
+                        label: Text(
+                          l.backupKeyButton,
+                          style: GoogleFonts.manrope(
+                            color: _backingUp
+                                ? colors.textMuted
+                                : AppColors.primaryColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: AppSizes.sp13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: AppSizes.ph16),
+
               // ── Session Controls ──
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(AppSizes.ph16),
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
+                  color: colors.cardBackground,
                   borderRadius: BorderRadius.circular(AppSizes.r16),
-                  border: Border.all(color: AppColors.inputBorder),
+                  border: Border.all(color: colors.inputBorder),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -576,7 +776,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                     Text(
                       l.sessionControlsSection,
                       style: GoogleFonts.manrope(
-                        color: AppColors.textMuted,
+                        color: colors.textMuted,
                         fontWeight: FontWeight.w700,
                         fontSize: AppSizes.sp12,
                         letterSpacing: 1.2,
@@ -586,7 +786,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                     Text(
                       l.endSessionDescription,
                       style: GoogleFonts.manrope(
-                        color: AppColors.textSubtitle,
+                        color: colors.textSubtitle,
                         fontSize: AppSizes.sp12,
                       ),
                     ),
@@ -604,14 +804,14 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
                             borderRadius: BorderRadius.circular(AppSizes.r12),
                           ),
                         ),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.logout_rounded,
-                          color: AppColors.textPrimary,
+                          color: colors.textPrimary,
                         ),
                         label: Text(
                           l.signOutButton,
                           style: GoogleFonts.manrope(
-                            color: AppColors.textPrimary,
+                            color: colors.textPrimary,
                             fontWeight: FontWeight.w800,
                             fontSize: AppSizes.sp14,
                           ),
@@ -636,11 +836,12 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen> {
 }
 
 Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
+  final colors = context.colors;
   return await showDialog<bool>(
         context: context,
         barrierDismissible: true,
         builder: (ctx) => Dialog(
-          backgroundColor: AppColors.cardBackground,
+          backgroundColor: colors.cardBackground,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSizes.r20),
           ),
@@ -665,7 +866,7 @@ Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
                 Text(
                   l.signOutButton,
                   style: GoogleFonts.manrope(
-                    color: AppColors.textTitle,
+                    color: colors.textTitle,
                     fontWeight: FontWeight.w800,
                     fontSize: AppSizes.sp18,
                   ),
@@ -675,7 +876,7 @@ Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
                   l.signOutConfirm,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.manrope(
-                    color: AppColors.textMuted,
+                    color: colors.textMuted,
                     fontSize: AppSizes.sp13,
                     height: 1.5,
                   ),
@@ -687,7 +888,7 @@ Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(ctx, false),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.inputBorder),
+                          side: BorderSide(color: colors.inputBorder),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppSizes.r12),
                           ),
@@ -698,7 +899,7 @@ Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
                         child: Text(
                           l.cancelButton,
                           style: GoogleFonts.manrope(
-                            color: AppColors.textMuted,
+                            color: colors.textMuted,
                             fontWeight: FontWeight.w600,
                             fontSize: AppSizes.sp14,
                           ),
@@ -722,7 +923,7 @@ Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
                         child: Text(
                           l.signOutButton,
                           style: GoogleFonts.manrope(
-                            color: AppColors.textPrimary,
+                            color: colors.textPrimary,
                             fontWeight: FontWeight.w700,
                             fontSize: AppSizes.sp14,
                           ),
@@ -739,6 +940,64 @@ Future<bool> _showLogoutDialog(BuildContext context, AppLocalizations l) async {
       false;
 }
 
+// ── Theme option chip ──
+class _ThemeOption extends StatelessWidget {
+  const _ThemeOption({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(vertical: AppSizes.ph10),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.primaryColor.withValues(alpha: 0.12)
+                : colors.sectionBackground,
+            borderRadius: BorderRadius.circular(AppSizes.r12),
+            border: Border.all(
+              color: selected ? AppColors.primaryColor : colors.inputBorder,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                color: selected ? AppColors.primaryColor : colors.textMuted,
+                size: AppSizes.sp18,
+              ),
+              SizedBox(height: AppSizes.h4),
+              Text(
+                label,
+                style: GoogleFonts.manrope(
+                  color: selected ? AppColors.primaryColor : colors.textMuted,
+                  fontSize: AppSizes.sp11,
+                  fontWeight:
+                      selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _InfoRow extends StatelessWidget {
   const _InfoRow({
     required this.icon,
@@ -752,6 +1011,7 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: AppSizes.ph8),
       child: Row(
@@ -765,7 +1025,7 @@ class _InfoRow extends StatelessWidget {
                 Text(
                   label.toUpperCase(),
                   style: GoogleFonts.manrope(
-                    color: AppColors.textMuted,
+                    color: colors.textMuted,
                     fontSize: AppSizes.sp10,
                     letterSpacing: 0.8,
                     fontWeight: FontWeight.w600,
@@ -775,7 +1035,7 @@ class _InfoRow extends StatelessWidget {
                 Text(
                   value.isNotEmpty ? value : '—',
                   style: GoogleFonts.manrope(
-                    color: AppColors.textTitle,
+                    color: colors.textTitle,
                     fontSize: AppSizes.sp13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -792,6 +1052,10 @@ class _InfoRow extends StatelessWidget {
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Divider(color: AppColors.inputBorder, height: 1, thickness: 1);
+    return Divider(
+      color: context.colors.inputBorder,
+      height: 1,
+      thickness: 1,
+    );
   }
 }

@@ -1,25 +1,36 @@
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'core/datasource/local_data/preferences_manager.dart';
+import 'core/services/notification_service.dart';
+import 'core/services/push_notification_service.dart';
 import 'core/providers/locale_provider.dart';
+import 'core/providers/theme_provider.dart';
 import 'core/services/session_manager.dart';
 import 'core/theme/theme_data.dart';
 import 'firebase_options.dart';
-import 'auth/login_screen.dart';
+import 'splash_screen.dart';
 import 'package:projects/l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Register background handler before Firebase.initializeApp
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await PreferencesManager().init();
+  await NotificationService.instance.initialize();
+  await PushNotificationService.instance.initialize();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => LocaleProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -104,6 +115,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final localeProvider = context.watch<LocaleProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
 
     return ScreenUtilInit(
       designSize: const Size(375, 812),
@@ -128,7 +140,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               ],
               title: 'GovChat',
               debugShowCheckedModeBanner: false,
-              theme: darkTheme,
+              theme: lightTheme,
+              darkTheme: darkTheme,
+              themeMode: themeProvider.themeMode,
 
               // ── Localization ──
               locale: localeProvider.locale,
@@ -149,7 +163,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   child: child ?? const SizedBox.shrink(),
                 );
               },
-              home: const LoginScreen(),
+              home: const SplashScreen(),
             ),
           ),
         );

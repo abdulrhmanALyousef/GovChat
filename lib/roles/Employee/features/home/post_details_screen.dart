@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:projects/l10n/app_localizations.dart';
@@ -53,18 +53,18 @@ class _PostDetailsView extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: context.colors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: context.colors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textTitle),
+          icon: Icon(Icons.arrow_back_ios_new, color: context.colors.textTitle),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l.postTitle,
           style: GoogleFonts.manrope(
-            color: AppColors.textTitle,
+            color: context.colors.textTitle,
             fontWeight: FontWeight.w800,
             fontSize: AppSizes.sp16,
           ),
@@ -84,7 +84,7 @@ class _PostDetailsView extends StatelessWidget {
                         child: Text(
                           controller.errorMessage!,
                           style: GoogleFonts.manrope(
-                            color: AppColors.textMuted,
+                            color: context.colors.textMuted,
                             fontSize: AppSizes.sp14,
                           ),
                         ),
@@ -117,9 +117,9 @@ class _PostDetailsView extends StatelessWidget {
         // ── Post card ──
         Container(
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            color: context.colors.cardBackground,
             borderRadius: BorderRadius.circular(AppSizes.r16),
-            border: Border.all(color: AppColors.inputBorder),
+            border: Border.all(color: context.colors.inputBorder),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +155,7 @@ class _PostDetailsView extends StatelessWidget {
                     Text(
                       _formatTime(post.createdAt, l),
                       style: GoogleFonts.manrope(
-                        color: AppColors.textMuted,
+                        color: context.colors.textMuted,
                         fontSize: AppSizes.sp11,
                       ),
                     ),
@@ -175,7 +175,7 @@ class _PostDetailsView extends StatelessWidget {
                   child: Text(
                     post.text,
                     style: GoogleFonts.manrope(
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                       fontSize: AppSizes.sp14,
                       height: 1.55,
                     ),
@@ -198,8 +198,8 @@ class _PostDetailsView extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    const Divider(
-                      color: AppColors.inputBorder,
+                    Divider(
+                      color: context.colors.inputBorder,
                       height: 1,
                       thickness: 1,
                     ),
@@ -218,7 +218,7 @@ class _PostDetailsView extends StatelessWidget {
                                     : Icons.favorite_border_rounded,
                                 color: isLiked
                                     ? AppColors.error
-                                    : AppColors.textMuted,
+                                    : context.colors.textMuted,
                                 size: AppSizes.sp18,
                               ),
                               SizedBox(width: AppSizes.w6),
@@ -227,7 +227,7 @@ class _PostDetailsView extends StatelessWidget {
                                 style: GoogleFonts.manrope(
                                   color: isLiked
                                       ? AppColors.error
-                                      : AppColors.textMuted,
+                                      : context.colors.textMuted,
                                   fontSize: AppSizes.sp12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -241,14 +241,14 @@ class _PostDetailsView extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.chat_bubble_outline_rounded,
-                              color: AppColors.textMuted,
+                              color: context.colors.textMuted,
                               size: AppSizes.sp16,
                             ),
                             SizedBox(width: AppSizes.w6),
                             Text(
                               '${post.commentsCount} ${post.commentsCount == 1 ? l.commentSingular : l.commentPlural}',
                               style: GoogleFonts.manrope(
-                                color: AppColors.textMuted,
+                                color: context.colors.textMuted,
                                 fontSize: AppSizes.sp12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -270,7 +270,7 @@ class _PostDetailsView extends StatelessWidget {
         Text(
           l.commentPlural,
           style: GoogleFonts.manrope(
-            color: AppColors.textTitle,
+            color: context.colors.textTitle,
             fontWeight: FontWeight.w800,
             fontSize: AppSizes.sp14,
             letterSpacing: 0.4,
@@ -285,7 +285,7 @@ class _PostDetailsView extends StatelessWidget {
               child: Text(
                 l.noCommentsYet,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textMuted,
+                  color: context.colors.textMuted,
                   fontSize: AppSizes.sp13,
                 ),
               ),
@@ -328,9 +328,9 @@ class _CommentTile extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(AppSizes.pw12),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: context.colors.cardBackground,
         borderRadius: BorderRadius.circular(AppSizes.r12),
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: context.colors.inputBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,7 +363,7 @@ class _CommentTile extends StatelessWidget {
                     Text(
                       _formatTime(comment.createdAt, l),
                       style: GoogleFonts.manrope(
-                        color: AppColors.textMuted,
+                        color: context.colors.textMuted,
                         fontSize: AppSizes.sp10,
                       ),
                     ),
@@ -373,7 +373,7 @@ class _CommentTile extends StatelessWidget {
                 Text(
                   comment.text,
                   style: GoogleFonts.manrope(
-                    color: AppColors.textPrimary,
+                    color: context.colors.textPrimary,
                     fontSize: AppSizes.sp13,
                     height: 1.5,
                   ),
@@ -456,10 +456,10 @@ class _CommentInputBarState extends State<_CommentInputBar> {
         AppSizes.pw16,
         AppSizes.ph16,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.cardBackground,
+      decoration: BoxDecoration(
+        color: context.colors.cardBackground,
         border: Border(
-          top: BorderSide(color: AppColors.inputBorder),
+          top: BorderSide(color: context.colors.inputBorder),
         ),
       ),
       child: Row(
@@ -467,14 +467,14 @@ class _CommentInputBarState extends State<_CommentInputBar> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.sectionBackground,
+                color: context.colors.sectionBackground,
                 borderRadius: BorderRadius.circular(AppSizes.r24),
-                border: Border.all(color: AppColors.inputBorder),
+                border: Border.all(color: context.colors.inputBorder),
               ),
               child: TextField(
                 controller: _textController,
                 style: GoogleFonts.manrope(
-                  color: AppColors.textTitle,
+                  color: context.colors.textTitle,
                   fontSize: AppSizes.sp14,
                 ),
                 maxLines: null,
@@ -483,7 +483,7 @@ class _CommentInputBarState extends State<_CommentInputBar> {
                 decoration: InputDecoration(
                   hintText: l.writeACommentHint,
                   hintStyle: GoogleFonts.manrope(
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     fontSize: AppSizes.sp14,
                   ),
                   contentPadding: EdgeInsets.symmetric(
@@ -511,7 +511,7 @@ class _CommentInputBarState extends State<_CommentInputBar> {
                         ],
                       ),
                 color: (!_hasText || submitting)
-                    ? AppColors.sectionBackground
+                    ? context.colors.sectionBackground
                     : null,
                 shape: BoxShape.circle,
               ),
@@ -530,7 +530,7 @@ class _CommentInputBarState extends State<_CommentInputBar> {
                       Icons.send_rounded,
                       color: _hasText
                           ? AppColors.buttonText
-                          : AppColors.textMuted,
+                          : context.colors.textMuted,
                       size: AppSizes.sp18,
                     ),
             ),
@@ -664,8 +664,8 @@ class _MediaRow extends StatelessWidget {
             width: double.infinity,
             height: AppSizes.h240,
             fit: BoxFit.cover,
-            placeholder: (_, _a) => _shimmerBox(double.infinity, AppSizes.h240),
-            errorWidget: (_, _a, _b) => _errorBox(double.infinity, AppSizes.h240),
+            placeholder: (_, _a) => _shimmerBox(context, double.infinity, AppSizes.h240),
+            errorWidget: (_, _a, _b) => _errorBox(context, double.infinity, AppSizes.h240),
           ),
         ),
       );
@@ -685,28 +685,28 @@ class _MediaRow extends StatelessWidget {
             width: AppSizes.w200,
             height: AppSizes.h200,
             fit: BoxFit.cover,
-            placeholder: (_, _a) => _shimmerBox(AppSizes.w200, AppSizes.h200),
-            errorWidget: (_, _a, _b) => _errorBox(AppSizes.w200, AppSizes.h200),
+            placeholder: (_, _a) => _shimmerBox(context, AppSizes.w200, AppSizes.h200),
+            errorWidget: (_, _a, _b) => _errorBox(context, AppSizes.w200, AppSizes.h200),
           ),
         ),
       ),
     );
   }
 
-  Widget _shimmerBox(double w, double h) {
+  Widget _shimmerBox(BuildContext context, double w, double h) {
     return Shimmer.fromColors(
-      baseColor: AppColors.sectionBackground,
-      highlightColor: AppColors.cardBackground,
-      child: Container(width: w, height: h, color: AppColors.sectionBackground),
+      baseColor: context.colors.sectionBackground,
+      highlightColor: context.colors.cardBackground,
+      child: Container(width: w, height: h, color: context.colors.sectionBackground),
     );
   }
 
-  Widget _errorBox(double w, double h) {
+  Widget _errorBox(BuildContext context, double w, double h) {
     return Container(
       width: w,
       height: h,
-      color: AppColors.sectionBackground,
-      child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
+      color: context.colors.sectionBackground,
+      child: Icon(Icons.broken_image_outlined, color: context.colors.textMuted),
     );
   }
 }

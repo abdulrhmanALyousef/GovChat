@@ -258,7 +258,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noConversationsYet => 'لا توجد محادثات بعد';
 
   @override
-  String get noMessagesYet => 'لا توجد رسائل بعد';
+  String get noMessagesYet => 'لا توجد رسائل حالياً';
+
+  @override
+  String get encryptedMessage => 'رسالة مشفرة';
 
   @override
   String get orgChatLabel => 'دردشة المنظمة';
@@ -949,7 +952,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get changePasswordDescription =>
-      'تحقق من هويتك عبر البريد الإلكتروني لتحديث كلمة المرور.';
+      'تحقق من هويتك عبر رمز OTP لتحديث كلمة المرور.';
+
+  @override
+  String get cpNoPhoneMessage =>
+      'التحقق عبر الهاتف مطلوب. يرجى التواصل مع مسؤولك لإضافة رقم هاتف محقق إلى حسابك.';
 
   @override
   String get verificationCodeTitle => 'رمز التحقق';
@@ -1409,4 +1416,526 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get logDescRequestSubmitted => 'Access request submitted';
+
+  @override
+  String get noAnnouncementsDesc => 'ستظهر هنا الإعلانات الرسمية من مؤسستك.';
+
+  @override
+  String get announcementPostedLabel => 'نُشر';
+
+  @override
+  String get announcementExpiresLabel => 'ينتهي';
+
+  @override
+  String get announcementPriorityNormal => 'عادي';
+
+  @override
+  String get announcementPriorityHigh => 'مرتفع';
+
+  @override
+  String get announcementPriorityUrgent => 'عاجل';
+
+  @override
+  String get logAnnouncementCreated => 'تم إنشاء إعلان';
+
+  @override
+  String get logAnnouncementUpdated => 'تم تحديث إعلان';
+
+  @override
+  String get logAnnouncementDeleted => 'تم حذف إعلان';
+
+  @override
+  String get phoneNumberLabel => 'رقم الهاتف';
+
+  @override
+  String get phoneNumberHint => '0597123456';
+
+  @override
+  String get phoneNumberRequired => 'رقم الهاتف مطلوب';
+
+  @override
+  String get phoneNumberInvalid =>
+      'أدخل رقم جوال سعودي صحيح (مثال: 0597123456)';
+
+  @override
+  String get employeePhoneRequired =>
+      'حسابك لا يحتوي على رقم هاتف موثق. يرجى التواصل مع المسؤول.';
+
+  @override
+  String get mobileEmployeeOnly =>
+      'هذا التطبيق للموظفين فقط. يجب على المسؤولين تسجيل الدخول عبر لوحة تحكم GovChat الإلكترونية.';
+
+  @override
+  String get otpVerificationTitle => 'التحقق بكلمة المرور المؤقتة';
+
+  @override
+  String get otpVerificationSubtitle => 'تم إرسال رمز مكون من 4 أرقام إلى';
+
+  @override
+  String get otpLoginTitle => 'المصادقة الثنائية';
+
+  @override
+  String get otpLoginSubtitle =>
+      'لحماية حسابك، أدخل رمز OTP المرسل إلى هاتفك المسجل.';
+
+  @override
+  String get otpEnterCode => 'أدخل رمز OTP المكون من 4 أرقام';
+
+  @override
+  String get otpVerifyButton => 'تحقق';
+
+  @override
+  String get otpResendButton => 'إعادة إرسال الرمز';
+
+  @override
+  String otpResendIn(int seconds) {
+    return 'إعادة الإرسال خلال $secondsث';
+  }
+
+  @override
+  String get otpSendingCode => 'جار إرسال OTP...';
+
+  @override
+  String get otpVerifying => 'جار التحقق...';
+
+  @override
+  String get otpInvalidCode => 'رمز غير صحيح. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get otpExpiredCode => 'انتهت صلاحية الرمز. يرجى طلب رمز جديد.';
+
+  @override
+  String get otpTooManyAttempts => 'محاولات كثيرة جداً. يرجى طلب رمز جديد.';
+
+  @override
+  String get otpSendFailed => 'فشل إرسال OTP. تحقق من رقم هاتفك وحاول مجدداً.';
+
+  @override
+  String get otpVerificationFailed =>
+      'فشل التحقق من OTP. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String otpAttemptsLeft(int count) {
+    return 'تبقى $count محاولات';
+  }
+
+  @override
+  String get logOtpSent => 'تم إرسال OTP إلى الهاتف';
+
+  @override
+  String get logOtpVerified => 'تم التحقق من OTP بنجاح';
+
+  @override
+  String get logOtpFailed => 'فشل التحقق من OTP';
+
+  @override
+  String get logPasswordResetViaSms => 'إعادة تعيين كلمة المرور عبر OTP';
+
+  @override
+  String get fpTitle => 'نسيت كلمة المرور';
+
+  @override
+  String get fpSubtitle =>
+      'أدخل بريدك الإلكتروني المسجل. سنرسل رمزاً لمرة واحدة إلى رقم هاتفك الموثق.';
+
+  @override
+  String get fpIdentifyButton => 'إرسال رمز OTP';
+
+  @override
+  String get fpEmployeeNotFound =>
+      'لم يتم العثور على حساب موظف نشط بهذا البريد الإلكتروني.';
+
+  @override
+  String get fpPasswordResetSuccess =>
+      'تمت إعادة تعيين كلمة المرور بنجاح! يرجى تسجيل الدخول باستخدام كلمة المرور الجديدة.';
+
+  @override
+  String get fpResetPasswordButton => 'إعادة تعيين كلمة المرور';
+
+  @override
+  String get newReminderTitle => 'تذكير جديد';
+
+  @override
+  String get editReminderTitle => 'تعديل التذكير';
+
+  @override
+  String get reminderDetailsSectionLabel => 'تفاصيل التذكير';
+
+  @override
+  String get reminderTitleLabel => 'العنوان';
+
+  @override
+  String get reminderTitleHint => 'عنوان التذكير';
+
+  @override
+  String get reminderDescLabel => 'الوصف (اختياري)';
+
+  @override
+  String get reminderDescHint => 'أضف المزيد من التفاصيل…';
+
+  @override
+  String get priorityLabel => 'الأولوية';
+
+  @override
+  String get priorityLow => 'منخفضة';
+
+  @override
+  String get priorityMedium => 'متوسطة';
+
+  @override
+  String get priorityHigh => 'عالية';
+
+  @override
+  String get scheduleSectionLabel => 'الجدولة';
+
+  @override
+  String get dueDateLabel => 'تاريخ الاستحقاق';
+
+  @override
+  String get dueTimeLabel => 'وقت الاستحقاق';
+
+  @override
+  String get remindBeforeLabel => 'التذكير قبل';
+
+  @override
+  String get remindAtTime => 'عند الوقت';
+
+  @override
+  String get remind15Min => '١٥ دقيقة';
+
+  @override
+  String get remind1Hour => 'ساعة واحدة';
+
+  @override
+  String get remind1Day => 'يوم واحد';
+
+  @override
+  String get remind2Days => 'يومان';
+
+  @override
+  String get repeatSectionLabel => 'التكرار';
+
+  @override
+  String get repeatNone => 'بدون تكرار';
+
+  @override
+  String get repeatDaily => 'يومياً';
+
+  @override
+  String get repeatWeekly => 'أسبوعياً';
+
+  @override
+  String get repeatMonthly => 'شهرياً';
+
+  @override
+  String get repeatCustom => 'مخصص';
+
+  @override
+  String get repeatEveryLabel => 'كل';
+
+  @override
+  String get repeatDaysLabel => 'يوم';
+
+  @override
+  String get notificationSectionLabel => 'الإشعارات';
+
+  @override
+  String get notificationEnabledLabel => 'تفعيل الإشعار';
+
+  @override
+  String get notificationEnabledDesc => 'ستتلقى إشعاراً في الوقت المحدد.';
+
+  @override
+  String get notificationDisabledDesc => 'لن يتم إرسال أي إشعار.';
+
+  @override
+  String get createReminderButton => 'إنشاء التذكير';
+
+  @override
+  String get deleteReminderTitle => 'حذف التذكير';
+
+  @override
+  String get deleteReminderConfirm =>
+      'سيتم حذف هذا التذكير نهائياً. لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get searchRemindersHint => 'البحث في التذكيرات…';
+
+  @override
+  String get filterAll => 'الكل';
+
+  @override
+  String get filterActive => 'نشط';
+
+  @override
+  String get filterOverdue => 'متأخر';
+
+  @override
+  String get filterCompleted => 'مكتمل';
+
+  @override
+  String get filterHighPriority => 'أولوية عالية';
+
+  @override
+  String get noRemindersYet => 'لا توجد تذكيرات بعد';
+
+  @override
+  String get noRemindersDesc => 'اضغط + لإنشاء أول تذكير.';
+
+  @override
+  String get noSearchResults => 'لا توجد نتائج';
+
+  @override
+  String get noSearchResultsDesc => 'جرب كلمة بحث أو فلتراً مختلفاً.';
+
+  @override
+  String get logReminderCreated => 'تم إنشاء التذكير';
+
+  @override
+  String get logReminderUpdated => 'تم تحديث التذكير';
+
+  @override
+  String get logReminderCompleted => 'تم تحديد التذكير كمكتمل';
+
+  @override
+  String get logReminderDeleted => 'تم حذف التذكير';
+
+  @override
+  String get reminderPastDateError =>
+      'يجب أن يكون تاريخ ووقت الاستحقاق في المستقبل. يرجى اختيار تاريخ أو وقت لاحق.';
+
+  @override
+  String get mediaSharingDisabledMessage =>
+      'تم تعطيل مشاركة الوسائط من قبل مسؤول المنظمة.';
+
+  @override
+  String get logMediaSharingEnabled => 'تم تفعيل مشاركة الوسائط';
+
+  @override
+  String get logMediaSharingDisabled => 'تم تعطيل مشاركة الوسائط';
+
+  @override
+  String get encryptionKeySection => 'نسخة احتياطية لمفتاح التشفير';
+
+  @override
+  String get encryptionKeyBackupDescription =>
+      'احفظ مفتاح التشفير احتياطيًا لاستعادة رسائلك على جهاز جديد.';
+
+  @override
+  String get backupKeyButton => 'نسخ المفتاح';
+
+  @override
+  String get backupSuccessMessage => 'تم حفظ مفتاح التشفير احتياطيًا بنجاح';
+
+  @override
+  String get backupFailedMessage => 'فشل حفظ مفتاح التشفير احتياطيًا';
+
+  @override
+  String get backupKeyPasswordDialogTitle => 'ضبط كلمة مرور النسخة الاحتياطية';
+
+  @override
+  String get backupKeyPasswordDialogDescription =>
+      'اختر كلمة مرور قوية لحماية نسخة مفتاح التشفير الاحتياطية. ستحتاجها لاستعادة رسائلك على جهاز آخر.';
+
+  @override
+  String get backupPasswordHint => 'أدخل كلمة المرور';
+
+  @override
+  String get confirmBackupPasswordHint => 'تأكيد كلمة المرور';
+
+  @override
+  String get passwordTooShort => 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل';
+
+  @override
+  String get restoreKeyPasswordDialogTitle => 'استعادة مفتاح التشفير';
+
+  @override
+  String get restoreKeyPasswordDialogDescription =>
+      'تم العثور على نسخة احتياطية لمفتاح التشفير. أدخل كلمة المرور لاستعادة الوصول إلى رسائلك.';
+
+  @override
+  String get restoreFailedWrongPassword =>
+      'كلمة المرور غير صحيحة. يرجى المحاولة مجددًا.';
+
+  @override
+  String get restoreFailedMessage => 'فشل استعادة مفتاح التشفير';
+
+  @override
+  String get skipRestoreButton => 'تخطي';
+
+  @override
+  String get restoreKeyButton => 'استعادة';
+
+  @override
+  String get notificationsLabel => 'الإشعارات';
+
+  @override
+  String get notifNewMessage => 'رسالة جديدة';
+
+  @override
+  String get notifNewPrivateMessage => 'رسالة خاصة جديدة';
+
+  @override
+  String get notifNewAnnouncement => 'إعلان جديد';
+
+  @override
+  String get notifViewAnnouncement => 'عرض الإعلان';
+
+  @override
+  String get notifChatChannel => 'الرسائل';
+
+  @override
+  String get notifAnnouncementChannel => 'الإعلانات';
+
+  @override
+  String get notifSystemChannel => 'النظام';
+
+  @override
+  String get logNotificationSent => 'تم إرسال الإشعار';
+
+  @override
+  String get logNotificationOpened => 'تم فتح الإشعار';
+
+  @override
+  String get logNotificationFailed => 'فشل إرسال الإشعار';
+
+  @override
+  String get aiSummaryTitle => 'ملخص المحادثة بالذكاء الاصطناعي';
+
+  @override
+  String get aiSummaryGenerate => 'إنشاء';
+
+  @override
+  String get aiSummaryRegenerate => 'إعادة الإنشاء';
+
+  @override
+  String get aiSummaryEmptyTitle => 'لا يوجد ملخص بعد';
+
+  @override
+  String get aiSummaryEmptySubtitle =>
+      'اضغط على إنشاء لإنشاء ملخص ذكي لهذه المحادثة.';
+
+  @override
+  String get aiSummaryGenerateButton => 'إنشاء ملخص';
+
+  @override
+  String get aiSummaryMainPoints => 'النقاط الرئيسية';
+
+  @override
+  String get aiSummaryDecisions => 'القرارات المهمة';
+
+  @override
+  String get aiSummaryTasks => 'المهام وبنود العمل';
+
+  @override
+  String get aiSummaryDeadlines => 'المواعيد والالتزامات';
+
+  @override
+  String get aiSummaryTone => 'النبرة العامة';
+
+  @override
+  String aiSummaryGeneratedAt(String date) {
+    return 'تم الإنشاء $date';
+  }
+
+  @override
+  String get inboxSummaryTitle => 'جميع محادثاتك';
+
+  @override
+  String get inboxSummarySubtitle =>
+      'نظرة شاملة بالذكاء الاصطناعي على جميع محادثاتك';
+
+  @override
+  String get inboxSummaryGenerate => 'إنشاء';
+
+  @override
+  String get inboxSummaryRegenerate => 'إعادة الإنشاء';
+
+  @override
+  String get inboxSummaryEmptyTitle => 'لا يوجد ملخص بعد';
+
+  @override
+  String get inboxSummaryEmptySubtitle =>
+      'اضغط على إنشاء لإنشاء ملخص ذكي للنشاط الأخير عبر جميع محادثاتك.';
+
+  @override
+  String get inboxSummaryGenerateButton => 'تلخيص صندوق الوارد';
+
+  @override
+  String get inboxSummaryAnalysing => 'جارٍ تحليل المحادثات…';
+
+  @override
+  String get inboxSummaryHighlights => 'أبرز النقاط';
+
+  @override
+  String get inboxSummaryUrgent => 'عاجل ويتطلب إجراء';
+
+  @override
+  String get inboxSummaryDecisions => 'القرارات المتخذة';
+
+  @override
+  String get inboxSummaryPending => 'البنود المعلقة';
+
+  @override
+  String get inboxSummaryPerChat => 'تفصيل لكل محادثة';
+
+  @override
+  String get inboxSummaryTrends => 'اتجاهات التواصل';
+
+  @override
+  String inboxSummaryGeneratedAt(String date) {
+    return 'تم الإنشاء $date';
+  }
+
+  @override
+  String get splashTagline => 'تواصل داخلي آمن';
+
+  @override
+  String get onboardingSkip => 'تخطي';
+
+  @override
+  String get onboardingNext => 'التالي';
+
+  @override
+  String get onboardingGetStarted => 'ابدأ الآن';
+
+  @override
+  String get onboarding1Title => 'تواصل آمن';
+
+  @override
+  String get onboarding1Subtitle =>
+      'تشفير كامل من طرف إلى طرف بمستوى عسكري يحمي كل رسالة.';
+
+  @override
+  String get onboarding2Title => 'تعاون الفريق';
+
+  @override
+  String get onboarding2Subtitle =>
+      'تنسيق سلس عبر الأقسام مع رسائل فورية وقنوات جماعية.';
+
+  @override
+  String get onboarding3Title => 'ابق على اطلاع';
+
+  @override
+  String get onboarding3Subtitle =>
+      'استقبل الإعلانات الهامة والتحديثات التنظيمية في اللحظة التي تصدر فيها.';
+
+  @override
+  String get onboarding4Title => 'هوية موثقة';
+
+  @override
+  String get onboarding4Subtitle =>
+      'التحقق بكلمة مرور لمرة واحدة يضمن وصول الأفراد المخوّلين فقط للنظام.';
+
+  @override
+  String get themeLabel => 'المظهر';
+
+  @override
+  String get themeDark => 'داكن';
+
+  @override
+  String get themeLight => 'فاتح';
+
+  @override
+  String get themeSystem => 'النظام';
 }
