@@ -96,7 +96,7 @@ GovChat is designed with security as a first-class requirement, informed by OWAS
 | **Session Security** | 5-minute inactivity timeout; session cleared on logout and role mismatch |
 | **Dependency Hygiene** | `flutter_lints` enforced; private package registry (`publish_to: none`) |
 
-**GitHub Secret Protection:** No credentials, API keys, or service account files are committed to the repository. Firebase configuration is generated per environment and excluded via `.gitignore`. A full security audit is available in [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md).
+**GitHub Secret Protection:** No credentials, API keys, or service account files are committed to the repository. Firebase configuration is generated per environment and excluded via `.gitignore`.
 
 ---
 
@@ -374,8 +374,6 @@ See [`CHANGELOG.md`](CHANGELOG.md) for a full list of changes by version.
 ---
 
 ## Security
-
-See [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md) for the complete security audit report.
 
 To report a vulnerability, contact the team directly — do not open a public GitHub issue.
 
